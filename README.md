@@ -141,7 +141,7 @@ pull requests.
 
 ## **Sobre o Desenvolvedor**
 
-Este projeto foi desenvolvido por Ithalo Sena como parte do Trabalho de
+Este projeto foi desenvolvido por Ithalo Sena e Raissa Alves como parte do Trabalho de
 Conclusão de Curso (TCC) do curso de Análise e Desenvolvimento de
 Sistemas (ADS) no Instituto Federal do Norte de Minas Gerais (IFNMG) e
 visa contribuir para a melhoria da gestão de informações de saúde dos
