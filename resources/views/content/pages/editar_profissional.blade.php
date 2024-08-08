@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Profissionais')
+@section('title', 'Profissionais - Editar Proficional')
 
 @section('content')
 
@@ -54,7 +54,8 @@ $configData = Helper::appClasses();
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
           <select name="especialidade" class="form-select" id="especialidade" placeholder="Digite sua especialidade" required>
-            <option value="{{ $prof->especialidade }}">{{ $prof->especialidade }}</option>
+            <option disabled value="{{ $prof->especialidade }}">{{ $prof->especialidade }}</option>
+            <option disabled>--- Selecione uma opção ---</option>
             <option value="Piscólogo(a)">Piscólogo</option>
             <option value="Clinico Geral">Clinico Geral</option>
             <option value="Dentista">Dentista</option>
@@ -91,37 +92,5 @@ $configData = Helper::appClasses();
       </form>
     </div>
   </div>
-</div>
-
-
-
-
-<div class="container mt-5">
-  <h2 class="text-center">Edição de Usuário</h2>
-  <form action="/atualizar-profissional/{{ $prof->id }}" method="POST">
-    @csrf
-    @method("PUT")
-    <div class="form-group">
-      <label for="nome">Nome</label>
-      <input value="{{ $prof->nome }}" name="nome" type="text" class="form-control" id="nome" placeholder="Digite seu nome">
-    </div>
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input value="{{ $prof->email }}" name="email" type="email" class="form-control" id="email" placeholder="Digite seu email">
-    </div>
-    <div class="form-group">
-      <label for="senha">Senha</label>
-      <input value="{{ $prof->senha }}" name="senha" type="password" class="form-control" id="senha" placeholder="Digite sua senha">
-    </div>
-    <div class="form-group">
-      <label for="contato">Contato</label>
-    </div>
-    <div class="form-group">
-      <label for="especialidade">Especialidade</label>
-      <input value="{{ $prof->especialidade }}" name="especialidade" type="text" class="form-control" id="especialidade" placeholder="Digite sua especialidade">
-    </div>
-    <button type="submit" class="btn btn-primary">Atualizar</button>
-    <a href="/profissionais" type="button" class="btn btn-warning">Voltar</a>
-  </form>
 </div>
 @endsection

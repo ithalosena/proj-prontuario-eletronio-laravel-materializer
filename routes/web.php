@@ -220,7 +220,8 @@ Route::post('/cadastrar-paciente', function (Request $infos) {
     'curso' => $infos->curso
   ]);
 
-  return view("content.pages.menu_voltar", ["url" => "/pacientes"]);
+  $pacientes = Paciente::all();
+  return view("content.pages.listagem_pacientes", ["pacientes" => $pacientes]);
 });
 
 Route::get('/editar-paciente/{id}', function ($id) {
@@ -243,14 +244,16 @@ Route::put('/atualizar-paciente/{id}', function (Request $infos,  $id) {
 
   $paciente->save();
 
-  return view("content.pages.menu_voltar", ["url" => "/pacientes"]);
+  $pacientes = Paciente::all();
+  return view("content.pages.listagem_pacientes", ["pacientes" => $pacientes]);
 });
 
 Route::get('/deletar-paciente/{id}', function ($id) {
   $paciente = Paciente::findOrFail($id);
   $paciente->delete();
 
-  return view("content.pages.menu_voltar", ["url" => "/pacientes"]);
+  $pacientes = Paciente::all();
+  return view("content.pages.listagem_pacientes", ["pacientes" => $pacientes]);
 });
 
 // CRUD PROFISSIONAL

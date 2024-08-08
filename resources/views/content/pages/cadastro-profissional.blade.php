@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Profissionais')
+@section('title', 'Profissionais - Cadastrar Proficional')
 
 @section('content')
 
@@ -53,7 +53,7 @@ $configData = Helper::appClasses();
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
           <select name="especialidade" class="form-select" id="especialidade" placeholder="Digite sua especialidade" required>
-            <option value="">Selecione a Especialidade</option>
+            <option disabled value="">Selecione a Especialidade</option>
             <option value="Piscólogo(a)">Piscólogo</option>
             <option value="Clinico Geral">Clinico Geral</option>
             <option value="Dentista">Dentista</option>

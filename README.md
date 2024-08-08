@@ -1,66 +1,170 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<p align="center" text ><a href="" target="_blank"><img src="https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer/blob/main/public/assets/img/branding/logo-text.png?raw=true" width="400" alt="Prontu IF Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# **Prontu IF - Sistema de Prontuário Eletrônico para o IFNMG**
 
-## About Laravel
+## **Descrição**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+O **Prontu IF** é um sistema de prontuário eletrônico web desenvolvido
+para o Instituto Federal do Norte de Minas Gerais (IFNMG), com o
+objetivo de otimizar o registro e a gestão das informações de saúde dos
+alunos, facilitando o trabalho dos profissionais e melhorando a
+qualidade do atendimento.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+O sistema oferece funcionalidades para o cadastro de usuários
+(administradores e profissionais de saúde), pacientes (alunos), registro
+de consultas, exames, prescrições, histórico de atendimento, relatórios
+e estatísticas. O Prontu IF garante a segurança dos dados através de
+criptografia, controle de acesso e backups regulares.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## **Funcionalidades Principais**
 
-## Learning Laravel
+- **Cadastro:**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+  - ✅Usuários (administradores e profissionais de saúde)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+  - ✅Profissionais de Saúde (médicos, dentistas, psicólogos, etc.)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+  - ✅Pacientes (alunos)
 
-## Laravel Sponsors
+- **Prontuário Eletrônico:**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+  - ⌛Registro de consultas
 
-### Premium Partners
+  - ⌛Registro de exames
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+  - ✅Prescrição de medicamentos
 
-## Contributing
+  - ⌛Encaminhamentos
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **Histórico de Atendimento:**
 
-## Code of Conduct
+  - ⌛Visualização do histórico completo ou simplificado dos atendimentos
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- **Relatórios e Estatísticas:**
 
-## Security Vulnerabilities
+  - ⌛Geração de relatórios personalizados
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+  - ⌛Visualização de estatísticas sobre a saúde dos alunos
 
-## License
+- **Controle de Acesso e Segurança:**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+  - ⌛Autenticação e autorização de usuários
+
+  - ⌛Criptografia de dados sensíveis
+
+  - ⌛Auditoria de ações
+
+✅(Concluído) ⌛(Em desenvolvimento)
+
+## **Tecnologias Utilizadas**
+
+- **Backend:**
+
+  - **Laravel:** Framework PHP para o desenvolvimento do backend.
+
+  - **MySQL:** Banco de dados para armazenar as informações do sistema.
+
+- **Frontend:**
+
+  - **Materialize (PixInvent):** Framework CSS baseado no Material Design para a construção da interface do usuário.
+
+## **Documentação**
+
+- **Laravel:**
+
+  > [[https://laravel.com/docs]{.underline}](https://laravel.com/docs)
+
+- **Materialize (PixInvent):**
+  > [[https://pixinvent.com/materialize-material-design-bootstrap-admin-template/]{.underline}](https://pixinvent.com/materialize-material-design-bootstrap-admin-template/)
+
+## **Pré-requisitos**
+
+- PHP \>= 8.1
+
+- Composer
+
+- Node.js e npm
+
+- MySQL (ou outro banco de dados compatível com o Laravel)
+
+## **Instalação**
+
+1.  Clone o repositório: git clone
+
+    > https://github.com/seu-usuario/prontu-if.git
+
+2.  Acesse a pasta do projeto:
+
+    > cd prontu-if
+
+3.  Instale as dependências do PHP:
+
+    > composer install
+
+4.  Instale as dependências do frontend:
+
+    > npm install
+
+5.  Crie o arquivo .env copiando o arquivo .env.example e configure as
+
+    > informações do seu banco de dados.
+
+6.  Gere a chave da aplicação:
+
+    > php artisan key:generate
+
+7.  Execute as migrations para criar as tabelas do banco de dados: php
+
+    > artisan migrate
+
+8.  Compile os assets do frontend:
+
+    > npm run dev
+
+9.  Inicie o servidor de desenvolvimento:
+    > php artisan serve
+
+## **Utilização**
+
+- Acesse o sistema em http://localhost:8000
+  (ou em outra porta, se você tiver configurado).
+
+- Faça o login ou registre-se como um novo usuário.
+
+- Utilize as funcionalidades do sistema de acordo com o seu perfil de acesso.
+  (administrador ou profissional de saúde).
+
+## **Contribuição**
+
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou
+pull requests.
+
+## **Sobre o Desenvolvedor**
+
+Este projeto foi desenvolvido por Ithalo Sena como parte do Trabalho de
+Conclusão de Curso (TCC) do curso de Análise e Desenvolvimento de
+Sistemas (ADS) no Instituto Federal do Norte de Minas Gerais (IFNMG) e
+visa contribuir para a melhoria da gestão de informações de saúde dos
+alunos da instituição.
+
+## **Sobre o IFNMG e o Curso de ADS**
+
+O Instituto Federal do Norte de Minas Gerais (IFNMG) é uma instituição
+de ensino público que oferece cursos técnicos, de graduação e
+pós-graduação em diversas áreas do conhecimento. O curso de Análise e
+Desenvolvimento de Sistemas (ADS) do IFNMG forma profissionais
+capacitados para projetar, desenvolver, implantar e manter sistemas de
+informação, utilizando tecnologias e metodologias adequadas.
+
+## **Licença**
+
+Este projeto está licenciado sob a licença MIT. Consulte o arquivo
+LICENSE para obter mais detalhes.
+
+**Contato**
+
+- Nome do Desenvolvedor: \[Ithalo Silva Sena Aquino\]
+
+- E-mail: \[ithalosena@gmail.com\]
+
+Sujeito à licença (MIT)
