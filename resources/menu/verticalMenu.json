@@ -1,0 +1,87 @@
+{
+  "menu": [
+    {
+      "url": "/",
+      "name": "Home",
+      "icon": "menu-icon tf-icons mdi mdi-home-outline",
+      "slug": "pages-home"
+    },
+    {
+      "name": "Profissionais",
+      "icon": "menu-icon tf-icons mdi mdi-pencil-box-multiple-outline",
+      "slug": "profissionais",
+      "submenu": [
+        {
+          "url": "/profissionais",
+          "name": "Listar Profissionais",
+          "slug": "profissionais-lista"
+        },
+        {
+          "url": "/cadastro-profissional",
+          "name": "Cadastrar Profissional",
+          "slug": "profissionais-cadastro"
+        }
+      ]
+    },
+    {
+      "icon": "menu-icon tf-icons mdi mdi-file-document-outline",
+      "name": "Pacientes",
+      "slug": "pacientes",
+      "submenu": [
+        {
+          "url": "/pacientes",
+          "name": "Listar pacientes",
+          "slug": "pacientes-lista"
+        },
+        {
+          "url": "/cadastro-pacientes",
+          "name": "Cadastrar pacientes",
+          "slug": "pacientes-cadastro"
+        }
+      ]
+    },
+    {
+      "icon": "menu-icon tf-icons mdi mdi-file-document-outline",
+      "name": "Prontuário",
+      "slug": "prontuarios",
+      "submenu": [
+        {
+          "url": "/prescricoes",
+          "name": "Prescricões",
+          "slug": "prescricoes-lista"
+        },
+        {
+          "url": "/exames",
+          "name": "Listar Exames",
+          "slug": "exames-lista"
+        },
+        {
+          "url": "/exames-profissional",
+          "name": "Cadastrar Profissional",
+          "slug": "exames-cadastro"
+        }
+      ]
+    },
+    {
+      "url": "/relatorios",
+      "name": "Relatorios",
+      "icon": "menu-icon tf-icons mdi mdi-alert-circle-outline",
+      "slug": "relatorios",
+      "target": "_blank"
+    },
+    {
+      "url": "/auth/login-basic",
+      "name": "Login",
+      "icon": "menu-icon tf-icons mdi mdi-login",
+      "slug": "auth-login-basic",
+      "target": "_blank"
+    },
+    {
+      "url": "/auth/register-basic",
+      "name": "Register",
+      "icon": "menu-icon tf-icons mdi mdi-account-outline",
+      "slug": "auth-register-basic",
+      "target": "_blank"
+    }
+  ]
+}
