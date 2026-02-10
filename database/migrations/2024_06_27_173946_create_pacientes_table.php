@@ -13,17 +13,20 @@ return new class extends Migration
     {
         Schema::create('pacientes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
             $table->string('nome');
-            $table->string('email');
-            $table->string('senha');
-            $table->string('contato');
-            $table->string('documento');
-            $table->string('idade');
-            $table->string('sexo');
-            $table->string('endereco');
-            $table->string('matricula');
+            $table->string('contato')->nullable();
+            $table->string('documento')->unique();
+            $table->date('data_nascimento');
+            $table->enum('sexo', ['M', 'F', 'outro']);
+            $table->string('endereco')->nullable();
+            $table->string('matricula')->unique();
             $table->string('curso');
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('nome');
+            $table->index('curso');
         });
     }
 
@@ -32,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('pacientes');
     }
 };

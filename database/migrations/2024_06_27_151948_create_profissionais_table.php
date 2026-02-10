@@ -11,14 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('exames', function (Blueprint $table) {
+        Schema::create('profissionais', function (Blueprint $table) {
             $table->id();
-            $table->string('observacao');
-            $table->string('nome_paciente');
-            $table->string('nome_profissional');
-            $table->string('data');
+            $table->foreignId('user_id')->unique()->constrained('users')->onDelete('cascade');
+            $table->string('nome');
+            $table->string('contato')->nullable();
             $table->string('especialidade');
+            $table->string('registro_profissional')->nullable();
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('especialidade');
         });
     }
 
@@ -27,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('profissionais');
     }
 };

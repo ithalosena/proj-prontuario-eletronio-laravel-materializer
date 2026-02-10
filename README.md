@@ -1,170 +1,294 @@
-<p align="center" text ><a href="" target="_blank"><img src="https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer/blob/main/public/assets/img/branding/logo-text.png?raw=true" width="400" alt="Prontu IF Logo"></a></p>
+<p align="center"><a href="" target="_blank"><img src="https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer/blob/main/public/assets/img/branding/logo-text.png?raw=true" width="400" alt="Prontu IF Logo"></a></p>
+
+<h3 align="center">Sistema de Prontuário Eletrônico para o IFNMG</h3>
+
+<p align="center">
+  <strong>TCC</strong> — Análise e Desenvolvimento de Sistemas · IFNMG
+  <br/>
+  Laravel 10 · PHP 8.2 · MySQL 8.0 · Materialize (PixInvent)
+</p>
+
+---
+
+## Sobre o Projeto
+
+O **Prontu IF** é um sistema web de prontuário eletrônico desenvolvido para o setor de saúde do Instituto Federal do Norte de Minas Gerais (IFNMG). O objetivo é simples e direto: **centralizar e organizar os registros de saúde dos alunos**, dando aos profissionais (médicos, dentistas, psicólogos, nutricionistas) uma ferramenta prática para registrar consultas, prescrever medicamentos, solicitar exames e acompanhar o histórico de cada paciente.
+
+O projeto nasceu como Trabalho de Conclusão de Curso (TCC) do curso de ADS, mas foi pensado para resolver um problema real — a gestão de informações de saúde dentro de uma instituição de ensino, onde o acompanhamento dos alunos é feito por múltiplos profissionais e precisa ser rastreável, seguro e acessível.
+
+### Por que isso importa?
+
+- Prontuários em papel se perdem, são difíceis de consultar e não permitem gerar relatórios
+- Profissionais diferentes precisam acessar o mesmo histórico do aluno de forma integrada
+- Dados de saúde são sensíveis e exigem segurança (LGPD, Lei 13.709/2018)
+- O IFNMG não possuía um sistema informatizado para essa finalidade
+
+---
+
+## Módulos e Funcionalidades
+
+### 📋 Cadastros
+| Funcionalidade | Status | Descrição |
+|---|---|---|
+| Usuários do sistema | ✅ Concluído | Administradores e profissionais de saúde com perfis distintos |
+| Profissionais de Saúde | ✅ Concluído | Médicos, dentistas, psicólogos, nutricionistas, fisioterapeutas |
+| Pacientes (Alunos) | ✅ Concluído | Dados pessoais, matrícula, curso, contato |
+
+### 🩺 Prontuário Eletrônico
+| Funcionalidade | Status | Descrição |
+|---|---|---|
+| Registro de consultas | 🔨 Em desenvolvimento | Módulo central: anamnese, diagnóstico, conduta |
+| Prescrição de medicamentos | ✅ Concluído | Medicamento, dosagem, frequência, duração |
+| Solicitação de exames | 🔨 Em desenvolvimento | Vinculação com consulta, registro de resultados |
+| Encaminhamentos | 📌 Planejado | Encaminhamento entre profissionais |
+
+### 📂 Histórico e Acompanhamento
+| Funcionalidade | Status | Descrição |
+|---|---|---|
+| Histórico do paciente | 🔨 Em desenvolvimento | Timeline cronológica de todos os atendimentos |
+| Detalhes da consulta | 🔨 Em desenvolvimento | Visualização completa com prescrições e exames associados |
+
+### 📊 Relatórios e Dashboard
+| Funcionalidade | Status | Descrição |
+|---|---|---|
+| Dashboard com indicadores | 🔨 Em desenvolvimento | Gráficos de atendimentos, distribuição por especialidade |
+| Relatórios com filtros | 🔨 Em desenvolvimento | Filtros por período, profissional, tipo de atendimento |
+| Exportação em PDF | 📌 Planejado | Geração de relatórios para impressão |
 
-# **Prontu IF - Sistema de Prontuário Eletrônico para o IFNMG**
+### 🔐 Segurança e Controle de Acesso
+| Funcionalidade | Status | Descrição |
+|---|---|---|
+| Autenticação segura | 🔨 Em desenvolvimento | Login com bcrypt, sessões, middleware de proteção |
+| Controle de acesso (RBAC) | 🔨 Em desenvolvimento | Perfis: administrador e profissional, com permissões distintas |
+| Auditoria de ações | 📌 Planejado | Log de quem criou, editou ou excluiu cada registro |
+| Conformidade LGPD | 🔨 Em desenvolvimento | Criptografia, controle de acesso, rastreabilidade |
+
+> **Legenda:** ✅ Concluído · 🔨 Em desenvolvimento · 📌 Planejado
+
+---
+
+## Arquitetura e Stack
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    FRONTEND                          │
+│   Materialize (PixInvent) · Bootstrap 5 · Blade     │
+│   ApexCharts · DataTables · Select2 · SweetAlert2   │
+├─────────────────────────────────────────────────────┤
+│                    BACKEND                           │
+│   Laravel 10 · PHP 8.2 · Eloquent ORM              │
+│   Auth Guards · Middleware · FormRequests · Policies │
+├─────────────────────────────────────────────────────┤
+│                  BANCO DE DADOS                      │
+│   MySQL 8.0 · Migrations · Foreign Keys · Seeders   │
+├─────────────────────────────────────────────────────┤
+│                   INFRAESTRUTURA                     │
+│   Docker · Laravel Sail · Git (branching strategy)   │
+└─────────────────────────────────────────────────────┘
+```
+
+| Camada | Tecnologia | Papel |
+|---|---|---|
+| **Backend** | Laravel 10 (PHP 8.2) | Framework MVC, rotas, controllers, autenticação, ORM |
+| **Frontend** | Materialize (PixInvent) | Template admin baseado em Material Design e Bootstrap 5 |
+| **Banco de Dados** | MySQL 8.0 | Armazenamento relacional com integridade referencial |
+| **Ambiente** | Docker + Laravel Sail | Containerização para desenvolvimento reprodutível |
+| **Versionamento** | Git + GitHub | Branches `master` (estável) e `dev-stg1` (desenvolvimento) |
 
-## **Descrição**
+---
+
+## Modelo de Dados (Simplificado)
+
+```
+Usuário (users)
+ ├── Profissional (1:1) ─── especialidade, contato, registro
+ │    └── Consultas (1:N) ── data, queixa, diagnóstico, conduta
+ │         ├── Prescrições (1:N) ── medicamento, dosagem, frequência
+ │         └── Exames (1:N) ─────── tipo, resultado, observação
+ │
+ └── Paciente ── nome, matrícula, curso, data_nascimento
+      └── Consultas (1:N) ── histórico completo de atendimentos
+```
 
-O **Prontu IF** é um sistema de prontuário eletrônico web desenvolvido
-para o Instituto Federal do Norte de Minas Gerais (IFNMG), com o
-objetivo de otimizar o registro e a gestão das informações de saúde dos
-alunos, facilitando o trabalho dos profissionais e melhorando a
-qualidade do atendimento.
+---
 
-O sistema oferece funcionalidades para o cadastro de usuários
-(administradores e profissionais de saúde), pacientes (alunos), registro
-de consultas, exames, prescrições, histórico de atendimento, relatórios
-e estatísticas. O Prontu IF garante a segurança dos dados através de
-criptografia, controle de acesso e backups regulares.
+## Instalação
 
-## **Funcionalidades Principais**
+### Com Docker (Recomendado)
 
-- **Cadastro:**
+O jeito mais rápido de rodar o projeto. Você só precisa ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado.
 
-  - ✅Usuários (administradores e profissionais de saúde)
+```bash
+# 1. Clone o repositório
+git clone https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer.git
+cd proj-prontuario-eletronio-laravel-materializer
 
-  - ✅Profissionais de Saúde (médicos, dentistas, psicólogos, etc.)
+# 2. Crie o arquivo .env
+cp .env.example .env
+# Configure DB_HOST=mysql, DB_USERNAME=sail, DB_PASSWORD=password, DB_DATABASE=prontu_if
+# Adicione: WWWUSER=1000 e WWWGROUP=1000
 
-  - ✅Pacientes (alunos)
+# 3. Instale as dependências PHP (via container temporário)
+docker run --rm -v $(pwd):/var/www/html -w /var/www/html laravelsail/php82-composer:latest composer install --ignore-platform-reqs
 
-- **Prontuário Eletrônico:**
+# 4. Suba os containers
+docker-compose up -d
 
-  - ⌛Registro de consultas
+# 5. Gere a chave da aplicação
+docker-compose exec laravel.test php artisan key:generate
 
-  - ⌛Registro de exames
+# 6. Instale as dependências do frontend
+docker-compose exec laravel.test npm install
+
+# 7. Execute as migrations
+docker-compose exec laravel.test php artisan migrate
 
-  - ✅Prescrição de medicamentos
+# 8. Compile os assets (demora ~15 minutos)
+docker-compose exec laravel.test npm run production
 
-  - ⌛Encaminhamentos
+# 9. Acesse: http://localhost
+```
 
-- **Histórico de Atendimento:**
+> **Nota para Windows (Git Bash):** Use `MSYS_NO_PATHCONV=1` antes do comando `docker run` no passo 3 para evitar conversão de paths.
 
-  - ⌛Visualização do histórico completo ou simplificado dos atendimentos
+### Sem Docker (Manual)
 
-- **Relatórios e Estatísticas:**
+Pré-requisitos: PHP >= 8.1, Composer, Node.js, npm, MySQL.
 
-  - ⌛Geração de relatórios personalizados
+```bash
+git clone https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer.git
+cd proj-prontuario-eletronio-laravel-materializer
+composer install
+npm install
+cp .env.example .env     # Configure o banco de dados
+php artisan key:generate
+php artisan migrate
+npm run production
+php artisan serve         # Acesse: http://localhost:8000
+```
 
-  - ⌛Visualização de estatísticas sobre a saúde dos alunos
+---
 
-- **Controle de Acesso e Segurança:**
+## Roadmap de Desenvolvimento
 
-  - ⌛Autenticação e autorização de usuários
+O desenvolvimento do Prontu IF segue um plano incremental em 4 fases, priorizando o que é crítico para a segurança e integridade do sistema antes de expandir funcionalidades.
 
-  - ⌛Criptografia de dados sensíveis
+### Fase 1: Fundação 🏗️
+> Corrigir a base técnica do projeto
 
-  - ⌛Auditoria de ações
+- [x] Configuração do ambiente Docker (Sail)
+- [ ] Autenticação segura com Auth facade do Laravel (bcrypt + sessões)
+- [ ] Proteção de rotas com middleware
+- [ ] Redesenho do banco de dados com foreign keys e tipos corretos
+- [ ] Refatoração: lógica de rotas movida para Resource Controllers
+- [ ] Validação de dados com FormRequests
+- [ ] Definição de relacionamentos Eloquent nos Models
 
-✅(Concluído) ⌛(Em desenvolvimento)
+### Fase 2: Funcionalidades Core 🩺
+> Implementar o coração do prontuário
 
-## **Tecnologias Utilizadas**
+- [ ] Módulo de Consultas (atendimentos) — entidade central
+- [ ] Vinculação de prescrições e exames a consultas
+- [ ] Controle de acesso por perfil (RBAC com Gates/Policies)
 
-- **Backend:**
+### Fase 3: Complementos 📊
+> Funcionalidades que agregam valor
 
-  - **Laravel:** Framework PHP para o desenvolvimento do backend.
+- [ ] Histórico completo do paciente (timeline)
+- [ ] Dashboard com gráficos e indicadores (ApexCharts)
+- [ ] Relatórios com filtros e exportação em PDF
+- [ ] Auditoria de ações (log de quem fez o quê)
 
-  - **MySQL:** Banco de dados para armazenar as informações do sistema.
+### Fase 4: Polimento ✨
+> Qualidade e apresentação
 
-- **Frontend:**
+- [ ] Testes automatizados (PHPUnit — Feature e Unit)
+- [ ] Seeders e Factories para dados de demonstração
+- [ ] Mensagens de feedback (sucesso, erro, validação)
+- [ ] Revisão de responsividade e consistência visual
 
-  - **Materialize (PixInvent):** Framework CSS baseado no Material Design para a construção da interface do usuário.
+---
 
-## **Documentação**
+## Utilização
 
-- **Laravel:**
+1. Acesse `http://localhost` (Docker) ou `http://localhost:8000` (manual)
+2. Faça login com suas credenciais
+3. Navegue pelos módulos de acordo com seu perfil de acesso:
+   - **Administrador:** acesso total — gerenciar usuários, profissionais, relatórios e logs
+   - **Profissional de Saúde:** registrar consultas, prescrever medicamentos, solicitar exames, consultar histórico
 
-  > [[https://laravel.com/docs]{.underline}](https://laravel.com/docs)
+---
 
-- **Materialize (PixInvent):**
-  > [[https://pixinvent.com/materialize-material-design-bootstrap-admin-template/]{.underline}](https://pixinvent.com/materialize-material-design-bootstrap-admin-template/)
+## Estrutura do Projeto
 
-## **Pré-requisitos**
+```
+prontu-if/
+├── app/
+│   ├── Http/Controllers/    # Controllers (lógica de cada módulo)
+│   ├── Models/              # Models Eloquent (Paciente, Profissional, Consulta...)
+│   └── Helpers/             # Helpers do template Materialize
+├── database/
+│   ├── migrations/          # Versionamento do schema do banco
+│   ├── factories/           # Factories para testes
+│   └── seeders/             # Dados iniciais
+├── resources/
+│   ├── views/               # Templates Blade
+│   └── menu/                # Configuração do menu lateral (JSON)
+├── routes/
+│   └── web.php              # Definição de rotas da aplicação
+├── docker/                  # Configuração Docker (PHP 8.2)
+├── docker-compose.yml       # Orquestração dos containers
+└── .env                     # Variáveis de ambiente (não versionado)
+```
 
-- PHP \>= 8.1
+---
 
-- Composer
+## Contexto Acadêmico
 
-- Node.js e npm
+Este projeto foi desenvolvido por **Ithalo Sena** e **Raissa Alves** como Trabalho de Conclusão de Curso (TCC) do curso de **Análise e Desenvolvimento de Sistemas (ADS)** no **Instituto Federal do Norte de Minas Gerais (IFNMG)**.
 
-- MySQL (ou outro banco de dados compatível com o Laravel)
+O Prontu IF não é apenas um exercício acadêmico — foi pensado para resolver uma necessidade real do campus, contribuindo para a melhoria da gestão de saúde dos alunos. O desenvolvimento envolveu decisões técnicas fundamentadas em conceitos de Engenharia de Software, Banco de Dados, Segurança da Informação e legislação (LGPD), documentadas na monografia que acompanha este repositório.
 
-## **Instalação**
+### Referências técnicas que guiam o projeto
+- **Padrão MVC** — Separação de responsabilidades (Gamma et al., 1994)
+- **OWASP Top 10** — Boas práticas de segurança web
+- **LGPD (Lei 13.709/2018)** — Proteção de dados pessoais sensíveis
+- **Resolução CFM 1.638/2002** — Definição de prontuário médico
+- **SBIS/CFM** — Requisitos de segurança para sistemas de saúde
 
-1.  Clone o repositório: git clone
+---
 
-    > https://github.com/seu-usuario/prontu-if.git
+## Documentação de Referência
 
-2.  Acesse a pasta do projeto:
+| Recurso | Link |
+|---|---|
+| Laravel 10 | [laravel.com/docs/10.x](https://laravel.com/docs/10.x) |
+| Materialize (PixInvent) | [pixinvent.com/materialize-material-design-bootstrap-admin-template](https://pixinvent.com/materialize-material-design-bootstrap-admin-template/) |
+| Docker | [docs.docker.com](https://docs.docker.com/) |
+| OWASP Top 10 | [owasp.org/Top10](https://owasp.org/Top10/) |
+| LGPD | [planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm](http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm) |
 
-    > cd prontu-if
+---
 
-3.  Instale as dependências do PHP:
+## Contribuição
 
-    > composer install
+Contribuições são bem-vindas! Se quiser sugerir melhorias ou reportar bugs:
 
-4.  Instale as dependências do frontend:
+1. Abra uma [issue](https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer/issues)
+2. Ou envie um pull request
 
-    > npm install
+---
 
-5.  Crie o arquivo .env copiando o arquivo .env.example e configure as
+## Contato
 
-    > informações do seu banco de dados.
+**Ithalo Silva Sena Aquino**
+- Email: ithalosena@gmail.com
+- GitHub: [@ithalosena](https://github.com/ithalosena)
 
-6.  Gere a chave da aplicação:
+**Raissa Alves**
 
-    > php artisan key:generate
+---
 
-7.  Execute as migrations para criar as tabelas do banco de dados: php
+## Licença
 
-    > artisan migrate
-
-8.  Compile os assets do frontend:
-
-    > npm run dev
-
-9.  Inicie o servidor de desenvolvimento:
-    > php artisan serve
-
-## **Utilização**
-
-- Acesse o sistema em http://localhost:8000
-  (ou em outra porta, se você tiver configurado).
-
-- Faça o login ou registre-se como um novo usuário.
-
-- Utilize as funcionalidades do sistema de acordo com o seu perfil de acesso.
-  (administrador ou profissional de saúde).
-
-## **Contribuição**
-
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou
-pull requests.
-
-## **Sobre o Desenvolvedor**
-
-Este projeto foi desenvolvido por Ithalo Sena e Raissa Alves como parte do Trabalho de
-Conclusão de Curso (TCC) do curso de Análise e Desenvolvimento de
-Sistemas (ADS) no Instituto Federal do Norte de Minas Gerais (IFNMG) e
-visa contribuir para a melhoria da gestão de informações de saúde dos
-alunos da instituição.
-
-## **Sobre o IFNMG e o Curso de ADS**
-
-O Instituto Federal do Norte de Minas Gerais (IFNMG) é uma instituição
-de ensino público que oferece cursos técnicos, de graduação e
-pós-graduação em diversas áreas do conhecimento. O curso de Análise e
-Desenvolvimento de Sistemas (ADS) do IFNMG forma profissionais
-capacitados para projetar, desenvolver, implantar e manter sistemas de
-informação, utilizando tecnologias e metodologias adequadas.
-
-## **Licença**
-
-Este projeto está licenciado sob a licença MIT. Consulte o arquivo
-LICENSE para obter mais detalhes.
-
-**Contato**
-
-- Nome do Desenvolvedor: \[Ithalo Silva Sena Aquino\]
-
-- E-mail: \[ithalosena@gmail.com\]
-
-Sujeito à licença (MIT)
+Este projeto está licenciado sob a [Licença MIT](LICENSE).
