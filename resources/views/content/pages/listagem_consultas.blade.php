@@ -39,9 +39,7 @@ $configData = Helper::appClasses();
             <tr>
               <th>Data / Hora</th>
               <th>Paciente</th>
-              <th>Profissional</th>
               <th>Tipo</th>
-              <th>Queixa</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -50,60 +48,50 @@ $configData = Helper::appClasses();
             <tr>
               <td><span class="fw-medium">{{ $consulta->data_hora->format('d/m/Y H:i') }}</span></td>
               <td>{{ $consulta->paciente->nome ?? '-' }}</td>
-              <td>{{ $consulta->profissional->nome ?? '-' }}</td>
               <td><span class="badge rounded-pill bg-label-primary">{{ $consulta->tipo }}</span></td>
-              <td class="text-wrap" style="max-width: 250px; white-space: normal;">
-                {{ Str::limit($consulta->queixa, 60) }}
-              </td>
               <td>
-                <div class="dropdown">
-                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                    <i class="mdi mdi-arrow-down-drop-circle-outline mdi-24px"></i>
+                <div class="d-flex align-items-center gap-2">
+                  <a href="/consultas/{{ $consulta->id }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="mdi mdi-file-document-outline me-1"></i>Ver Prontuário
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-danger ms-3" data-bs-toggle="modal" data-bs-target="#deletar-{{ $consulta->id }}">
+                    <i class="mdi mdi-trash-can-outline me-1"></i>Deletar
                   </button>
-                  <div class="dropdown-menu">
-                    <a class="dropdown-item" href="/consultas/{{ $consulta->id }}">
-                      <i class="mdi mdi-file-document-outline mdi-24px me-1"></i>Ver Prontuário
-                    </a>
-                    <a class="dropdown-item" href="/editar-consulta/{{ $consulta->id }}">
-                      <i class="mdi mdi-pencil-outline mdi-24px me-1"></i>Editar
-                    </a>
-                    <a class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deletar-{{ $consulta->id }}">
-                      <i class="mdi mdi-trash-can-outline mdi-24px me-1"></i>Deletar
-                    </a>
-                  </div>
+                </div>
 
-                  <div class="modal fade" id="deletar-{{ $consulta->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title">Deletar Consulta</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                          <p>Deseja deletar a consulta de <strong>{{ $consulta->paciente->nome ?? '-' }}</strong>
-                            em {{ $consulta->data_hora->format('d/m/Y') }}?</p>
-                          <p class="text-danger small mb-0">
-                            <i class="mdi mdi-alert-outline me-1"></i>
-                            Exames e prescrições vinculados também serão removidos.
-                          </p>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
-                          <form action="/deletar-consulta/{{ $consulta->id }}" method="POST" style="display:inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Excluir</button>
-                          </form>
-                        </div>
+                {{-- Modal Deletar --}}
+                <div class="modal fade" id="deletar-{{ $consulta->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Deletar Consulta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p>Deseja deletar a consulta de <strong>{{ $consulta->paciente->nome ?? '-' }}</strong>
+                          em {{ $consulta->data_hora->format('d/m/Y') }}?</p>
+                        <p class="text-danger small mb-0">
+                          <i class="mdi mdi-alert-outline me-1"></i>
+                          Exames e prescrições vinculados também serão removidos.
+                        </p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                        <form action="/deletar-consulta/{{ $consulta->id }}" method="POST" style="display:inline">
+                          @csrf
+                          @method('DELETE')
+                          <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
                       </div>
                     </div>
                   </div>
                 </div>
+
               </td>
             </tr>
             @empty
             <tr>
-              <td colspan="6" class="text-center text-muted py-4">Nenhuma consulta registrada.</td>
+              <td colspan="4" class="text-center text-muted py-4">Nenhuma consulta registrada.</td>
             </tr>
             @endforelse
           </tbody>

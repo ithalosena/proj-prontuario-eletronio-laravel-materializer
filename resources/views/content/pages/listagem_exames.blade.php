@@ -37,10 +37,8 @@ $configData = Helper::appClasses();
             <tr>
               <th>Tipo</th>
               <th>Paciente</th>
-              <th>Profissional</th>
-              <th>Data Solicitacao</th>
               <th>Resultado</th>
-              <th>Acoes</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
@@ -48,8 +46,6 @@ $configData = Helper::appClasses();
             <tr>
               <td><span class="fw-medium">{{ $exame->tipo }}</span></td>
               <td>{{ $exame->consulta->paciente->nome ?? '-' }}</td>
-              <td>{{ $exame->consulta->profissional->nome ?? '-' }}</td>
-              <td>{{ $exame->data_solicitacao ? $exame->data_solicitacao->format('d/m/Y') : '-' }}</td>
               <td>
                 @if($exame->resultado)
                   <span class="badge rounded-pill bg-label-success">Com resultado</span>
@@ -58,34 +54,86 @@ $configData = Helper::appClasses();
                 @endif
               </td>
               <td>
-                <div class="dropdown">
-                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="mdi mdi-arrow-down-drop-circle-outline mdi-24px"></i></button>
-                  <div class="dropdown-menu">
-                    <a class="dropdown-item" href="/editar-exame/{{ $exame->id }}"><i class="mdi mdi-pencil-outline mdi-24px me-1"></i>Editar</a>
-                    <a class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deletar-{{ $exame->id }}"><i class="mdi mdi-trash-can-outline mdi-24px me-1"></i>Deletar</a>
-                  </div>
-                  <div class="modal fade" id="deletar-{{ $exame->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title">Deletar Exame</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detalhar-{{ $exame->id }}">
+                    <i class="mdi mdi-information-outline me-1"></i>Detalhar
+                  </button>
+                </div>
+
+                {{-- Modal Detalhar --}}
+                <div class="modal fade" id="detalhar-{{ $exame->id }}" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title"><i class="mdi mdi-test-tube me-2"></i>{{ $exame->tipo }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="row">
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Paciente</p>
+                            <p class="fw-semibold mb-0">{{ $exame->consulta->paciente->nome ?? '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Profissional</p>
+                            <p class="fw-semibold mb-0">{{ $exame->consulta->profissional->nome ?? '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Data de Solicitação</p>
+                            <p class="fw-semibold mb-0">{{ $exame->data_solicitacao ? $exame->data_solicitacao->format('d/m/Y') : '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Resultado</p>
+                            @if($exame->resultado)
+                              <span class="badge bg-label-success">Com resultado</span>
+                            @else
+                              <span class="badge bg-label-warning">Pendente</span>
+                            @endif
+                          </div>
+                          @if($exame->observacao)
+                          <div class="col-12 mb-0">
+                            <p class="text-muted small mb-1">Observação</p>
+                            <p class="fw-semibold mb-0">{{ $exame->observacao }}</p>
+                          </div>
+                          @endif
                         </div>
-                        <div class="modal-body">
-                          <p>Deseja deletar o exame <strong>{{ $exame->tipo }}</strong>?</p>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
-                          <form action="/deletar-exame/{{ $exame->id }}" method="POST" style="display:inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Excluir</button>
-                          </form>
-                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <a href="/editar-exame/{{ $exame->id }}" class="btn btn-outline-primary">
+                          <i class="mdi mdi-pencil-outline me-1"></i>Editar
+                        </a>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#deletar-{{ $exame->id }}">
+                          <i class="mdi mdi-trash-can-outline me-1"></i>Deletar
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {{-- Modal Deletar --}}
+                <div class="modal fade" id="deletar-{{ $exame->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Deletar Exame</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p>Deseja deletar o exame <strong>{{ $exame->tipo }}</strong>?</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                        <form action="/deletar-exame/{{ $exame->id }}" method="POST" style="display:inline">
+                          @csrf
+                          @method('DELETE')
+                          <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </td>
             </tr>
             @endforeach

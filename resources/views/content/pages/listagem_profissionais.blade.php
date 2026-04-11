@@ -36,50 +36,86 @@ $configData = Helper::appClasses();
           <thead class="table-light">
             <tr>
               <th>Nome</th>
-              <th>Email</th>
-              <th>Contato</th>
               <th>Especialidade</th>
-              <th>Registro</th>
-              <th>Acoes</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
             @foreach($profissionais as $profissional)
             <tr>
               <td><span class="fw-medium">{{ $profissional->nome }}</span></td>
-              <td>{{ $profissional->user->email ?? '-' }}</td>
-              <td>{{ $profissional->contato }}</td>
-              <td><span class="badge rounded-pill bg-label-primary me-2">{{ $profissional->especialidade }}</span></td>
-              <td>{{ $profissional->registro_profissional }}</td>
+              <td><span class="badge rounded-pill bg-label-primary">{{ $profissional->especialidade }}</span></td>
               <td>
-                <div class="dropdown">
-                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="mdi mdi-arrow-down-drop-circle-outline mdi-24px"></i></button>
-                  <div class="dropdown-menu">
-                    <a class="dropdown-item" href="/editar-profissional/{{ $profissional->id }}"><i class="mdi mdi-account-edit mdi-24px me-1"></i>Editar</a>
-                    <a class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deletar-{{ $profissional->id }}"><i class="mdi mdi-trash-can-outline mdi-24px me-1"></i>Deletar</a>
-                  </div>
-                  <div class="modal fade" id="deletar-{{ $profissional->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title">Deletar Profissional</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detalhar-{{ $profissional->id }}">
+                    <i class="mdi mdi-information-outline me-1"></i>Detalhar
+                  </button>
+                </div>
+
+                {{-- Modal Detalhar --}}
+                <div class="modal fade" id="detalhar-{{ $profissional->id }}" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title"><i class="mdi mdi-doctor me-2"></i>{{ $profissional->nome }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="row">
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Especialidade</p>
+                            <span class="badge rounded-pill bg-label-primary">{{ $profissional->especialidade ?? '-' }}</span>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Registro Profissional</p>
+                            <p class="fw-semibold mb-0">{{ $profissional->registro_profissional ?? '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Contato</p>
+                            <p class="fw-semibold mb-0">{{ $profissional->contato ?? '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-0">
+                            <p class="text-muted small mb-1">E-mail</p>
+                            <p class="fw-semibold mb-0">{{ $profissional->user->email ?? '-' }}</p>
+                          </div>
                         </div>
-                        <div class="modal-body">
-                          <p>Deseja deletar o profissional <strong>{{ $profissional->nome }}</strong>?</p>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
-                          <form action="/deletar-profissional/{{ $profissional->id }}" method="POST" style="display:inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Excluir</button>
-                          </form>
-                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <a href="/editar-profissional/{{ $profissional->id }}" class="btn btn-outline-primary">
+                          <i class="mdi mdi-pencil-outline me-1"></i>Editar
+                        </a>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#deletar-{{ $profissional->id }}">
+                          <i class="mdi mdi-trash-can-outline me-1"></i>Deletar
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {{-- Modal Deletar --}}
+                <div class="modal fade" id="deletar-{{ $profissional->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Deletar Profissional</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p>Deseja deletar o profissional <strong>{{ $profissional->nome }}</strong>?</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                        <form action="/deletar-profissional/{{ $profissional->id }}" method="POST" style="display:inline">
+                          @csrf
+                          @method('DELETE')
+                          <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </td>
             </tr>
             @endforeach

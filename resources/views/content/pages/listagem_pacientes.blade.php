@@ -36,58 +36,102 @@ $configData = Helper::appClasses();
           <thead class="table-light">
             <tr>
               <th>Nome</th>
-              <th>Email</th>
-              <th>Contato</th>
-              <th>Idade</th>
-              <th>Sexo</th>
-              <th>Documento</th>
-              <th>Matricula</th>
-              <th>Curso</th>
-              <th>Acoes</th>
+              <th>Matrícula</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
             @foreach($pacientes as $paciente)
             <tr>
               <td><span class="fw-medium">{{ $paciente->nome }}</span></td>
-              <td>{{ $paciente->user->email ?? '-' }}</td>
-              <td>{{ $paciente->contato }}</td>
-              <td>{{ $paciente->idade }} anos</td>
-              <td>{{ $paciente->sexo }}</td>
-              <td>{{ $paciente->documento }}</td>
-              <td>{{ $paciente->matricula }}</td>
-              <td>{{ $paciente->curso }}</td>
+              <td>{{ $paciente->matricula ?? '-' }}</td>
               <td>
-                <div class="dropdown">
-                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="mdi mdi-arrow-down-drop-circle-outline mdi-24px"></i></button>
-                  <div class="dropdown-menu">
-                    <a class="dropdown-item" href="/pacientes/{{ $paciente->id }}/historico"><i class="mdi mdi-history mdi-24px me-1"></i>Histórico</a>
-                    <a class="dropdown-item text-dark" href="/editar-paciente/{{ $paciente->id }}"><i class="mdi mdi-account-edit mdi-24px me-1"></i>Editar</a>
-                    <a class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deletar-{{ $paciente->id }}"><i class="mdi mdi-trash-can-outline mdi-24px me-1"></i>Deletar</a>
-                  </div>
-                  <!-- Modal -->
-                  <div class="modal fade" id="deletar-{{ $paciente->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <h5 class="modal-title">Deletar Paciente</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detalhar-{{ $paciente->id }}">
+                    <i class="mdi mdi-information-outline me-1"></i>Detalhar
+                  </button>
+                  <a href="/pacientes/{{ $paciente->id }}/historico" class="btn btn-sm btn-outline-secondary">
+                    <i class="mdi mdi-history me-1"></i>Histórico
+                  </a>
+                </div>
+
+                {{-- Modal Detalhar --}}
+                <div class="modal fade" id="detalhar-{{ $paciente->id }}" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title"><i class="mdi mdi-account-outline me-2"></i>{{ $paciente->nome }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p class="text-muted small mb-0">Matrícula: <span class="fw-semibold text-body">{{ $paciente->matricula ?? '-' }}</span></p>
+                        <p class="text-muted small mb-3">Curso: <span class="fw-semibold text-body text-break">{{ $paciente->curso ?? '-' }}</span></p>
+                        <hr class="mt-0 mb-3">
+                        <div class="row">
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Data de Nascimento</p>
+                            <p class="fw-semibold mb-0 text-break">{{ $paciente->data_nascimento ? \Carbon\Carbon::parse($paciente->data_nascimento)->format('d/m/Y') : '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Sexo</p>
+                            <p class="fw-semibold mb-0 text-break">{{ $paciente->sexo ?? '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Contato</p>
+                            <p class="fw-semibold mb-0 text-break">{{ $paciente->contato ?? '-' }}</p>
+                          </div>
+                          <div class="col-6 mb-3">
+                            <p class="text-muted small mb-1">Documento</p>
+                            <p class="fw-semibold mb-0 text-break">{{ $paciente->documento ?? '-' }}</p>
+                          </div>
+                          <div class="col-12 mb-0">
+                            <p class="text-muted small mb-1">E-mail</p>
+                            <p class="fw-semibold mb-0 text-break">{{ $paciente->user->email ?? '-' }}</p>
+                          </div>
+                          @if($paciente->endereco)
+                          <div class="col-12 mt-3 mb-0">
+                            <p class="text-muted small mb-1">Endereço</p>
+                            <p class="fw-semibold mb-0 text-break">{{ $paciente->endereco }}</p>
+                          </div>
+                          @endif
                         </div>
-                        <div class="modal-body">
-                          <p>Deseja deletar o paciente <strong>{{ $paciente->nome }}</strong>?</p>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
-                          <form action="/deletar-paciente/{{ $paciente->id }}" method="POST" style="display:inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Excluir</button>
-                          </form>
-                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <a href="/editar-paciente/{{ $paciente->id }}" class="btn btn-outline-primary">
+                          <i class="mdi mdi-pencil-outline me-1"></i>Editar
+                        </a>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#deletar-{{ $paciente->id }}">
+                          <i class="mdi mdi-trash-can-outline me-1"></i>Deletar
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {{-- Modal Deletar --}}
+                <div class="modal fade" id="deletar-{{ $paciente->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Deletar Paciente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p>Deseja deletar o paciente <strong>{{ $paciente->nome }}</strong>?</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                        <form action="/deletar-paciente/{{ $paciente->id }}" method="POST" style="display:inline">
+                          @csrf
+                          @method('DELETE')
+                          <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </td>
             </tr>
             @endforeach
