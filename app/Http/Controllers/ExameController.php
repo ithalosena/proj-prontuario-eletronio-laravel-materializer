@@ -17,8 +17,9 @@ class ExameController extends Controller
 
     public function create()
     {
-        $consultas = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
-        return view('content.pages.cadastro-exame', ['consultas' => $consultas]);
+        $consultas  = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
+        $consultaId = request()->query('consulta_id');
+        return view('content.pages.cadastro-exame', compact('consultas', 'consultaId'));
     }
 
     public function store(StoreExameRequest $request)
@@ -29,6 +30,10 @@ class ExameController extends Controller
             'observacao'       => $request->observacao,
             'data_solicitacao' => $request->data_solicitacao,
         ]);
+
+        if ($request->consulta_id_origem) {
+            return redirect('/consultas/' . $request->consulta_id_origem)->with('success', 'Exame cadastrado com sucesso!');
+        }
 
         return redirect('/exames')->with('success', 'Exame cadastrado com sucesso!');
     }

@@ -61,6 +61,7 @@ $configData = Helper::appClasses();
                 <div class="dropdown">
                   <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="mdi mdi-arrow-down-drop-circle-outline mdi-24px"></i></button>
                   <div class="dropdown-menu">
+                    <a class="dropdown-item" href="/pacientes/{{ $paciente->id }}/historico"><i class="mdi mdi-history mdi-24px me-1"></i>Histórico</a>
                     <a class="dropdown-item text-dark" href="/editar-paciente/{{ $paciente->id }}"><i class="mdi mdi-account-edit mdi-24px me-1"></i>Editar</a>
                     <a class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deletar-{{ $paciente->id }}"><i class="mdi mdi-trash-can-outline mdi-24px me-1"></i>Deletar</a>
                   </div>

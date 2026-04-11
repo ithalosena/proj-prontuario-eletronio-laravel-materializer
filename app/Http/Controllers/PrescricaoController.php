@@ -17,8 +17,9 @@ class PrescricaoController extends Controller
 
     public function create()
     {
-        $consultas = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
-        return view('content.pages.cadastro-prescricao', ['consultas' => $consultas]);
+        $consultas  = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
+        $consultaId = request()->query('consulta_id');
+        return view('content.pages.cadastro-prescricao', compact('consultas', 'consultaId'));
     }
 
     public function store(StorePrescricaoRequest $request)
@@ -31,6 +32,10 @@ class PrescricaoController extends Controller
             'duracao'          => $request->duracao,
             'observacao'       => $request->observacao,
         ]);
+
+        if ($request->consulta_id_origem) {
+            return redirect('/consultas/' . $request->consulta_id_origem)->with('success', 'Prescrição cadastrada com sucesso!');
+        }
 
         return redirect('/prescricoes')->with('success', 'Prescricao cadastrada com sucesso!');
     }

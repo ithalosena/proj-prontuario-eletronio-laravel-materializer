@@ -61,6 +61,9 @@ $configData = Helper::appClasses();
                     <i class="mdi mdi-arrow-down-drop-circle-outline mdi-24px"></i>
                   </button>
                   <div class="dropdown-menu">
+                    <a class="dropdown-item" href="/consultas/{{ $consulta->id }}">
+                      <i class="mdi mdi-file-document-outline mdi-24px me-1"></i>Ver Prontuário
+                    </a>
                     <a class="dropdown-item" href="/editar-consulta/{{ $consulta->id }}">
                       <i class="mdi mdi-pencil-outline mdi-24px me-1"></i>Editar
                     </a>

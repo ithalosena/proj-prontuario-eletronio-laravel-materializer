@@ -15,7 +15,9 @@ $configData = Helper::appClasses();
         <div class="card-header header-elements">
           <h3 class="align-text-bottom-2">Cadastro de Prescricao</h3>
           <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
-            <a href="/prescricoes" class="btn btn-default"><i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar</a>
+            <a href="{{ $consultaId ? '/consultas/' . $consultaId : '/prescricoes' }}" class="btn btn-default">
+              <i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar
+            </a>
           </div>
         </div>
       </div>
@@ -33,11 +35,14 @@ $configData = Helper::appClasses();
 
       <form class="browser-default-validation" action="/cadastrar-prescricao" method="POST">
         @csrf
+        @if($consultaId)
+          <input type="hidden" name="consulta_id_origem" value="{{ $consultaId }}">
+        @endif
         <div class="form-floating form-floating-outline mb-6 mt-3">
           <select name="consulta_id" class="form-select" id="consulta_id" required>
-            <option disabled selected value="">Selecione a Consulta</option>
+            <option disabled value="" {{ old('consulta_id', $consultaId) ? '' : 'selected' }}>Selecione a Consulta</option>
             @foreach($consultas as $consulta)
-            <option value="{{ $consulta->id }}">
+            <option value="{{ $consulta->id }}" {{ old('consulta_id', $consultaId) == $consulta->id ? 'selected' : '' }}>
               {{ $consulta->data_hora->format('d/m/Y H:i') }} - {{ $consulta->paciente->nome ?? '?' }} ({{ $consulta->profissional->nome ?? '?' }})
             </option>
             @endforeach
@@ -67,7 +72,7 @@ $configData = Helper::appClasses();
 
         <div class="mt-4">
           <button type="submit" class="btn btn-primary">Cadastrar</button>
-          <a href="/prescricoes" class="btn btn-outline-secondary ms-2">Cancelar</a>
+          <a href="{{ $consultaId ? '/consultas/' . $consultaId : '/prescricoes' }}" class="btn btn-outline-secondary ms-2">Cancelar</a>
         </div>
       </form>
     </div>

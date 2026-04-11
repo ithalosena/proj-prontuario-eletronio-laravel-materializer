@@ -43,6 +43,18 @@ class ConsultaController extends Controller
         return redirect('/consultas')->with('success', 'Consulta registrada com sucesso!');
     }
 
+    public function show($id)
+    {
+        $consulta = Consulta::with(
+            'paciente',
+            'profissional',
+            'exames',
+            'prescricoes'
+        )->findOrFail($id);
+
+        return view('content.pages.detalhes_consulta', compact('consulta'));
+    }
+
     public function edit($id)
     {
         $consulta      = Consulta::findOrFail($id);

@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
     // CRUD CONSULTA
     // ------------------------------------------------------------------
     Route::get('/consultas',               [ConsultaController::class, 'index']);
+    Route::get('/consultas/{id}',          [ConsultaController::class, 'show']);
     Route::get('/cadastro-consulta',       [ConsultaController::class, 'create']);
     Route::post('/cadastrar-consulta',     [ConsultaController::class, 'store']);
     Route::get('/editar-consulta/{id}',    [ConsultaController::class, 'edit']);
@@ -97,12 +98,13 @@ Route::middleware('auth')->group(function () {
     // ------------------------------------------------------------------
     // CRUD PACIENTE
     // ------------------------------------------------------------------
-    Route::get('/pacientes',               [PacienteController::class, 'index']);
-    Route::get('/cadastro-paciente',       [PacienteController::class, 'create']);
-    Route::post('/cadastrar-paciente',     [PacienteController::class, 'store']);
-    Route::get('/editar-paciente/{id}',    [PacienteController::class, 'edit']);
-    Route::put('/atualizar-paciente/{id}', [PacienteController::class, 'update']);
-    Route::delete('/deletar-paciente/{id}',[PacienteController::class, 'destroy']);
+    Route::get('/pacientes',                    [PacienteController::class, 'index']);
+    Route::get('/pacientes/{id}/historico',     [PacienteController::class, 'historico']);
+    Route::get('/cadastro-paciente',            [PacienteController::class, 'create']);
+    Route::post('/cadastrar-paciente',          [PacienteController::class, 'store']);
+    Route::get('/editar-paciente/{id}',         [PacienteController::class, 'edit']);
+    Route::put('/atualizar-paciente/{id}',      [PacienteController::class, 'update']);
+    Route::delete('/deletar-paciente/{id}',     [PacienteController::class, 'destroy']);
 
     // ------------------------------------------------------------------
     // CRUD EXAME

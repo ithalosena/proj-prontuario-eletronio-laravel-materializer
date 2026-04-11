@@ -74,6 +74,17 @@ class PacienteController extends Controller
         return redirect('/pacientes')->with('success', 'Paciente atualizado com sucesso!');
     }
 
+    public function historico($id)
+    {
+        $paciente = Paciente::findOrFail($id);
+        $consultas = $paciente->consultas()
+            ->with('profissional', 'exames', 'prescricoes')
+            ->orderBy('data_hora', 'desc')
+            ->get();
+
+        return view('content.pages.historico_paciente', compact('paciente', 'consultas'));
+    }
+
     public function destroy($id)
     {
         $paciente = Paciente::findOrFail($id);
