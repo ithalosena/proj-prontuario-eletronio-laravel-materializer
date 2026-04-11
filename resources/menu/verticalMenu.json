@@ -8,7 +8,7 @@
     },
     {
       "name": "Profissionais",
-      "icon": "menu-icon tf-icons mdi mdi-pencil-box-multiple-outline",
+      "icon": "menu-icon tf-icons mdi mdi-doctor",
       "slug": "profissionais",
       "submenu": [
         {
@@ -24,64 +24,77 @@
       ]
     },
     {
-      "icon": "menu-icon tf-icons mdi mdi-file-document-outline",
+      "icon": "menu-icon tf-icons mdi mdi-account-group-outline",
       "name": "Pacientes",
       "slug": "pacientes",
       "submenu": [
         {
           "url": "/pacientes",
-          "name": "Listar pacientes",
+          "name": "Listar Pacientes",
           "slug": "pacientes-lista"
         },
         {
-          "url": "/cadastro-pacientes",
-          "name": "Cadastrar pacientes",
+          "url": "/cadastro-paciente",
+          "name": "Cadastrar Paciente",
           "slug": "pacientes-cadastro"
         }
       ]
     },
     {
-      "icon": "menu-icon tf-icons mdi mdi-file-document-outline",
-      "name": "Prontuário",
-      "slug": "prontuarios",
+      "icon": "menu-icon tf-icons mdi mdi-calendar-check-outline",
+      "name": "Consultas",
+      "slug": "consultas",
       "submenu": [
         {
-          "url": "/prescricoes",
-          "name": "Prescricões",
-          "slug": "prescricoes-lista"
+          "url": "/consultas",
+          "name": "Listar Consultas",
+          "slug": "consultas-lista"
         },
+        {
+          "url": "/cadastro-consulta",
+          "name": "Nova Consulta",
+          "slug": "consultas-cadastro"
+        }
+      ]
+    },
+    {
+      "icon": "menu-icon tf-icons mdi mdi-clipboard-pulse-outline",
+      "name": "Prontuario",
+      "slug": "prontuarios",
+      "submenu": [
         {
           "url": "/exames",
           "name": "Listar Exames",
           "slug": "exames-lista"
         },
         {
-          "url": "/exames-profissional",
-          "name": "Cadastrar Profissional",
+          "url": "/cadastro-exame",
+          "name": "Cadastrar Exame",
           "slug": "exames-cadastro"
+        },
+        {
+          "url": "/prescricoes",
+          "name": "Listar Prescricoes",
+          "slug": "prescricoes-lista"
+        },
+        {
+          "url": "/cadastro-prescricao",
+          "name": "Cadastrar Prescricao",
+          "slug": "prescricoes-cadastro"
         }
       ]
     },
     {
       "url": "/relatorios",
       "name": "Relatorios",
-      "icon": "menu-icon tf-icons mdi mdi-alert-circle-outline",
-      "slug": "relatorios",
-      "target": "_blank"
+      "icon": "menu-icon tf-icons mdi mdi-chart-bar",
+      "slug": "relatorios"
     },
     {
-      "url": "/auth/login-basic",
-      "name": "Login",
-      "icon": "menu-icon tf-icons mdi mdi-login",
-      "slug": "auth-login-basic",
-      "target": "_blank"
-    },
-    {
-      "url": "/auth/register-basic",
-      "name": "Register",
-      "icon": "menu-icon tf-icons mdi mdi-account-outline",
-      "slug": "auth-register-basic",
-      "target": "_blank"
+      "url": "/logout",
+      "name": "Sair",
+      "icon": "menu-icon tf-icons mdi mdi-logout",
+      "slug": "logout"
     }
   ]
 }
