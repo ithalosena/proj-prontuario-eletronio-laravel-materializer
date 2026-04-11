@@ -4,11 +4,11 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Pacientes - Editar Paciente')
+@section('title', 'Editar Paciente')
 
 @section('content')
 
-<div class="container-xxll flex-grow-1 container-p-y">
+<div class="container-xxl flex-grow-1 container-p-y">
   <div class="row">
     <div class="col-md-8">
       <div class="card mb-3">
@@ -16,7 +16,6 @@ $configData = Helper::appClasses();
           <h3 class="align-text-bottom-2">Editar Paciente</h3>
           <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
             <a href="/pacientes" class="btn btn-default"><i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar</a>
-            <a href="/cadastro-paciente" class="btn btn-primary"><i class="mdi mdi-account-multiple-plus-outline mdi-24px me-2"></i>Adicionar Paciente</a>
           </div>
         </div>
       </div>
@@ -24,87 +23,64 @@ $configData = Helper::appClasses();
   </div>
   <div class="col-md-8 card mt-1">
     <div class="card-body">
+
+      @if(session('success'))
+      <div class="alert alert-success alert-dismissible mb-3" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+      @endif
+
+      <h5 class="card-title">1. Dados Pessoais</h5>
       <form class="browser-default-validation" action="/atualizar-paciente/{{ $paciente->id }}" method="POST">
         @csrf
         @method("PUT")
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->nome }}" name="nome" type="text" class="form-control" id="nome" placeholder="Digite seu nome">
+          <input required value="{{ $paciente->nome }}" name="nome" type="text" class="form-control" id="nome" placeholder="Nome completo">
           <label for="nome">Nome</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $paciente->email }}" name="email" type="email" class="form-control" id="email" placeholder="Digite seu email">
-          <label for="email">Email</label>
-        </div>
-        <div class="mb-4 form-password-toggle mt-3">
-          <div class="input-group input-group-merge">
-            <div class="form-floating form-floating-outline">
-              <input required value="{{ $paciente->senha }}" name="senha" type="password" class="form-control" id="senha" placeholder="Digite sua senha">
-              <label for="senha">Senha</label>
-            </div>
-          </div>
-        </div>
-        <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->contato }}" name="contato" type="text" class="form-control" id="contato" placeholder="Digite seu contato">
+          <input required value="{{ $paciente->contato }}" name="contato" type="text" class="form-control" id="contato" placeholder="(00) 90000-0000">
           <label for="contato">Contato</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->idade }}" name="idade" type="text" class="form-control" id="idade" placeholder="Digite sua idade">
-          <label for="idade">Idade</label>
+          <input required value="{{ $paciente->documento }}" name="documento" type="text" class="form-control" id="documento" placeholder="000.000.000-00">
+          <label for="documento">Documento (CPF)</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <select name="sexo" class="form-select" id="sexo" placeholder="" required>
-            <option disabled value="{{$paciente->sexo }}">{{$paciente->sexo }}</option>
-            <option disabled>--- Selecione uma opção ---</option>
-            <option value="Feminino(a)">Feminino</option>
-            <option value="FemininoFeminino">Masculino</option>
-            <option value="Prefiro não dizer">Prefiro não dizer</option>
-            <option value="Outro">Outro</option>
+          <input required value="{{ $paciente->data_nascimento ? $paciente->data_nascimento->format('Y-m-d') : '' }}" name="data_nascimento" type="date" class="form-control" id="data_nascimento">
+          <label for="data_nascimento">Data de Nascimento</label>
+        </div>
+        <div class="form-floating form-floating-outline mb-6 mt-3">
+          <select name="sexo" class="form-select" id="sexo" required>
+            <option value="F" {{ $paciente->sexo == 'F' ? 'selected' : '' }}>Feminino</option>
+            <option value="M" {{ $paciente->sexo == 'M' ? 'selected' : '' }}>Masculino</option>
+            <option value="outro" {{ $paciente->sexo == 'outro' ? 'selected' : '' }}>Outro</option>
           </select>
           <label for="sexo">Sexo</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $paciente->documento }}" name="documento" type="text" class="form-control" id="documento" placeholder="Digite seu documento">
-          <label for="documento">Documento</label>
+          <input value="{{ $paciente->endereco }}" name="endereco" type="text" class="form-control" id="endereco" placeholder="Rua, numero - Cidade/UF">
+          <label for="endereco">Endereco</label>
+        </div>
+
+        <h5 class="card-title">2. Dados Academicos</h5>
+
+        <div class="form-floating form-floating-outline mb-6 mt-3">
+          <input required value="{{ $paciente->matricula }}" name="matricula" type="text" class="form-control" id="matricula" placeholder="2024001">
+          <label for="matricula">Matricula</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $paciente->endereco }}" name="endereco" type="text" class="form-control" id="endereco" placeholder="Digite seu endereço">
-          <label for="endereco">Endereço</label>
-        </div>
-        <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $paciente->matricula }}" name="matricula" type="text" class="form-control" id="matricula" placeholder="Digite sua matrícula">
-          <label for="matricula">Matrícula</label>
-        </div>
-        <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $paciente->curso }}" name="curso" type="text" class="form-control" id="curso" placeholder="Digite seu curso">
+          <input required value="{{ $paciente->curso }}" name="curso" type="text" class="form-control" id="curso" placeholder="Analise e Desenvolvimento de Sistemas">
           <label for="curso">Curso</label>
         </div>
 
-        <div class="card-header header-elements">
-          <div class="card-header-elements ms-auto mb-1 me-0">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confimacao">Atualizar</button>
-          </div>
-
-          <!-- Modal -->
-          <div class="modal fade" id="confimacao" tabindex="-1" data-bs-backdrop="static" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="exampleModalLabel">Operação Bem Sucedida</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                  </button>
-                </div>
-                <div class="modal-body">
-                  <p>Atualização realizada com sucesso.</p>
-                </div>
-                <div class="modal-footer">
-                  <button type="submit" class="btn btn-default mt-4">Voltar</button>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">Atualizar</button>
+          <a href="/pacientes" class="btn btn-outline-secondary ms-2">Cancelar</a>
+        </div>
       </form>
     </div>
   </div>
 </div>
-
 @endsection

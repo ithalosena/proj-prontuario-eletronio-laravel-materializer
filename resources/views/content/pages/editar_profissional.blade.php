@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Profissionais - Editar Proficional')
+@section('title', 'Editar Profissional')
 
 @section('content')
 
@@ -13,7 +13,7 @@ $configData = Helper::appClasses();
     <div class="col-md-8">
       <div class="card mb-3">
         <div class="card-header header-elements">
-          <h3 class="align-text-bottom-2">Editar Profissional/Usuário</h3>
+          <h3 class="align-text-bottom-2">Editar Profissional</h3>
           <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
             <a href="/profissionais" class="btn btn-default"><i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar</a>
           </div>
@@ -24,70 +24,50 @@ $configData = Helper::appClasses();
   <div class="col-md-8 card mt-1">
     <div class="card-body">
 
-      <h5 class="card-title">1. Login</h5>
+      @if(session('success'))
+      <div class="alert alert-success alert-dismissible mb-3" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+      @endif
+
+      <h5 class="card-title">1. Dados de Acesso</h5>
       <form class="browser-default-validation" action="/atualizar-profissional/{{ $prof->id }}" method="POST">
         @csrf
         @method("PUT")
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $prof->nome }}" name="nome" type="text" class="form-control" id="nome" placeholder="Digite seu nome">
+          <input value="{{ $prof->nome }}" name="nome" type="text" class="form-control" id="nome" placeholder="Nome completo" required>
           <label for="nome">Nome</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $prof->email }}" name="email" type="email" class="form-control" id="email" placeholder="Digite seu email">
+          <input value="{{ $prof->user->email ?? '' }}" name="email" type="email" class="form-control" id="email" placeholder="Email institucional">
           <label for="email">Email</label>
         </div>
-        <div class="mb-4 form-password-toggle  mt-3">
-          <div class="input-group input-group-merge">
-            <div class="form-floating form-floating-outline">
-              <input value="{{ $prof->senha }}" name="senha" type="password" class="form-control" id="senha" placeholder="Digite sua senha">
-              <label for="senha">Senha</label>
-            </div>
-            <span class="input-group-text cursor-pointer" id="basic-default-password3"><i class="mdi mdi-eye-off-outline mdi-24px"></i></span>
-          </div>
-        </div>
 
-        <h5 class="card-title">2. Dados Pessoais</h5>
+        <h5 class="card-title">2. Dados Profissionais</h5>
 
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input value="{{ $prof->contato }}" name="contato" type="text" class="form-control" id="contato" placeholder="Digite seu contato">
+          <input value="{{ $prof->contato }}" name="contato" type="text" class="form-control" id="contato" placeholder="(00) 90000-0000">
           <label for="contato">Contato</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <select name="especialidade" class="form-select" id="especialidade" placeholder="Digite sua especialidade" required>
-            <option disabled value="{{ $prof->especialidade }}">{{ $prof->especialidade }}</option>
-            <option disabled>--- Selecione uma opção ---</option>
-            <option value="Piscólogo(a)">Piscólogo</option>
-            <option value="Clinico Geral">Clinico Geral</option>
-            <option value="Dentista">Dentista</option>
-            <option value="Nutricionista">Nutricionista</option>
-            <option value="Fisioterapeuta">Fisioterapeuta</option>
+          <select name="especialidade" class="form-select" id="especialidade" required>
+            <option value="Clinico Geral" {{ $prof->especialidade == 'Clinico Geral' ? 'selected' : '' }}>Clinico Geral</option>
+            <option value="Odontologia" {{ $prof->especialidade == 'Odontologia' ? 'selected' : '' }}>Odontologia</option>
+            <option value="Psicologia" {{ $prof->especialidade == 'Psicologia' ? 'selected' : '' }}>Psicologia</option>
+            <option value="Nutricionista" {{ $prof->especialidade == 'Nutricionista' ? 'selected' : '' }}>Nutricionista</option>
+            <option value="Fisioterapeuta" {{ $prof->especialidade == 'Fisioterapeuta' ? 'selected' : '' }}>Fisioterapeuta</option>
           </select>
           <label for="especialidade">Especialidade</label>
         </div>
+        <div class="form-floating form-floating-outline mb-6 mt-3">
+          <input value="{{ $prof->registro_profissional }}" name="registro_profissional" type="text" class="form-control" id="registro_profissional" placeholder="CRM-MG 12345">
+          <label for="registro_profissional">Registro Profissional</label>
+        </div>
 
-        <div class="card-header header-elements">
-          <div class="card-header-elements ms-auto mb-1 me-0">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confimacao">Atualizar</button>
-          </div>
-
-          <!-- Modal -->
-          <div class="modal fade" id="confimacao" tabindex="-1" data-bs-backdrop="static" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="exampleModalLabel">Operação Bem Sucedida</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                  </button>
-                </div>
-                <div class="modal-body">
-                  <p>Atualização realizada com sucesso.</p>
-                </div>
-                <div class="modal-footer">
-                  <button type="submit" class="btn btn-default mt-4">Voltar</button>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary">Atualizar</button>
+          <a href="/profissionais" class="btn btn-outline-secondary ms-2">Cancelar</a>
         </div>
       </form>
     </div>
