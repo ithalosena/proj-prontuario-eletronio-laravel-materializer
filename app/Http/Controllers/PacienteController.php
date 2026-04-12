@@ -6,6 +6,7 @@ use App\Http\Requests\StorePacienteRequest;
 use App\Http\Requests\UpdatePacienteRequest;
 use App\Models\Paciente;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PacienteController extends Controller
@@ -83,6 +84,22 @@ class PacienteController extends Controller
             ->get();
 
         return view('content.pages.historico_paciente', compact('paciente', 'consultas'));
+    }
+
+    public function meuProntuario()
+    {
+        $paciente = Auth::user()->paciente;
+
+        if (!$paciente) {
+            return redirect('/')->with('error', 'Seu usuário não possui um perfil de paciente vinculado.');
+        }
+
+        $consultas = $paciente->consultas()
+            ->with('profissional', 'exames', 'prescricoes')
+            ->orderBy('data_hora', 'desc')
+            ->get();
+
+        return view('content.pages.meu_prontuario', compact('paciente', 'consultas'));
     }
 
     public function destroy($id)

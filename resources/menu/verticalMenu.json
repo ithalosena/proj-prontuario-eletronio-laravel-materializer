@@ -91,6 +91,12 @@
       "slug": "relatorios"
     },
     {
+      "url": "/meu-prontuario",
+      "name": "Meu Prontuario",
+      "icon": "menu-icon tf-icons mdi mdi-folder-account-outline",
+      "slug": "meu-prontuario"
+    },
+    {
       "url": "/logout",
       "name": "Sair",
       "icon": "menu-icon tf-icons mdi mdi-logout",

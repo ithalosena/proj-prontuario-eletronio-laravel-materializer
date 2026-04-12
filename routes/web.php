@@ -70,6 +70,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/pages/misc-error',[MiscError::class, 'index'])->name('pages-misc-error');
 
     // ------------------------------------------------------------------
+    // MEU PRONTUARIO (qualquer usuario autenticado com perfil de paciente)
+    // ------------------------------------------------------------------
+    Route::get('/meu-prontuario', [PacienteController::class, 'meuProntuario']);
+
+    // ------------------------------------------------------------------
     // RELATORIOS (coordenador e acima: nivel <= 2)
     // ------------------------------------------------------------------
     Route::get('/relatorios', [RelatorioController::class, 'index'])->middleware('nivel:2');
