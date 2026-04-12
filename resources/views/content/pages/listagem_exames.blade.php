@@ -100,12 +100,16 @@ $configData = Helper::appClasses();
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        @if(Auth::user()->nivelAcesso() <= 3)
                         <a href="/editar-exame/{{ $exame->id }}" class="btn btn-outline-primary">
                           <i class="mdi mdi-pencil-outline me-1"></i>Editar
                         </a>
+                        @endif
+                        @if(Auth::user()->nivelAcesso() <= 2)
                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#deletar-{{ $exame->id }}">
                           <i class="mdi mdi-trash-can-outline me-1"></i>Deletar
                         </button>
+                        @endif
                       </div>
                     </div>
                   </div>

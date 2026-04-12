@@ -54,9 +54,11 @@ $configData = Helper::appClasses();
                   <a href="/consultas/{{ $consulta->id }}" class="btn btn-sm btn-outline-secondary">
                     <i class="mdi mdi-file-document-outline me-1"></i>Ver Prontuário
                   </a>
+                  @if(Auth::user()->nivelAcesso() <= 2)
                   <button type="button" class="btn btn-sm btn-outline-danger ms-3" data-bs-toggle="modal" data-bs-target="#deletar-{{ $consulta->id }}">
                     <i class="mdi mdi-trash-can-outline me-1"></i>Deletar
                   </button>
+                  @endif
                 </div>
 
                 {{-- Modal Deletar --}}
