@@ -24,3 +24,6 @@ package-lock.json
 /public/assets/js
 /public/assets/css
 /public/assets/vendor
+/docs_desenvolvimento
+/.claude
+nul

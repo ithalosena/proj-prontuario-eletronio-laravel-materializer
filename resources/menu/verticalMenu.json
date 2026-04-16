@@ -4,12 +4,14 @@
       "url": "/",
       "name": "Home",
       "icon": "menu-icon tf-icons mdi mdi-home-outline",
-      "slug": "pages-home"
+      "slug": "pages-home",
+      "nivel_minimo": 5
     },
     {
       "name": "Profissionais",
       "icon": "menu-icon tf-icons mdi mdi-doctor",
       "slug": "profissionais",
+      "nivel_minimo": 1,
       "submenu": [
         {
           "url": "/profissionais",
@@ -27,6 +29,7 @@
       "icon": "menu-icon tf-icons mdi mdi-account-group-outline",
       "name": "Pacientes",
       "slug": "pacientes",
+      "nivel_minimo": 4,
       "submenu": [
         {
           "url": "/pacientes",
@@ -44,6 +47,7 @@
       "icon": "menu-icon tf-icons mdi mdi-calendar-check-outline",
       "name": "Consultas",
       "slug": "consultas",
+      "nivel_minimo": 3,
       "submenu": [
         {
           "url": "/consultas",
@@ -61,6 +65,7 @@
       "icon": "menu-icon tf-icons mdi mdi-clipboard-pulse-outline",
       "name": "Prontuario",
       "slug": "prontuarios",
+      "nivel_minimo": 3,
       "submenu": [
         {
           "url": "/exames",
@@ -88,19 +93,22 @@
       "url": "/relatorios",
       "name": "Relatorios",
       "icon": "menu-icon tf-icons mdi mdi-chart-bar",
-      "slug": "relatorios"
+      "slug": "relatorios",
+      "nivel_minimo": 2
     },
     {
       "url": "/meu-prontuario",
       "name": "Meu Prontuario",
       "icon": "menu-icon tf-icons mdi mdi-folder-account-outline",
-      "slug": "meu-prontuario"
+      "slug": "meu-prontuario",
+      "nivel_minimo": 5
     },
     {
       "url": "/logout",
       "name": "Sair",
       "icon": "menu-icon tf-icons mdi mdi-logout",
-      "slug": "logout"
+      "slug": "logout",
+      "nivel_minimo": 5
     }
   ]
 }

@@ -62,6 +62,7 @@ $configData = Helper::appClasses();
     @endphp
 
     {{-- main menu --}}
+    @if (!isset($menu->nivel_minimo) || Auth::user()->nivelAcesso() <= $menu->nivel_minimo)
     <li class="menu-item {{$activeClass}}">
       <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
         @isset($menu->icon)
@@ -79,6 +80,7 @@ $configData = Helper::appClasses();
       @include('layouts.sections.menu.submenu',['menu' => $menu->submenu])
       @endisset
     </li>
+    @endif {{-- nivel_minimo --}}
     @endif
     @endforeach
   </ul>
