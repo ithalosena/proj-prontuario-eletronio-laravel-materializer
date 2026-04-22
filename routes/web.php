@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use App\Http\Controllers\language\LanguageController;
 use App\Http\Controllers\pages\HomePage;
 use App\Http\Controllers\pages\Page2;
@@ -15,6 +13,7 @@ use App\Http\Controllers\ExameController;
 use App\Http\Controllers\PrescricaoController;
 use App\Http\Controllers\ConsultaController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\Auth\LoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,30 +28,9 @@ Route::get('lang/{locale}', [LanguageController::class, 'swap']);
 // ROTAS PUBLICAS (sem autenticacao)
 // ==========================================================================
 
-Route::get('/login', function () {
-    return view('content.authentications.auth-login-basic');
-})->name('login');
-
-Route::post('/fazer-login', function (Request $request) {
-    $credentials = [
-        'email'    => $request->email,
-        'password' => $request->senha,
-    ];
-
-    if (Auth::attempt($credentials)) {
-        $request->session()->regenerate();
-        return redirect('/');
-    }
-
-    return back()->with('error', 'Email ou senha incorretos.');
-});
-
-Route::get('/logout', function (Request $request) {
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-    return redirect('/login');
-});
+Route::get('/login',      [LoginController::class, 'showLogin'])->name('login');
+Route::post('/fazer-login', [LoginController::class, 'login']);
+Route::get('/logout',     [LoginController::class, 'logout']);
 
 // authentication views (template Materialize)
 Route::get('/auth/login-basic',    [LoginBasic::class, 'index'])->name('auth-login-basic');
