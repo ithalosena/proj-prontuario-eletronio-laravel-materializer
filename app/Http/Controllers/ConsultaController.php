@@ -14,7 +14,7 @@ class ConsultaController extends Controller
     {
         $consultas = Consulta::with('paciente', 'profissional')
             ->orderBy('data_hora', 'desc')
-            ->get();
+            ->paginate(15);
 
         return view('content.pages.listagem_consultas', ['consultas' => $consultas]);
     }

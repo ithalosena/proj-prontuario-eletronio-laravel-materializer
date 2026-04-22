@@ -142,6 +142,9 @@ $configData = Helper::appClasses();
           </tbody>
         </table>
       </div>
+      <div class="mt-3">
+        {{ $pacientes->links() }}
+      </div>
     </div>
   </div>
 </div>

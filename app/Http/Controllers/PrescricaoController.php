@@ -11,7 +11,7 @@ class PrescricaoController extends Controller
 {
     public function index()
     {
-        $prescricoes = Prescricao::with('consulta.paciente', 'consulta.profissional')->get();
+        $prescricoes = Prescricao::with('consulta.paciente', 'consulta.profissional')->paginate(15);
         return view('content.pages.listagem_prescricoes', ['prescricoes' => $prescricoes]);
     }
 

@@ -12,7 +12,7 @@ class ProfissionalController extends Controller
 {
     public function index()
     {
-        $profissionais = Profissional::with('user')->get();
+        $profissionais = Profissional::with('user')->paginate(15);
         return view('content.pages.listagem_profissionais', ['profissionais' => $profissionais]);
     }
 

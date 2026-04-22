@@ -13,7 +13,7 @@ class PacienteController extends Controller
 {
     public function index()
     {
-        $pacientes = Paciente::with('user')->get();
+        $pacientes = Paciente::with('user')->paginate(15);
         return view('content.pages.listagem_pacientes', ['pacientes' => $pacientes]);
     }
 
