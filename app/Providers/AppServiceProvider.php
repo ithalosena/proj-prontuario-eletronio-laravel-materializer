@@ -4,22 +4,28 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use App\Models\Consulta;
+use App\Models\Exame;
+use App\Models\Prescricao;
+use App\Models\Paciente;
+use App\Models\Profissional;
+use App\Observers\AuditObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
-  /**
-   * Register any application services.
-   */
   public function register(): void
   {
     //
   }
 
-  /**
-   * Bootstrap any application services.
-   */
   public function boot(): void
   {
     Paginator::useBootstrapFive();
+
+    Consulta::observe(AuditObserver::class);
+    Paciente::observe(AuditObserver::class);
+    Profissional::observe(AuditObserver::class);
+    Exame::observe(AuditObserver::class);
+    Prescricao::observe(AuditObserver::class);
   }
 }

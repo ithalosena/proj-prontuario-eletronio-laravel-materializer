@@ -13,6 +13,7 @@ use App\Http\Controllers\ExameController;
 use App\Http\Controllers\PrescricaoController;
 use App\Http\Controllers\ConsultaController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\LoginController;
 
 /*
@@ -56,6 +57,11 @@ Route::middleware('auth')->group(function () {
     // RELATORIOS (coordenador e acima: nivel <= 2)
     // ------------------------------------------------------------------
     Route::get('/relatorios', [RelatorioController::class, 'index'])->middleware('nivel:2');
+
+    // ------------------------------------------------------------------
+    // AUDIT LOGS (admin e acima: nivel <= 1)
+    // ------------------------------------------------------------------
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('nivel:1');
 
     // ------------------------------------------------------------------
     // CRUD CONSULTA (profissional e acima: nivel <= 3)
