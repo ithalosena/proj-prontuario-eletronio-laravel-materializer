@@ -15,7 +15,7 @@ $configData = Helper::appClasses();
         <div class="card-header header-elements">
           <h3 class="align-text-bottom-2">Editar Paciente</h3>
           <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
-            <a href="/pacientes" class="btn btn-default"><i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar</a>
+            <a href="{{ url()->previous('/pacientes') }}" class="btn btn-default"><i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar</a>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ $configData = Helper::appClasses();
 
         <div class="mt-4">
           <button type="submit" class="btn btn-primary">Atualizar</button>
-          <a href="/pacientes" class="btn btn-outline-secondary ms-2">Cancelar</a>
+          <a href="{{ url()->previous('/pacientes') }}" class="btn btn-outline-secondary ms-2">Cancelar</a>
         </div>
       </form>
     </div>

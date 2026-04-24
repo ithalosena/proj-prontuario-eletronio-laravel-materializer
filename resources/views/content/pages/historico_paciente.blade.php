@@ -23,7 +23,7 @@ $configData = Helper::appClasses();
             <a href="/cadastro-consulta" class="btn btn-primary">
               <i class="mdi mdi-plus me-1"></i>Nova Consulta
             </a>
-            <a href="/pacientes" class="btn btn-default">
+            <a href="{{ url()->previous('/pacientes') }}" class="btn btn-default">
               <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
             </a>
           </div>

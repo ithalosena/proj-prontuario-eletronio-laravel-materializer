@@ -8,58 +8,32 @@
       "nivel_minimo": 5
     },
     {
+      "url": "/profissionais",
       "name": "Profissionais",
       "icon": "menu-icon tf-icons mdi mdi-doctor",
       "slug": "profissionais",
-      "nivel_minimo": 1,
-      "submenu": [
-        {
-          "url": "/profissionais",
-          "name": "Listar Profissionais",
-          "slug": "profissionais-lista"
-        },
-        {
-          "url": "/cadastro-profissional",
-          "name": "Cadastrar Profissional",
-          "slug": "profissionais-cadastro"
-        }
-      ]
+      "nivel_minimo": 1
     },
     {
-      "icon": "menu-icon tf-icons mdi mdi-account-group-outline",
+      "url": "/pacientes",
       "name": "Pacientes",
+      "icon": "menu-icon tf-icons mdi mdi-account-group-outline",
       "slug": "pacientes",
-      "nivel_minimo": 4,
-      "submenu": [
-        {
-          "url": "/pacientes",
-          "name": "Listar Pacientes",
-          "slug": "pacientes-lista"
-        },
-        {
-          "url": "/cadastro-paciente",
-          "name": "Cadastrar Paciente",
-          "slug": "pacientes-cadastro"
-        }
-      ]
+      "nivel_minimo": 4
     },
     {
-      "icon": "menu-icon tf-icons mdi mdi-calendar-check-outline",
+      "url": "/atendimentos",
+      "name": "Atendimentos",
+      "icon": "menu-icon tf-icons mdi mdi-folder-open-outline",
+      "slug": "atendimentos",
+      "nivel_minimo": 3
+    },
+    {
+      "url": "/consultas",
       "name": "Consultas",
+      "icon": "menu-icon tf-icons mdi mdi-calendar-check-outline",
       "slug": "consultas",
-      "nivel_minimo": 3,
-      "submenu": [
-        {
-          "url": "/consultas",
-          "name": "Listar Consultas",
-          "slug": "consultas-lista"
-        },
-        {
-          "url": "/cadastro-consulta",
-          "name": "Nova Consulta",
-          "slug": "consultas-cadastro"
-        }
-      ]
+      "nivel_minimo": 3
     },
     {
       "icon": "menu-icon tf-icons mdi mdi-clipboard-pulse-outline",
@@ -69,23 +43,13 @@
       "submenu": [
         {
           "url": "/exames",
-          "name": "Listar Exames",
+          "name": "Exames",
           "slug": "exames-lista"
         },
         {
-          "url": "/cadastro-exame",
-          "name": "Cadastrar Exame",
-          "slug": "exames-cadastro"
-        },
-        {
           "url": "/prescricoes",
-          "name": "Listar Prescricoes",
+          "name": "Prescricoes",
           "slug": "prescricoes-lista"
-        },
-        {
-          "url": "/cadastro-prescricao",
-          "name": "Cadastrar Prescricao",
-          "slug": "prescricoes-cadastro"
         }
       ]
     },

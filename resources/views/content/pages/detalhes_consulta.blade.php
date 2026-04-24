@@ -1,5 +1,11 @@
 @php
-$configData = Helper::appClasses();
+$configData  = Helper::appClasses();
+$paciente    = $consulta->paciente;
+$profissional = $consulta->profissional;
+$atendimento = $consulta->atendimento;
+$iniciais    = collect(explode(' ', $paciente->nome ?? 'P'))
+    ->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('');
+$atendAberto = $atendimento?->isAberto() ?? true;
 @endphp
 
 @extends('layouts/layoutMaster')
@@ -10,178 +16,259 @@ $configData = Helper::appClasses();
 
 <div class="container-xxl flex-grow-1 container-p-y">
 
-  {{-- Header --}}
-  <div class="row">
-    <div class="col-md-12">
-      <div class="card mb-3">
-        <div class="card-header header-elements">
-          <div>
-            <h3 class="align-text-bottom-2 mb-0">Prontuário da Consulta</h3>
-            <small class="text-muted">{{ $consulta->data_hora->format('d/m/Y \à\s H:i') }}</small>
-          </div>
-          <div class="card-header-elements ms-auto mt-2 mb-1 me-2 d-flex gap-2">
-            <a href="/editar-consulta/{{ $consulta->id }}" class="btn btn-outline-primary">
-              <i class="mdi mdi-pencil-outline me-1"></i>Editar
-            </a>
-            <a href="/consultas" class="btn btn-default">
-              <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
-            </a>
+  {{-- ================================================================ --}}
+  {{-- ZONA 1: HERO HEADER                                              --}}
+  {{-- ================================================================ --}}
+  <div class="card mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+
+        {{-- Avatar com iniciais --}}
+        <div class="flex-shrink-0">
+          <div class="avatar avatar-xl">
+            <span class="avatar-initial rounded-circle bg-label-primary" style="font-size:1.4rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
+              {{ $iniciais }}
+            </span>
           </div>
         </div>
+
+        {{-- Dados do paciente --}}
+        <div class="flex-grow-1">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h4 class="mb-0">{{ $paciente->nome ?? '-' }}</h4>
+            <span class="badge rounded-pill bg-label-primary">{{ $consulta->tipo }}</span>
+            @if($atendAberto)
+              <span class="badge rounded-pill bg-label-success">Atendimento aberto</span>
+            @else
+              <span class="badge rounded-pill bg-label-secondary">Atendimento encerrado</span>
+            @endif
+          </div>
+          <div class="d-flex flex-wrap gap-3 text-muted small">
+            @if($paciente->matricula)
+              <span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $paciente->matricula }}</span>
+            @endif
+            @if($paciente->curso)
+              <span><i class="mdi mdi-school-outline me-1"></i>{{ $paciente->curso }}</span>
+            @endif
+            <span><i class="mdi mdi-doctor me-1"></i>{{ $profissional->nome ?? '-' }}
+              @if($profissional->especialidade) · {{ $profissional->especialidade }} @endif
+            </span>
+            <span><i class="mdi mdi-calendar-clock-outline me-1"></i>{{ $consulta->data_hora->format('d/m/Y \à\s H:i') }}</span>
+            @if($atendimento)
+              <a href="/atendimentos/{{ $atendimento->id }}" class="text-primary text-decoration-none">
+                <i class="mdi mdi-folder-open-outline me-1"></i>Atendimento #{{ $atendimento->id }}
+              </a>
+            @endif
+          </div>
+        </div>
+
+        {{-- Ações --}}
+        <div class="flex-shrink-0 d-flex gap-2">
+          @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+          <a href="/editar-consulta/{{ $consulta->id }}" class="btn btn-outline-primary">
+            <i class="mdi mdi-pencil-outline me-1"></i>Editar
+          </a>
+          @endif
+          <a href="{{ url()->previous('/consultas') }}" class="btn btn-default">
+            <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
+          </a>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <div class="row">
+  {{-- Flash messages --}}
+  @if(session('success'))
+  <div class="alert alert-success alert-dismissible mb-4" role="alert">
+    {{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+  </div>
+  @endif
 
-    {{-- Coluna principal --}}
-    <div class="col-md-8">
+  <div class="row g-4">
 
-      {{-- Seção 1: Identificação --}}
-      <div class="card mb-4">
+    {{-- ================================================================ --}}
+    {{-- ZONA 2: REGISTRO CLÍNICO (SOAP)                                  --}}
+    {{-- ================================================================ --}}
+    <div class="col-md-7">
+      <div class="card h-100">
         <div class="card-header">
-          <h5 class="card-title mb-0"><i class="mdi mdi-account-details-outline me-2"></i>Identificação</h5>
+          <h5 class="card-title mb-0">
+            <i class="mdi mdi-stethoscope me-2"></i>Registro Clínico
+          </h5>
         </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <p class="text-muted small mb-1">Paciente</p>
-              <p class="fw-semibold mb-0">{{ $consulta->paciente->nome ?? '-' }}</p>
-              <small class="text-muted">Matrícula: {{ $consulta->paciente->matricula ?? '-' }} | {{ $consulta->paciente->curso ?? '-' }}</small>
-            </div>
-            <div class="col-md-6 mb-3">
-              <p class="text-muted small mb-1">Profissional Responsável</p>
-              <p class="fw-semibold mb-0">{{ $consulta->profissional->nome ?? '-' }}</p>
-              <small class="text-muted">{{ $consulta->profissional->especialidade ?? '-' }} | {{ $consulta->profissional->registro_profissional ?? '-' }}</small>
-            </div>
-            <div class="col-md-6 mb-0">
-              <p class="text-muted small mb-1">Data e Hora</p>
-              <p class="fw-semibold mb-0">{{ $consulta->data_hora->format('d/m/Y \à\s H:i') }}</p>
-            </div>
-            <div class="col-md-6 mb-0">
-              <p class="text-muted small mb-1">Tipo de Atendimento</p>
-              <span class="badge rounded-pill bg-label-primary fs-6">{{ $consulta->tipo }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+        <div class="card-body p-0">
 
-      {{-- Seção 2: Registro Clínico --}}
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0"><i class="mdi mdi-stethoscope me-2"></i>Registro Clínico</h5>
-        </div>
-        <div class="card-body">
-
-          <div class="mb-4">
-            <p class="text-muted small mb-1">Queixa Principal</p>
-            <p class="mb-0">{{ $consulta->queixa ?? '-' }}</p>
+          {{-- Queixa --}}
+          <div class="p-4 border-start border-4 border-primary">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="mdi mdi-chat-question-outline text-primary"></i>
+              <span class="fw-semibold text-uppercase small tracking-wide text-muted">Queixa Principal</span>
+            </div>
+            @if($consulta->queixa)
+              <p class="mb-0 lh-lg">{{ $consulta->queixa }}</p>
+            @else
+              <p class="mb-0 text-muted fst-italic small">Não registrado nesta consulta.</p>
+            @endif
           </div>
 
-          <div class="mb-4">
-            <p class="text-muted small mb-1">Anamnese</p>
+          <hr class="my-0">
+
+          {{-- Anamnese --}}
+          <div class="p-4 border-start border-4 border-info">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="mdi mdi-clipboard-text-outline text-info"></i>
+              <span class="fw-semibold text-uppercase small text-muted">Anamnese</span>
+            </div>
             @if($consulta->anamnese)
-              <p class="mb-0">{{ $consulta->anamnese }}</p>
+              <p class="mb-0 lh-lg">{{ $consulta->anamnese }}</p>
             @else
-              <p class="text-muted fst-italic mb-0">Não registrado.</p>
+              <p class="mb-0 text-muted fst-italic small">Não registrado nesta consulta.</p>
             @endif
           </div>
 
-          <div class="mb-4">
-            <p class="text-muted small mb-1">Diagnóstico</p>
+          <hr class="my-0">
+
+          {{-- Diagnóstico --}}
+          <div class="p-4 border-start border-4 border-warning">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="mdi mdi-microscope text-warning"></i>
+              <span class="fw-semibold text-uppercase small text-muted">Diagnóstico</span>
+            </div>
             @if($consulta->diagnostico)
-              <p class="mb-0">{{ $consulta->diagnostico }}</p>
+              <p class="mb-0 lh-lg">{{ $consulta->diagnostico }}</p>
             @else
-              <p class="text-muted fst-italic mb-0">Não registrado.</p>
+              <p class="mb-0 text-muted fst-italic small">Não registrado nesta consulta.</p>
             @endif
           </div>
 
-          <div class="mb-0">
-            <p class="text-muted small mb-1">Conduta</p>
+          <hr class="my-0">
+
+          {{-- Conduta --}}
+          <div class="p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="mdi mdi-list-box-outline text-success"></i>
+              <span class="fw-semibold text-uppercase small text-muted">Conduta</span>
+            </div>
             @if($consulta->conduta)
-              <p class="mb-0">{{ $consulta->conduta }}</p>
+              <p class="mb-0 lh-lg">{{ $consulta->conduta }}</p>
             @else
-              <p class="text-muted fst-italic mb-0">Não registrado.</p>
+              <p class="mb-0 text-muted fst-italic small">Não registrado nesta consulta.</p>
             @endif
           </div>
 
         </div>
       </div>
-
     </div>
 
-    {{-- Coluna lateral: Exames e Prescrições --}}
-    <div class="col-md-4">
+    {{-- ================================================================ --}}
+    {{-- ZONA 3: EXAMES E PRESCRIÇÕES                                      --}}
+    {{-- ================================================================ --}}
+    <div class="col-md-5 d-flex flex-column gap-4">
 
       {{-- Exames --}}
-      <div class="card mb-4">
+      <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between">
-          <h5 class="card-title mb-0"><i class="mdi mdi-test-tube me-2"></i>Exames</h5>
+          <h5 class="card-title mb-0">
+            <i class="mdi mdi-test-tube me-2"></i>Exames
+            <span class="badge bg-label-secondary ms-1">{{ $consulta->exames->count() }}</span>
+          </h5>
+          @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
           <a href="/cadastro-exame?consulta_id={{ $consulta->id }}" class="btn btn-sm btn-primary">
             <i class="mdi mdi-plus me-1"></i>Novo
           </a>
+          @endif
         </div>
         <div class="card-body p-0">
           @forelse($consulta->exames as $exame)
-          <div class="d-flex align-items-start p-3 border-bottom">
-            <div class="flex-grow-1">
+          <div class="d-flex align-items-start p-3 border-bottom border-start border-3
+            {{ $exame->resultado ? 'border-success' : 'border-warning' }}">
+            <div class="flex-grow-1 min-width-0">
               <p class="fw-semibold mb-1">{{ $exame->tipo }}</p>
               @if($exame->observacao)
-                <small class="text-muted d-block">{{ $exame->observacao }}</small>
+                <small class="text-muted d-block text-truncate">{{ $exame->observacao }}</small>
               @endif
-              <small class="text-muted">Solicitado: {{ $exame->data_solicitacao ? $exame->data_solicitacao->format('d/m/Y') : '-' }}</small>
+              <small class="text-muted">
+                <i class="mdi mdi-calendar-outline me-1"></i>
+                {{ $exame->data_solicitacao ? $exame->data_solicitacao->format('d/m/Y') : '-' }}
+              </small>
             </div>
-            <div class="ms-2 text-end">
+            <div class="ms-3 d-flex flex-column align-items-end gap-1 flex-shrink-0">
               @if($exame->resultado)
-                <span class="badge bg-label-success">Com resultado</span>
+                <span class="badge bg-label-success">Resultado</span>
               @else
                 <span class="badge bg-label-warning">Pendente</span>
               @endif
-              <div class="mt-1">
-                <a href="/editar-exame/{{ $exame->id }}" class="text-muted" title="Editar">
-                  <i class="mdi mdi-pencil-outline"></i>
-                </a>
-              </div>
+              @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+              <a href="/editar-exame/{{ $exame->id }}" class="btn btn-xs btn-outline-secondary">
+                <i class="mdi mdi-pencil-outline me-1"></i>Editar
+              </a>
+              @endif
             </div>
           </div>
           @empty
-          <div class="p-3 text-center text-muted">
-            <i class="mdi mdi-test-tube-empty mdi-24px d-block mb-1"></i>
-            <small>Nenhum exame solicitado.</small>
+          <div class="p-4 text-center text-muted">
+            <i class="mdi mdi-test-tube-empty mdi-36px d-block mb-2 text-muted opacity-50"></i>
+            <p class="mb-0 small">Nenhum exame solicitado nesta consulta.</p>
+            @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+            <a href="/cadastro-exame?consulta_id={{ $consulta->id }}" class="btn btn-sm btn-outline-primary mt-2">
+              <i class="mdi mdi-plus me-1"></i>Solicitar Exame
+            </a>
+            @endif
           </div>
           @endforelse
         </div>
       </div>
 
       {{-- Prescrições --}}
-      <div class="card mb-4">
+      <div class="card">
         <div class="card-header d-flex align-items-center justify-content-between">
-          <h5 class="card-title mb-0"><i class="mdi mdi-pill me-2"></i>Prescrições</h5>
+          <h5 class="card-title mb-0">
+            <i class="mdi mdi-pill me-2"></i>Prescrições
+            <span class="badge bg-label-secondary ms-1">{{ $consulta->prescricoes->count() }}</span>
+          </h5>
+          @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
           <a href="/cadastro-prescricao?consulta_id={{ $consulta->id }}" class="btn btn-sm btn-primary">
             <i class="mdi mdi-plus me-1"></i>Nova
           </a>
+          @endif
         </div>
         <div class="card-body p-0">
           @forelse($consulta->prescricoes as $prescricao)
-          <div class="d-flex align-items-start p-3 border-bottom">
-            <div class="flex-grow-1">
+          <div class="d-flex align-items-start p-3 border-bottom border-start border-3 border-primary">
+            <div class="flex-grow-1 min-width-0">
               <p class="fw-semibold mb-1">{{ $prescricao->nome_medicamento }}</p>
-              <small class="text-muted d-block">{{ $prescricao->dosagem }} — {{ $prescricao->frequencia }}</small>
-              <small class="text-muted d-block">Duração: {{ $prescricao->duracao }}</small>
+              <small class="text-muted d-block">
+                <i class="mdi mdi-pill me-1"></i>{{ $prescricao->dosagem }}
+                @if($prescricao->frequencia) · {{ $prescricao->frequencia }} @endif
+              </small>
+              @if($prescricao->duracao)
+              <small class="text-muted d-block">
+                <i class="mdi mdi-clock-outline me-1"></i>{{ $prescricao->duracao }}
+              </small>
+              @endif
               @if($prescricao->observacao)
-                <small class="text-muted fst-italic d-block">{{ $prescricao->observacao }}</small>
+                <small class="text-muted fst-italic d-block mt-1">{{ $prescricao->observacao }}</small>
               @endif
             </div>
-            <div class="ms-2">
-              <a href="/editar-prescricao/{{ $prescricao->id }}" class="text-muted" title="Editar">
-                <i class="mdi mdi-pencil-outline"></i>
+            @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+            <div class="ms-3 flex-shrink-0">
+              <a href="/editar-prescricao/{{ $prescricao->id }}" class="btn btn-xs btn-outline-secondary">
+                <i class="mdi mdi-pencil-outline me-1"></i>Editar
               </a>
             </div>
+            @endif
           </div>
           @empty
-          <div class="p-3 text-center text-muted">
-            <i class="mdi mdi-pill-off mdi-24px d-block mb-1"></i>
-            <small>Nenhuma prescrição emitida.</small>
+          <div class="p-4 text-center text-muted">
+            <i class="mdi mdi-pill-off mdi-36px d-block mb-2 text-muted opacity-50"></i>
+            <p class="mb-0 small">Nenhuma prescrição emitida nesta consulta.</p>
+            @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+            <a href="/cadastro-prescricao?consulta_id={{ $consulta->id }}" class="btn btn-sm btn-outline-primary mt-2">
+              <i class="mdi mdi-plus me-1"></i>Emitir Prescrição
+            </a>
+            @endif
           </div>
           @endforelse
         </div>

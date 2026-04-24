@@ -27,3 +27,4 @@ package-lock.json
 /docs_desenvolvimento
 /.claude
 nul
+database/seeders/PaginationTestSeeder.php

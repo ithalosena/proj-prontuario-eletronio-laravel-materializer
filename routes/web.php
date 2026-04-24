@@ -14,6 +14,7 @@ use App\Http\Controllers\PrescricaoController;
 use App\Http\Controllers\ConsultaController;
 use App\Http\Controllers\RelatorioController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\AtendimentoController;
 use App\Http\Controllers\Auth\LoginController;
 
 /*
@@ -62,6 +63,17 @@ Route::middleware('auth')->group(function () {
     // AUDIT LOGS (admin e acima: nivel <= 1)
     // ------------------------------------------------------------------
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('nivel:1');
+
+    // ------------------------------------------------------------------
+    // ATENDIMENTOS (profissional e acima: nivel <= 3)
+    // ------------------------------------------------------------------
+    Route::middleware('nivel:3')->group(function () {
+        Route::get('/atendimentos',                       [AtendimentoController::class, 'index']);
+        Route::get('/cadastro-atendimento',               [AtendimentoController::class, 'create']);
+        Route::post('/cadastrar-atendimento',             [AtendimentoController::class, 'store']);
+        Route::get('/atendimentos/{id}',                  [AtendimentoController::class, 'show']);
+        Route::patch('/atendimentos/{id}/fechar',         [AtendimentoController::class, 'fechar']);
+    });
 
     // ------------------------------------------------------------------
     // CRUD CONSULTA (profissional e acima: nivel <= 3)
