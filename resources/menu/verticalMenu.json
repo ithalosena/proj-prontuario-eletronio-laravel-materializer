@@ -72,7 +72,8 @@
       "name": "Meu Prontuario",
       "icon": "menu-icon tf-icons mdi mdi-folder-account-outline",
       "slug": "meu-prontuario",
-      "nivel_minimo": 5
+      "nivel_minimo": 5,
+      "requer_paciente": true
     },
     {
       "url": "/logout",

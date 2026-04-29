@@ -6,6 +6,9 @@ use App\Http\Requests\StorePacienteRequest;
 use App\Http\Requests\UpdatePacienteRequest;
 use App\Models\Paciente;
 use App\Models\User;
+use App\Services\SearchService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -13,8 +16,18 @@ class PacienteController extends Controller
 {
     public function index()
     {
-        $pacientes = Paciente::with('user')->paginate(15);
-        return view('content.pages.listagem_pacientes', ['pacientes' => $pacientes]);
+        $busca = request('busca');
+
+        $pacientes = Paciente::with('user')
+            ->when($busca, fn($q) => $q
+                ->where('nome', 'like', "%{$busca}%")
+                ->orWhere('matricula', 'like', "%{$busca}%")
+            )
+            ->orderBy('nome')
+            ->paginate(15)
+            ->appends(['busca' => $busca]);
+
+        return view('content.pages.listagem_pacientes', compact('pacientes', 'busca'));
     }
 
     public function create()
@@ -108,5 +121,22 @@ class PacienteController extends Controller
         $paciente->delete();
 
         return redirect('/pacientes')->with('success', 'Paciente removido com sucesso!');
+    }
+
+    /*
+     * Endpoint AJAX de autocomplete de pacientes.
+     * Consumido pelo componente de busca em cadastro_atendimento e cadastro-consulta.
+     * Retorna até 10 pacientes cujo nome ou matrícula contenha o termo (?q=).
+     */
+    public function buscar(Request $request): JsonResponse
+    {
+        return response()->json(
+            app(SearchService::class)->autocomplete(
+                Paciente::class,
+                $request->input('q', ''),
+                ['nome', 'matricula'],
+                ['id', 'nome', 'matricula']
+            )
+        );
     }
 }

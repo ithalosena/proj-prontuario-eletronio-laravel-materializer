@@ -1,8 +1,13 @@
 @php
 $configData = Helper::appClasses();
-// url()->previous() usa o HTTP Referer para saber de onde o usuário veio.
-// O fallback '/consultas' é usado caso o Referer não esteja disponível.
+// $voltarUrl é usado apenas no modo livre (sem atendimento)
 $voltarUrl  = url()->previous('/consultas');
+
+// Hero contextual: iniciais do paciente para o avatar
+$iniciais = $atendimento
+    ? collect(explode(' ', $atendimento->paciente->nome ?? 'P'))
+        ->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('')
+    : null;
 @endphp
 
 @extends('layouts/layoutMaster')
@@ -13,55 +18,142 @@ $voltarUrl  = url()->previous('/consultas');
 
 <div class="container-xxl flex-grow-1 container-p-y">
 
-  {{-- Cabeçalho: título + referência ao atendimento (se houver contexto) + botão Voltar --}}
-  <div class="card mb-3">
-    <div class="card-header header-elements">
-      <div>
-        <h3 class="align-text-bottom-2 mb-0">Nova Consulta</h3>
-        @if($atendimento)
-          <small class="text-muted">Atendimento #{{ $atendimento->id }}</small>
-        @endif
-      </div>
-      <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
-        <a href="{{ $voltarUrl }}" class="btn btn-default">
-          <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
-        </a>
+  {{-- ================================================================ --}}
+  {{-- CABEÇALHO                                                         --}}
+  {{-- Modo contextual (de um atendimento): hero igual ao detalhes_consulta --}}
+  {{-- Modo livre: card header simples com título e botão Voltar         --}}
+  {{-- ================================================================ --}}
+  @if($atendimento)
+
+  {{-- Hero header contextual: mesma estrutura do detalhes_consulta --}}
+  @php
+    $atendAberto = $atendimento->isAberto();
+    $nomePaciente = $atendimento->paciente->nome ?? '-';
+    $nomeProfissional = $profissionalLogado->nome ?? $atendimento->profissional->nome ?? '-';
+    $especialidade = $profissionalLogado->especialidade
+        ?? ($atendimento->profissional->especialidade ?? null);
+  @endphp
+  <div class="card mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+
+        {{-- Avatar com iniciais do paciente --}}
+        <div class="flex-shrink-0">
+          <div class="avatar avatar-xl">
+            <span class="avatar-initial rounded-circle bg-label-primary"
+              style="font-size:1.4rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
+              {{ $iniciais }}
+            </span>
+          </div>
+        </div>
+
+        {{-- Dados do paciente e contexto do atendimento --}}
+        <div class="flex-grow-1">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h4 class="mb-0">{{ $nomePaciente }}</h4>
+            @if($atendAberto)
+              <span class="badge rounded-pill bg-label-success">Atendimento aberto</span>
+            @else
+              <span class="badge rounded-pill bg-label-secondary">Atendimento encerrado</span>
+            @endif
+            <span class="badge rounded-pill bg-label-info">Nova Consulta</span>
+          </div>
+          <div class="d-flex flex-wrap gap-3 text-muted small">
+            @if($atendimento->paciente->matricula ?? null)
+              <span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $atendimento->paciente->matricula }}</span>
+            @endif
+            @if($atendimento->paciente->curso ?? null)
+              <span><i class="mdi mdi-school-outline me-1"></i>{{ $atendimento->paciente->curso }}</span>
+            @endif
+            <span>
+              <i class="mdi mdi-doctor me-1"></i>{{ $nomeProfissional }}
+              @if($especialidade) · {{ $especialidade }} @endif
+            </span>
+            <a href="/atendimentos/{{ $atendimento->id }}" class="text-primary text-decoration-none">
+              <i class="mdi mdi-folder-open-outline me-1"></i>Atendimento #{{ $atendimento->id }}
+            </a>
+          </div>
+        </div>
+
+        {{-- Botão Voltar --}}
+        <div class="flex-shrink-0">
+          <a href="/atendimentos/{{ $atendimento->id }}" class="btn btn-default">
+            <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
+          </a>
+        </div>
+
       </div>
     </div>
   </div>
 
-  {{-- Banner de contexto: aparece quando a consulta está sendo criada dentro de um atendimento.
-       Mostra o resumo do atendimento e um link para voltar a ele caso necessário. --}}
-  @if($atendimento)
-  <div class="alert alert-info alert-dismissible mb-4" role="alert">
-    <div class="d-flex align-items-center gap-3">
-      <i class="mdi mdi-folder-open-outline mdi-24px flex-shrink-0"></i>
-      <div>
-        <strong>Atendimento #{{ $atendimento->id }}</strong>
-        — {{ $atendimento->paciente->nome ?? '' }}
-        @if($atendimento->profissional)
-          · {{ $atendimento->profissional->nome }}
-          @if($atendimento->profissional->especialidade)
-            ({{ $atendimento->profissional->especialidade }})
-          @endif
-        @endif
-        <span class="ms-3">
-          <a href="/atendimentos/{{ $atendimento->id }}" class="alert-link small">Ver atendimento</a>
-        </span>
+  @else
+
+  {{-- Hero modo livre: exibe dados do profissional responsável --}}
+  @php
+    $iniciaisProf = $profissionalLogado
+        ? collect(explode(' ', $profissionalLogado->nome ?? 'P'))
+            ->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('')
+        : null;
+  @endphp
+  <div class="card mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+
+        {{-- Avatar: iniciais do profissional ou ícone genérico para admin --}}
+        <div class="flex-shrink-0">
+          <div class="avatar avatar-xl">
+            @if($iniciaisProf)
+              <span class="avatar-initial rounded-circle bg-label-success"
+                style="font-size:1.4rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
+                {{ $iniciaisProf }}
+              </span>
+            @else
+              <span class="avatar-initial rounded-circle bg-label-secondary"
+                style="font-size:1.8rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
+                <i class="mdi mdi-stethoscope"></i>
+              </span>
+            @endif
+          </div>
+        </div>
+
+        {{-- Dados do profissional e contexto --}}
+        <div class="flex-grow-1">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            @if($profissionalLogado)
+              <h4 class="mb-0">{{ $profissionalLogado->nome }}</h4>
+              @if($profissionalLogado->especialidade)
+                <span class="badge rounded-pill bg-label-primary">{{ $profissionalLogado->especialidade }}</span>
+              @endif
+            @else
+              <h4 class="mb-0">Nova Consulta</h4>
+            @endif
+            <span class="badge rounded-pill bg-label-info">Modo Livre</span>
+          </div>
+          <div class="d-flex flex-wrap gap-3 text-muted small">
+            @if($profissionalLogado && $profissionalLogado->registro_profissional)
+              <span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $profissionalLogado->registro_profissional }}</span>
+            @endif
+            <span><i class="mdi mdi-account-search-outline me-1"></i>Selecione o paciente abaixo</span>
+          </div>
+        </div>
+
+        {{-- Botão Voltar --}}
+        <div class="flex-shrink-0">
+          <a href="{{ $voltarUrl }}" class="btn btn-default">
+            <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
+          </a>
+        </div>
+
       </div>
     </div>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
   </div>
+
   @endif
 
   <form class="browser-default-validation" action="/cadastrar-consulta" method="POST">
     @csrf
 
-    {{-- Campos hidden para modo contextual (quando vem de um atendimento):
-         O paciente e o profissional já estão definidos pelo atendimento,
-         então enviamos os IDs via input hidden para não precisar de selects.
-         O profissional logado tem prioridade sobre o do atendimento
-         (para o caso de um profissional diferente registrar a consulta). --}}
+    {{-- Campos hidden para modo contextual: IDs de paciente/profissional/atendimento --}}
     @if($atendimento)
       <input type="hidden" name="atendimento_id"  value="{{ $atendimento->id }}">
       <input type="hidden" name="paciente_id"     value="{{ $atendimento->paciente_id }}">
@@ -69,19 +161,17 @@ $voltarUrl  = url()->previous('/consultas');
     @endif
 
     @php
-      // Tenta obter a especialidade do profissional logado ou, como fallback, do atendimento.
-      // Usada para pré-selecionar o tipo de consulta automaticamente.
-      $especialidade = $profissionalLogado->especialidade
+      // Pré-seleciona tipo pela especialidade do profissional (se disponível)
+      $especialidade = $especialidade ?? $profissionalLogado->especialidade
           ?? ($atendimento->profissional->especialidade ?? null);
 
-      // No modo contextual, pré-preenche a data com o momento atual.
-      // No modo livre (sem atendimento), usa o valor anterior (old) em caso de erro de validação.
+      // Modo contextual: data começa com o momento atual
+      // Modo livre: usa old() em caso de resubmissão com erro de validação
       $dataDefault = $atendimento
           ? now()->format('Y-m-d\TH:i')
           : old('data_hora');
     @endphp
 
-    {{-- Layout de duas colunas: Identificação + SOAP à esquerda, Exames + Prescrições à direita --}}
     <div class="row g-4">
 
       {{-- ============================================================
@@ -89,51 +179,24 @@ $voltarUrl  = url()->previous('/consultas');
            ============================================================ --}}
       <div class="col-md-7">
 
-        {{-- Card de identificação: paciente, profissional, data e tipo --}}
+        {{-- Card de identificação --}}
         <div class="card mb-4">
           <div class="card-header">
             <h5 class="card-title mb-0"><i class="mdi mdi-account-outline me-2"></i>Identificação</h5>
           </div>
           <div class="card-body">
 
-            {{-- Modo contextual (vindo de um atendimento): campos travados
-                 O bg-light deixa o campo visualmente desabilitado sem usar o atributo disabled,
-                 que impediria o valor de ser enviado no formulário. --}}
-            @if($atendimento)
-              <div class="mb-3">
-                <label class="form-label text-muted small">Paciente</label>
-                <div class="form-control bg-light d-flex align-items-center gap-2">
-                  <i class="mdi mdi-account text-primary"></i>
-                  <div>
-                    <strong>{{ $atendimento->paciente->nome ?? '-' }}</strong>
-                    @if($atendimento->paciente->matricula)
-                      <span class="text-muted ms-2">· {{ $atendimento->paciente->matricula }}</span>
-                    @endif
-                  </div>
-                </div>
-              </div>
-              <div class="mb-3">
-                <label class="form-label text-muted small">Profissional Responsável</label>
-                <div class="form-control bg-light d-flex align-items-center gap-2">
-                  <i class="mdi mdi-doctor text-primary"></i>
-                  <div>
-                    <strong>{{ $profissionalLogado->nome ?? $atendimento->profissional->nome ?? '-' }}</strong>
-                    @if($especialidade)
-                      <span class="text-muted ms-2">· {{ $especialidade }}</span>
-                    @endif
-                  </div>
-                </div>
-              </div>
+            {{-- Modo livre: selects completos de paciente e profissional --}}
+            @if(!$atendimento)
 
-            {{-- Modo livre (sem atendimento): selects completos para escolher paciente e profissional --}}
-            @else
-              {{-- Select de paciente: sempre aparece no modo livre --}}
+              {{-- Select de paciente: pré-selecionado quando vem de ?paciente_id=X --}}
               <div class="form-floating form-floating-outline mb-4">
                 <select name="paciente_id" id="paciente_id"
                   class="form-select @error('paciente_id') is-invalid @enderror" required>
-                  <option disabled {{ old('paciente_id') ? '' : 'selected' }} value="">Selecione o paciente</option>
+                  <option disabled {{ (old('paciente_id') || $pacientePreSelecionado) ? '' : 'selected' }} value="">Selecione o paciente</option>
                   @foreach($pacientes as $paciente)
-                  <option value="{{ $paciente->id }}" {{ old('paciente_id') == $paciente->id ? 'selected' : '' }}>
+                  @php $selecionado = old('paciente_id', $pacientePreSelecionado?->id) == $paciente->id; @endphp
+                  <option value="{{ $paciente->id }}" {{ $selecionado ? 'selected' : '' }}>
                     {{ $paciente->nome }} — {{ $paciente->matricula }}
                   </option>
                   @endforeach
@@ -142,8 +205,7 @@ $voltarUrl  = url()->previous('/consultas');
                 @error('paciente_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
               </div>
 
-              {{-- Profissional: travado se o usuário logado tem perfil de profissional,
-                   select aberto se for admin ou recepcionista. --}}
+              {{-- Profissional: travado se logado tem perfil de profissional, select caso contrário --}}
               @if($profissionalLogado)
                 <input type="hidden" name="profissional_id" value="{{ $profissionalLogado->id }}">
                 <div class="mb-4">
@@ -173,9 +235,11 @@ $voltarUrl  = url()->previous('/consultas');
                   @error('profissional_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
               @endif
-            @endif
 
-            {{-- Data/hora e tipo de consulta em linha --}}
+            @endif
+            {{-- Fim do bloco modo livre --}}
+
+            {{-- Data/hora e tipo: aparecem nos dois modos --}}
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="form-floating form-floating-outline">
@@ -210,8 +274,7 @@ $voltarUrl  = url()->previous('/consultas');
 
         {{-- ============================================================
              Card SOAP: Registro Clínico
-             Cada seção tem uma borda colorida à esquerda para facilitar
-             a identificação visual do campo (padrão do prontuário eletrônico).
+             Cada seção tem borda colorida à esquerda para identificação visual.
              S = Subjetivo (queixa do paciente)
              A = Anamnese (história clínica)
              D = Diagnóstico (hipótese ou confirmado)
@@ -251,7 +314,7 @@ $voltarUrl  = url()->previous('/consultas');
               @error('diagnostico')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
-            {{-- P: Conduta — plano de tratamento, orientações e encaminhamentos, opcional --}}
+            {{-- P: Conduta — plano de tratamento e orientações, opcional --}}
             <div class="ps-3" style="border-left: 4px solid var(--bs-success)">
               <label for="conduta" class="form-label fw-semibold">P — Conduta <span class="text-muted fw-normal">(opcional)</span></label>
               <textarea name="conduta" id="conduta" rows="3"
@@ -263,6 +326,23 @@ $voltarUrl  = url()->previous('/consultas');
           </div>
         </div>
 
+        {{-- Botões de ação
+             intent=realize → cria consulta e vai para detalhes
+             intent=schedule → cria consulta e vai para agendamentos (módulo ST-09) --}}
+        <input type="hidden" name="intent" id="form-intent" value="realize">
+        <div class="d-flex flex-wrap gap-2 mt-4 mb-2">
+          <button type="submit" class="btn btn-primary"
+            onclick="document.getElementById('form-intent').value='realize'">
+            <i class="mdi mdi-check-circle-outline me-1"></i>Realizar Agora
+          </button>
+          <button type="submit" class="btn btn-outline-primary"
+            onclick="document.getElementById('form-intent').value='schedule'">
+            <i class="mdi mdi-calendar-clock-outline me-1"></i>Agendar para depois
+          </button>
+          <a href="{{ $atendimento ? '/atendimentos/' . $atendimento->id : $voltarUrl }}"
+            class="btn btn-outline-secondary ms-auto">Cancelar</a>
+        </div>
+
       </div>
 
       {{-- ============================================================
@@ -271,10 +351,10 @@ $voltarUrl  = url()->previous('/consultas');
            Cada row criado gera campos com nome no formato exames[N][campo],
            que o PHP/Laravel reconhece como array ao fazer o parse do POST.
            ============================================================ --}}
-      <div class="col-md-5">
+      <div class="col-md-5 d-flex flex-column gap-4">
 
         {{-- Card de exames: container vazio + botão "Adicionar" --}}
-        <div class="card mb-4">
+        <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0"><i class="mdi mdi-test-tube-outline me-2"></i>Exames</h5>
             <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-exame">
@@ -310,14 +390,6 @@ $voltarUrl  = url()->previous('/consultas');
         </div>
 
       </div>
-    </div>
-
-    {{-- Botões de ação do formulário --}}
-    <div class="d-flex gap-2 mt-4 mb-2">
-      <button type="submit" class="btn btn-primary">
-        <i class="mdi mdi-check-circle-outline me-1"></i>Registrar Consulta
-      </button>
-      <a href="{{ $voltarUrl }}" class="btn btn-outline-secondary">Cancelar</a>
     </div>
 
   </form>

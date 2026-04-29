@@ -15,9 +15,8 @@ $configData = Helper::appClasses();
        O botão "Encerrar Atendimento" só aparece se:
          - O atendimento ainda está aberto (isAberto())
          - E o usuário é admin (nivel <= 1) OU é quem criou o atendimento
-       Isso impede que um profissional encerre atendimento de outro.
-       O confirm() no onsubmit avisa o usuário antes de confirmar a ação,
-       pois o encerramento é irreversível.
+       UX-07-RETORNO: o confirm() JS foi substituído por um modal Bootstrap
+       que apresenta as opções "Encerrar" e "Encerrar e Agendar Retorno".
        ============================================================ --}}
   <div class="row">
     <div class="col-md-12">
@@ -28,15 +27,11 @@ $configData = Helper::appClasses();
             <small class="text-muted">Aberto em {{ $atendimento->created_at->format('d/m/Y \à\s H:i') }}</small>
           </div>
           <div class="card-header-elements ms-auto mt-2 mb-1 me-2 d-flex gap-2">
+            {{-- Abre o modal de encerramento em vez de submeter direto com confirm() --}}
             @if($atendimento->isAberto() && (Auth::user()->nivelAcesso() <= 3 && Auth::id() === $atendimento->criado_por_id || Auth::user()->nivelAcesso() <= 1))
-            <form action="/atendimentos/{{ $atendimento->id }}/fechar" method="POST" style="display:inline"
-              onsubmit="return confirm('Deseja encerrar este atendimento? Após fechado, as consultas vinculadas não poderão ser editadas.')">
-              @csrf
-              @method('PATCH')
-              <button type="submit" class="btn btn-warning">
-                <i class="mdi mdi-folder-lock-outline me-1"></i>Encerrar Atendimento
-              </button>
-            </form>
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modal-encerrar">
+              <i class="mdi mdi-folder-lock-outline me-1"></i>Encerrar Atendimento
+            </button>
             @endif
             <a href="/atendimentos" class="btn btn-default">
               <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
@@ -88,8 +83,20 @@ $configData = Helper::appClasses();
 
           <div class="mb-3">
             <p class="text-muted small mb-1">Paciente</p>
-            <p class="fw-semibold mb-0">{{ $atendimento->paciente->nome ?? '-' }}</p>
+            {{-- UX-06: link para histórico — excluído para paciente (nivel 5), que usa Meu Prontuário --}}
+            @if(Auth::user()->nivelAcesso() <= 4 && $atendimento->paciente)
+              <a href="/pacientes/{{ $atendimento->paciente->id }}/historico"
+                 class="fw-semibold text-body text-decoration-none d-block mb-0">{{ $atendimento->paciente->nome }}</a>
+            @else
+              <p class="fw-semibold mb-0">{{ $atendimento->paciente->nome ?? '-' }}</p>
+            @endif
             <small class="text-muted">{{ $atendimento->paciente->matricula ?? '' }} — {{ $atendimento->paciente->curso ?? '' }}</small>
+            @if(Auth::user()->nivelAcesso() <= 4 && $atendimento->paciente)
+            <a href="/pacientes/{{ $atendimento->paciente->id }}/historico"
+               class="btn btn-sm btn-outline-info w-100 mt-2">
+              <i class="mdi mdi-history me-1"></i>Ver Histórico Completo
+            </a>
+            @endif
           </div>
 
           <div class="mb-3">
@@ -179,6 +186,58 @@ $configData = Helper::appClasses();
       </div>
     </div>
 
+  </div>
+</div>
+
+{{-- ============================================================
+     Modal de encerramento do atendimento (UX-07-RETORNO)
+     Substitui o confirm() JS por duas ações claras:
+     - "Encerrar sem agendar": submit normal
+     - "Encerrar e Agendar Retorno": submit com hidden agendar_retorno=1
+       → quando ST-09 (Agendamentos) for implementado, o controller
+         redirecionará para /cadastro-agendamento com os dados do paciente
+     ============================================================ --}}
+<div class="modal fade" id="modal-encerrar" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="mdi mdi-folder-lock-outline me-2 text-warning"></i>Encerrar Atendimento
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">
+          Após encerrado, as consultas vinculadas não poderão ser editadas.
+        </p>
+        <p class="mb-0">
+          Deseja agendar um <strong>retorno</strong> para
+          <strong>{{ $atendimento->paciente->nome ?? 'este paciente' }}</strong>?
+        </p>
+      </div>
+      <div class="modal-footer flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="mdi mdi-close me-1"></i>Cancelar
+        </button>
+        {{-- Encerrar sem agendar retorno --}}
+        <form action="/atendimentos/{{ $atendimento->id }}/fechar" method="POST" class="d-inline">
+          @csrf
+          @method('PATCH')
+          <button type="submit" class="btn btn-warning">
+            <i class="mdi mdi-folder-lock-outline me-1"></i>Encerrar sem agendar
+          </button>
+        </form>
+        {{-- Encerrar e agendar retorno: ST-09 usará este campo para redirecionar --}}
+        <form action="/atendimentos/{{ $atendimento->id }}/fechar" method="POST" class="d-inline">
+          @csrf
+          @method('PATCH')
+          <input type="hidden" name="agendar_retorno" value="1">
+          <button type="submit" class="btn btn-primary">
+            <i class="mdi mdi-calendar-plus-outline me-1"></i>Encerrar e Agendar Retorno
+          </button>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 

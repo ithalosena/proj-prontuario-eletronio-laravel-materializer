@@ -62,7 +62,12 @@ $configData = Helper::appClasses();
     @endphp
 
     {{-- main menu --}}
-    @if (!isset($menu->nivel_minimo) || Auth::user()->nivelAcesso() <= $menu->nivel_minimo)
+    {{-- Verifica nivel de acesso + se o item exige perfil de paciente vinculado --}}
+    {{-- requer_paciente: true faz o item aparecer apenas para quem tem Auth::user()->paciente --}}
+    @if (
+        (!isset($menu->nivel_minimo) || Auth::user()->nivelAcesso() <= $menu->nivel_minimo)
+        && (!isset($menu->requer_paciente) || Auth::user()->paciente !== null)
+    )
     <li class="menu-item {{$activeClass}}">
       <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
         @isset($menu->icon)

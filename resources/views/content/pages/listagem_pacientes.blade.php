@@ -31,6 +31,22 @@ $configData = Helper::appClasses();
 
   <div class="card mt-1">
     <div class="card-body">
+
+      {{-- Campo de busca: submete automaticamente ao digitar (debounce 400ms via JS) --}}
+      <form method="GET" action="/pacientes" id="busca-form" class="mb-3">
+        <div class="input-group">
+          <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+          <input type="text" name="busca" id="input-busca" class="form-control"
+            placeholder="Buscar por nome ou matrícula..."
+            value="{{ $busca ?? '' }}" autocomplete="off">
+          @if($busca)
+          <a href="/pacientes" class="btn btn-outline-secondary" title="Limpar busca">
+            <i class="mdi mdi-close"></i>
+          </a>
+          @endif
+        </div>
+      </form>
+
       <div class="table-responsive text-nowrap">
         <table class="table table-hover">
           <thead class="table-light">
@@ -41,18 +57,24 @@ $configData = Helper::appClasses();
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
-            @foreach($pacientes as $paciente)
+            @forelse($pacientes as $paciente)
             <tr>
               <td><span class="fw-medium">{{ $paciente->nome }}</span></td>
               <td>{{ $paciente->matricula ?? '-' }}</td>
               <td>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                   <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detalhar-{{ $paciente->id }}">
                     <i class="mdi mdi-information-outline me-1"></i>Detalhar
                   </button>
                   <a href="/pacientes/{{ $paciente->id }}/historico" class="btn btn-sm btn-outline-secondary">
                     <i class="mdi mdi-history me-1"></i>Histórico
                   </a>
+                  {{-- Botão Iniciar Consulta: apenas para profissional (nivel <= 3) --}}
+                  @if(Auth::user()->nivelAcesso() <= 3)
+                  <a href="/cadastro-consulta?paciente_id={{ $paciente->id }}" class="btn btn-sm btn-primary">
+                    <i class="mdi mdi-stethoscope me-1"></i>Iniciar Consulta
+                  </a>
+                  @endif
                 </div>
 
                 {{-- Modal Detalhar --}}
@@ -138,7 +160,17 @@ $configData = Helper::appClasses();
 
               </td>
             </tr>
-            @endforeach
+            @empty
+            <tr>
+              <td colspan="3" class="text-center text-muted py-4">
+                @if($busca)
+                  Nenhum paciente encontrado para "<strong>{{ $busca }}</strong>".
+                @else
+                  Nenhum paciente cadastrado.
+                @endif
+              </td>
+            </tr>
+            @endforelse
           </tbody>
         </table>
       </div>
@@ -149,4 +181,20 @@ $configData = Helper::appClasses();
   </div>
 </div>
 
+@endsection
+
+{{-- Debounce: submete o form de busca 400ms após o usuário parar de digitar --}}
+@section('page-script')
+<script>
+(function () {
+  var input = document.getElementById('input-busca');
+  var form  = document.getElementById('busca-form');
+  var timer = null;
+  if (!input) return;
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { form.submit(); }, 400);
+  });
+})();
+</script>
 @endsection

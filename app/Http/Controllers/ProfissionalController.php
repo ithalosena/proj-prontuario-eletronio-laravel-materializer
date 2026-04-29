@@ -6,6 +6,9 @@ use App\Http\Requests\StoreProfissionalRequest;
 use App\Http\Requests\UpdateProfissionalRequest;
 use App\Models\Profissional;
 use App\Models\User;
+use App\Services\SearchService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ProfissionalController extends Controller
@@ -75,5 +78,21 @@ class ProfissionalController extends Controller
         $prof->delete();
 
         return redirect('/profissionais')->with('success', 'Profissional removido com sucesso!');
+    }
+
+    /*
+     * Endpoint AJAX de autocomplete de profissionais.
+     * Retorna até 10 profissionais cujo nome ou especialidade contenha o termo (?q=).
+     */
+    public function buscar(Request $request): JsonResponse
+    {
+        return response()->json(
+            app(SearchService::class)->autocomplete(
+                Profissional::class,
+                $request->input('q', ''),
+                ['nome', 'especialidade'],
+                ['id', 'nome', 'especialidade', 'registro_profissional']
+            )
+        );
     }
 }

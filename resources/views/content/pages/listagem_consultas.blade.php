@@ -13,7 +13,12 @@ $configData = Helper::appClasses();
     <div class="col-md-12">
       <div class="card mb-3">
         <div class="card-header header-elements">
-          <h3 class="align-text-bottom-2">Listagem de Consultas</h3>
+          <h3 class="align-text-bottom-2">
+            Consultas
+            @if(Auth::user()->nivelAcesso() == 3)
+              <small class="text-muted fw-normal fs-6 ms-2">— exibindo suas consultas</small>
+            @endif
+          </h3>
           <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
             <a href="/cadastro-consulta" class="btn btn-primary">
               <i class="mdi mdi-plus-circle-outline mdi-24px me-2"></i>Nova Consulta
@@ -47,7 +52,15 @@ $configData = Helper::appClasses();
             @forelse($consultas as $consulta)
             <tr>
               <td><span class="fw-medium">{{ $consulta->data_hora->format('d/m/Y H:i') }}</span></td>
-              <td>{{ $consulta->paciente->nome ?? '-' }}</td>
+              {{-- UX-06: link para histórico — excluído para paciente (nivel 5) --}}
+              <td>
+                @if(Auth::user()->nivelAcesso() <= 4 && $consulta->paciente)
+                  <a href="/pacientes/{{ $consulta->paciente->id }}/historico"
+                     class="text-body text-decoration-none">{{ $consulta->paciente->nome }}</a>
+                @else
+                  {{ $consulta->paciente->nome ?? '-' }}
+                @endif
+              </td>
               <td><span class="badge rounded-pill bg-label-primary">{{ $consulta->tipo }}</span></td>
               <td>
                 <div class="d-flex align-items-center gap-2">

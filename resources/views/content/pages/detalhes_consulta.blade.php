@@ -35,7 +35,13 @@ $atendAberto = $atendimento?->isAberto() ?? true;
         {{-- Dados do paciente --}}
         <div class="flex-grow-1">
           <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <h4 class="mb-0">{{ $paciente->nome ?? '-' }}</h4>
+            {{-- UX-06: link para histórico — excluído para paciente (nivel 5), que usa Meu Prontuário --}}
+            @if(Auth::user()->nivelAcesso() <= 4)
+              <a href="/pacientes/{{ $paciente->id }}/historico"
+                 class="text-body fw-bold text-decoration-none" style="font-size:1.5rem;">{{ $paciente->nome ?? '-' }}</a>
+            @else
+              <h4 class="mb-0">{{ $paciente->nome ?? '-' }}</h4>
+            @endif
             <span class="badge rounded-pill bg-label-primary">{{ $consulta->tipo }}</span>
             @if($atendAberto)
               <span class="badge rounded-pill bg-label-success">Atendimento aberto</span>
@@ -64,12 +70,17 @@ $atendAberto = $atendimento?->isAberto() ?? true;
 
         {{-- Ações --}}
         <div class="flex-shrink-0 d-flex gap-2">
-          @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+          {{-- ST-08: $autorizado vem do ConsultaController::show() --}}
+          {{-- É true se o usuário for admin ou for o criador E o atendimento estiver aberto --}}
+          @if($autorizado)
           <a href="/editar-consulta/{{ $consulta->id }}" class="btn btn-outline-primary">
             <i class="mdi mdi-pencil-outline me-1"></i>Editar
           </a>
           @endif
-          <a href="{{ url()->previous('/consultas') }}" class="btn btn-default">
+          {{-- Destino lógico fixo: volta para o atendimento de origem, ou para /consultas se não houver. --}}
+          {{-- Não usamos url()->previous() aqui porque editar_consulta também aponta de volta --}}
+          {{-- para esta tela, criando um loop infinito ao usar o Referer HTTP. --}}
+          <a href="{{ $atendimento ? '/atendimentos/' . $atendimento->id : '/consultas' }}" class="btn btn-default">
             <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
           </a>
         </div>
@@ -200,7 +211,9 @@ $atendAberto = $atendimento?->isAberto() ?? true;
               @else
                 <span class="badge bg-label-warning">Pendente</span>
               @endif
-              @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+              {{-- ST-08: verifica autoria do exame individualmente --}}
+              {{-- Cada exame pode ter sido criado por um profissional diferente --}}
+              @if($atendAberto && (Auth::id() == $exame->criado_por_id || Auth::user()->nivelAcesso() <= 1))
               <a href="/editar-exame/{{ $exame->id }}" class="btn btn-xs btn-outline-secondary">
                 <i class="mdi mdi-pencil-outline me-1"></i>Editar
               </a>
@@ -252,7 +265,8 @@ $atendAberto = $atendimento?->isAberto() ?? true;
                 <small class="text-muted fst-italic d-block mt-1">{{ $prescricao->observacao }}</small>
               @endif
             </div>
-            @if($atendAberto && Auth::user()->nivelAcesso() <= 3)
+            {{-- ST-08: verifica autoria da prescrição individualmente --}}
+            @if($atendAberto && (Auth::id() == $prescricao->criado_por_id || Auth::user()->nivelAcesso() <= 1))
             <div class="ms-3 flex-shrink-0">
               <a href="/editar-prescricao/{{ $prescricao->id }}" class="btn btn-xs btn-outline-secondary">
                 <i class="mdi mdi-pencil-outline me-1"></i>Editar

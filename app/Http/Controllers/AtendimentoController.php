@@ -6,6 +6,7 @@ use App\Http\Requests\StoreAtendimentoRequest;
 use App\Models\Atendimento;
 use App\Models\Paciente;
 use App\Models\Profissional;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -63,11 +64,15 @@ class AtendimentoController extends Controller
      */
     public function create()
     {
-        $pacientes          = Paciente::orderBy('nome')->get();
         $profissionais      = Profissional::orderBy('nome')->get();
         $profissionalLogado = Auth::user()->profissional; // null se o usuário não for profissional
 
-        return view('content.pages.cadastro_atendimento', compact('pacientes', 'profissionais', 'profissionalLogado'));
+        // Quando a validação falha e o Laravel volta com old(), precisamos dos dados do
+        // paciente previamente selecionado para repopular o campo de busca (UX-11b).
+        // Buscamos apenas esse registro — não mais todos os pacientes (autocomplete via AJAX).
+        $pacienteAnterior = old('paciente_id') ? Paciente::find(old('paciente_id')) : null;
+
+        return view('content.pages.cadastro_atendimento', compact('profissionais', 'profissionalLogado', 'pacienteAnterior'));
     }
 
     /*
@@ -120,7 +125,14 @@ class AtendimentoController extends Controller
      * essa restrição é aplicada nas views com a verificação $atendimento->isAberto().
      * Não usamos delete() porque o histórico do atendimento deve ser preservado.
      */
-    public function fechar($id)
+    /*
+     * Encerra um atendimento aberto.
+     *
+     * UX-07-RETORNO: se o formulário enviar agendar_retorno=1 (botão "Encerrar e Agendar Retorno"),
+     * o redirect aponta para /cadastro-agendamento com os dados do paciente e profissional.
+     * Enquanto o módulo ST-09 não existir, exibe flash informativo e fica na mesma página.
+     */
+    public function fechar(Request $request, $id)
     {
         $atendimento = Atendimento::findOrFail($id);
 
@@ -133,6 +145,14 @@ class AtendimentoController extends Controller
         $atendimento->fechado_por_id = Auth::id();
         $atendimento->fechado_em     = now();
         $atendimento->save();
+
+        // Quando ST-09 (Agendamentos) for implementado, substituir pelo redirect abaixo:
+        // return redirect('/cadastro-agendamento?paciente_id=' . $atendimento->paciente_id
+        //     . '&profissional_id=' . $atendimento->profissional_id);
+        if ($request->boolean('agendar_retorno')) {
+            return redirect('/atendimentos/' . $id)
+                ->with('success', 'Atendimento encerrado. O módulo de Agendamento de Retorno estará disponível em breve.');
+        }
 
         return redirect('/atendimentos/' . $id)->with('success', 'Atendimento encerrado com sucesso.');
     }

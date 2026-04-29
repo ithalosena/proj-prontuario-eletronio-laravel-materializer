@@ -28,6 +28,7 @@ class Consulta extends Model
      */
     protected $fillable = [
         'atendimento_id',
+        'criado_por_id', // ST-08: quem criou o registro (só o autor pode editar/deletar)
         'profissional_id',
         'paciente_id',
         'data_hora',
@@ -50,6 +51,12 @@ class Consulta extends Model
     // =========================================================
     // Relacionamentos Eloquent
     // =========================================================
+
+    // Usuário que criou este registro (ST-08: controle de autoria)
+    public function criadoPor()
+    {
+        return $this->belongsTo(User::class, 'criado_por_id');
+    }
 
     // Uma consulta pertence a um atendimento (agrupador de consultas do paciente)
     public function atendimento()

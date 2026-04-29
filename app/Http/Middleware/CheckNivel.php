@@ -17,7 +17,9 @@ class CheckNivel
         $user = Auth::user();
 
         if (!$user || $user->nivelAcesso() > $nivelMinimo) {
-            return redirect('/')->with('error', 'Você não tem permissão para acessar esta página.');
+            // redirect()->back() evita o problema de redirecionar para / que pode quebrar
+            // dependendo do perfil do usuário — melhor voltar com mensagem de erro clara
+            return redirect()->back()->with('error', 'Você não tem permissão para acessar esta página.');
         }
 
         return $next($request);

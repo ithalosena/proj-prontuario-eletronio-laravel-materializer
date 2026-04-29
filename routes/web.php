@@ -65,6 +65,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('nivel:1');
 
     // ------------------------------------------------------------------
+    // AUTOCOMPLETE AJAX (profissional e acima: nivel <= 3)
+    // Endpoints consumidos pelos componentes de busca nas telas de cadastro.
+    // IMPORTANTE: devem vir ANTES das rotas com {id} para evitar conflito de parâmetro.
+    // ------------------------------------------------------------------
+    Route::middleware('nivel:3')->group(function () {
+        Route::get('/pacientes/buscar',    [PacienteController::class,    'buscar']);
+        Route::get('/profissionais/buscar',[ProfissionalController::class,'buscar']);
+        Route::get('/consultas/buscar',   [ConsultaController::class,    'buscar']);
+    });
+
+    // ------------------------------------------------------------------
     // ATENDIMENTOS (profissional e acima: nivel <= 3)
     // ------------------------------------------------------------------
     Route::middleware('nivel:3')->group(function () {

@@ -71,8 +71,14 @@ $configData = Helper::appClasses();
             @forelse($atendimentos as $atendimento)
             <tr>
               {{-- Paciente: nome em destaque e matrícula como subtexto --}}
+              {{-- UX-06: link para histórico — excluído para paciente (nivel 5) --}}
               <td>
-                <span class="fw-medium">{{ $atendimento->paciente->nome ?? '-' }}</span>
+                @if(Auth::user()->nivelAcesso() <= 4 && $atendimento->paciente)
+                  <a href="/pacientes/{{ $atendimento->paciente->id }}/historico"
+                     class="fw-medium text-body text-decoration-none">{{ $atendimento->paciente->nome }}</a>
+                @else
+                  <span class="fw-medium">{{ $atendimento->paciente->nome ?? '-' }}</span>
+                @endif
                 @if($atendimento->paciente->matricula)
                   <br><small class="text-muted">{{ $atendimento->paciente->matricula }}</small>
                 @endif
