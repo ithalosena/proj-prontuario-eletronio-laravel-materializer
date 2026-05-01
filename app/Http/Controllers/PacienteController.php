@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePacienteRequest;
 use App\Http\Requests\UpdatePacienteRequest;
+use App\Models\Atendimento;
 use App\Models\Paciente;
 use App\Models\User;
 use App\Services\SearchService;
@@ -18,7 +19,7 @@ class PacienteController extends Controller
     {
         $busca = request('busca');
 
-        $pacientes = Paciente::with('user')
+        $pacientes = Paciente::with(['user', 'ultimoAtendimento.profissional'])
             ->when($busca, fn($q) => $q
                 ->where('nome', 'like', "%{$busca}%")
                 ->orWhere('matricula', 'like', "%{$busca}%")
@@ -27,7 +28,21 @@ class PacienteController extends Controller
             ->paginate(15)
             ->appends(['busca' => $busca]);
 
-        return view('content.pages.listagem_pacientes', compact('pacientes', 'busca'));
+        // Indicadores para o topo da página
+        $totalPacientes = Paciente::count();
+
+        // Atendimentos abertos do profissional logado (apenas para nivel 3 com perfil)
+        $atendimentosAbertos = null;
+        $profissional = Auth::user()->profissional;
+        if ($profissional && Auth::user()->nivelAcesso() == 3) {
+            $atendimentosAbertos = Atendimento::where('profissional_id', $profissional->id)
+                ->where('status', 'aberto')
+                ->count();
+        }
+
+        return view('content.pages.listagem_pacientes', compact(
+            'pacientes', 'busca', 'totalPacientes', 'atendimentosAbertos'
+        ));
     }
 
     public function create()
@@ -86,6 +101,28 @@ class PacienteController extends Controller
         }
 
         return redirect('/pacientes')->with('success', 'Paciente atualizado com sucesso!');
+    }
+
+    /*
+     * UX-14: Exibe o perfil do paciente com estatísticas agregadas.
+     * Separa "quem é o paciente" (dados pessoais + stats) de "o que aconteceu" (historico completo).
+     * Contadores usam queries diretas para evitar carregar todas as consultas em memória.
+     */
+    public function show($id)
+    {
+        $paciente = Paciente::with('user')->findOrFail($id);
+
+        $totalConsultas   = $paciente->consultas()->count();
+        $totalExames      = \App\Models\Exame::whereHas(
+            'consulta', fn($q) => $q->where('paciente_id', $id)
+        )->count();
+        $totalPrescricoes = \App\Models\Prescricao::whereHas(
+            'consulta', fn($q) => $q->where('paciente_id', $id)
+        )->count();
+
+        return view('content.pages.detalhes_paciente', compact(
+            'paciente', 'totalConsultas', 'totalExames', 'totalPrescricoes'
+        ));
     }
 
     public function historico($id)

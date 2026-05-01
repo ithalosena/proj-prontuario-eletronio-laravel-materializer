@@ -52,6 +52,8 @@ $container = ($configData['contentLayout'] === 'compact') ? 'container-xxl' : 'c
       @endif
       <!-- END: Navbar-->
 
+      {{-- Slot de breadcrumbs: cada view empurra seu breadcrumb via @push('breadcrumbs') --}}
+      @stack('breadcrumbs')
 
       <!-- Content wrapper -->
       <div class="content-wrapper">

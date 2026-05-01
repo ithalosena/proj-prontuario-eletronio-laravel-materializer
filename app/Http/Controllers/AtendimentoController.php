@@ -85,14 +85,17 @@ class AtendimentoController extends Controller
      */
     public function store(StoreAtendimentoRequest $request)
     {
-        Atendimento::create([
+        $atendimento = Atendimento::create([
             'paciente_id'     => $request->paciente_id,
             'profissional_id' => $request->profissional_id,
             'criado_por_id'   => Auth::id(),
             'status'          => 'aberto',
         ]);
 
-        return redirect('/atendimentos')->with('success', 'Atendimento aberto com sucesso!');
+        // UX-13: redireciona para os detalhes do atendimento recém-criado (PRG pattern),
+        // orientando o próximo passo em vez de voltar para a listagem.
+        return redirect('/atendimentos/' . $atendimento->id)
+            ->with('success', 'Atendimento aberto! Registre a primeira consulta abaixo.');
     }
 
     /*
@@ -114,7 +117,18 @@ class AtendimentoController extends Controller
             'consultas.prescricoes'  // carrega as prescrições de cada consulta vinculada
         )->findOrFail($id);
 
-        return view('content.pages.detalhes_atendimento', compact('atendimento'));
+        // UX-14: últimos 5 atendimentos do mesmo paciente para o mini-card de histórico.
+        // Dados já em memória após esse eager load — o modal não faz queries extras.
+        $ultimosAtendimentos = $atendimento->paciente_id
+            ? Atendimento::with('profissional', 'consultas')
+                ->where('paciente_id', $atendimento->paciente_id)
+                ->where('id', '!=', $id)
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+            : collect();
+
+        return view('content.pages.detalhes_atendimento', compact('atendimento', 'ultimosAtendimentos'));
     }
 
     /*

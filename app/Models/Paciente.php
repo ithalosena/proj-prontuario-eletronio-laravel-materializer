@@ -41,6 +41,17 @@ class Paciente extends Model
         return $this->hasMany(Consulta::class);
     }
 
+    public function atendimentos()
+    {
+        return $this->hasMany(\App\Models\Atendimento::class);
+    }
+
+    // Último atendimento via subquery eficiente (sem N+1) — Laravel 8+ latestOfMany()
+    public function ultimoAtendimento()
+    {
+        return $this->hasOne(\App\Models\Atendimento::class)->latestOfMany();
+    }
+
     public function exames()
     {
         return $this->hasManyThrough(Exame::class, Consulta::class);

@@ -1,7 +1,7 @@
 <?php
 // Variables
 return [
-  "creatorName" => "Ithalo & Raissa",
+  "creatorName" => "Ithalo Aquino",
   "creatorUrl" => "https://pixinvent.com",
   "templateName" => "Prontu IF",
   "templateSuffix" => "Sistema de Prontuário Eletrônico para IF",

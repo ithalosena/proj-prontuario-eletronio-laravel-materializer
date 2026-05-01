@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /*
  * Controller: ConsultaController
@@ -181,10 +182,16 @@ class ConsultaController extends Controller
             'prescricoes'
         )->findOrFail($id);
 
-        // Calcula se o usuário logado pode editar/deletar esta consulta
         $autorizado = $this->podeModificar($consulta, $consulta->atendimento ?? null);
 
-        return view('content.pages.detalhes_consulta', compact('consulta', 'autorizado'));
+        // ST-12: seleciona view especializada pelo slug da especialidade do profissional.
+        // view()->exists() garante degradação graciosa: especialidade sem view implementada
+        // cai no padrão sem erro 500 (Convention Over Configuration).
+        $especialidade = Str::slug(optional($consulta->profissional)->especialidade ?? '', '_');
+        $viewEspec     = 'content.pages.detalhes_consulta_' . $especialidade;
+        $view          = view()->exists($viewEspec) ? $viewEspec : 'content.pages.detalhes_consulta';
+
+        return view($view, compact('consulta', 'autorizado'));
     }
 
     /*

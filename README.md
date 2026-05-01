@@ -6,15 +6,21 @@
   <strong>TCC</strong> — Análise e Desenvolvimento de Sistemas · IFNMG
   <br/>
   Laravel 10 · PHP 8.2 · MySQL 8.0 · Materialize (PixInvent)
+  <br/><br/>
+  <img src="https://img.shields.io/badge/versão-v0.4.2-blue" alt="versão"/>
+  <img src="https://img.shields.io/badge/PHP-8.2-777BB4" alt="PHP"/>
+  <img src="https://img.shields.io/badge/Laravel-10-FF2D20" alt="Laravel"/>
+  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1" alt="MySQL"/>
+  <img src="https://img.shields.io/badge/ambiente-Docker-2496ED" alt="Docker"/>
 </p>
 
 ---
 
 ## Sobre o Projeto
 
-O **Prontu IF** é um sistema web de prontuário eletrônico desenvolvido para o setor de saúde do Instituto Federal do Norte de Minas Gerais (IFNMG). O objetivo é simples e direto: **centralizar e organizar os registros de saúde dos alunos**, dando aos profissionais (médicos, dentistas, psicólogos, nutricionistas) uma ferramenta prática para registrar consultas, prescrever medicamentos, solicitar exames e acompanhar o histórico de cada paciente.
+O **Prontu IF** é um sistema web de prontuário eletrônico desenvolvido para o setor de saúde do Instituto Federal do Norte de Minas Gerais (IFNMG). O objetivo é simples: **centralizar e organizar os registros de saúde dos alunos**, dando aos profissionais (médicos, dentistas, psicólogos, nutricionistas, fisioterapeutas) uma ferramenta prática para registrar atendimentos, consultas, prescrever medicamentos, solicitar exames e acompanhar o histórico de cada paciente.
 
-O projeto nasceu como Trabalho de Conclusão de Curso (TCC) do curso de ADS, mas foi pensado para resolver um problema real — a gestão de informações de saúde dentro de uma instituição de ensino, onde o acompanhamento dos alunos é feito por múltiplos profissionais e precisa ser rastreável, seguro e acessível.
+O projeto nasceu como TCC do curso de ADS, mas foi pensado para resolver um problema real — a gestão de informações de saúde dentro de uma instituição de ensino, onde o acompanhamento dos alunos é feito por múltiplos profissionais e precisa ser rastreável, seguro e acessível.
 
 ### Por que isso importa?
 
@@ -27,41 +33,51 @@ O projeto nasceu como Trabalho de Conclusão de Curso (TCC) do curso de ADS, mas
 
 ## Módulos e Funcionalidades
 
-### 📋 Cadastros
-| Funcionalidade | Status | Descrição |
-|---|---|---|
-| Usuários do sistema | ✅ Concluído | Administradores e profissionais de saúde com perfis distintos |
-| Profissionais de Saúde | ✅ Concluído | Médicos, dentistas, psicólogos, nutricionistas, fisioterapeutas |
-| Pacientes (Alunos) | ✅ Concluído | Dados pessoais, matrícula, curso, contato |
+### Cadastros
 
-### 🩺 Prontuário Eletrônico
 | Funcionalidade | Status | Descrição |
 |---|---|---|
-| Registro de consultas | 🔨 Em desenvolvimento | Módulo central: anamnese, diagnóstico, conduta |
+| Usuários do sistema | ✅ Concluído | 5 níveis de acesso: admin, coordenador, profissional, recepcionista, paciente |
+| Profissionais de Saúde | ✅ Concluído | Médicos, dentistas, psicólogos, nutricionistas, fisioterapeutas |
+| Pacientes (Alunos) | ✅ Concluído | Dados pessoais, matrícula, curso, contato, endereço |
+
+### Prontuário Eletrônico
+
+| Funcionalidade | Status | Descrição |
+|---|---|---|
+| Módulo de Atendimentos | ✅ Concluído | Ciclo de vida aberto → fechado; profissional vê apenas os seus |
+| Registro de consultas (SOAP) | ✅ Concluído | Queixa, Anamnese, Diagnóstico, Conduta com autoria e controle de edição |
 | Prescrição de medicamentos | ✅ Concluído | Medicamento, dosagem, frequência, duração |
-| Solicitação de exames | 🔨 Em desenvolvimento | Vinculação com consulta, registro de resultados |
+| Solicitação e resultado de exames | ✅ Concluído | Vinculação com consulta, registro de resultado |
+| Visões por especialidade | ✅ Concluído | View selecionada dinamicamente por especialidade (degradação graciosa) |
 | Encaminhamentos | 📌 Planejado | Encaminhamento entre profissionais |
 
-### 📂 Histórico e Acompanhamento
-| Funcionalidade | Status | Descrição |
-|---|---|---|
-| Histórico do paciente | 🔨 Em desenvolvimento | Timeline cronológica de todos os atendimentos |
-| Detalhes da consulta | 🔨 Em desenvolvimento | Visualização completa com prescrições e exames associados |
+### Histórico e Acompanhamento
 
-### 📊 Relatórios e Dashboard
 | Funcionalidade | Status | Descrição |
 |---|---|---|
-| Dashboard com indicadores | 🔨 Em desenvolvimento | Gráficos de atendimentos, distribuição por especialidade |
-| Relatórios com filtros | 🔨 Em desenvolvimento | Filtros por período, profissional, tipo de atendimento |
+| Perfil do paciente | ✅ Concluído | Stats de consultas, exames e prescrições + dados pessoais |
+| Histórico completo | ✅ Concluído | Timeline cronológica de todos os atendimentos e consultas |
+| Histórico recente inline | ✅ Concluído | Mini-card com os 5 atendimentos anteriores dentro do contexto do atendimento atual |
+| Meu Prontuário | ✅ Concluído | Paciente visualiza o próprio histórico (acesso restrito) |
+
+### Relatórios e Dashboard
+
+| Funcionalidade | Status | Descrição |
+|---|---|---|
+| Dashboard com indicadores | ✅ Concluído | Contadores reais (consultas, pacientes, profissionais) por role |
+| Relatórios com filtros | 🔨 Em desenvolvimento | Filtragem por período, profissional, tipo |
 | Exportação em PDF | 📌 Planejado | Geração de relatórios para impressão |
 
-### 🔐 Segurança e Controle de Acesso
+### Segurança e Controle de Acesso
+
 | Funcionalidade | Status | Descrição |
 |---|---|---|
-| Autenticação segura | 🔨 Em desenvolvimento | Login com bcrypt, sessões, middleware de proteção |
-| Controle de acesso (RBAC) | 🔨 Em desenvolvimento | Perfis: administrador e profissional, com permissões distintas |
-| Auditoria de ações | 📌 Planejado | Log de quem criou, editou ou excluiu cada registro |
-| Conformidade LGPD | 🔨 Em desenvolvimento | Criptografia, controle de acesso, rastreabilidade |
+| Autenticação segura | ✅ Concluído | Bcrypt, sessões, middleware `auth` em todas as rotas protegidas |
+| RBAC — 5 níveis de acesso | ✅ Concluído | Admin → Coordenador → Profissional → Recepcionista → Paciente |
+| Controle de autoria | ✅ Concluído | Profissional só edita/exclui consultas, exames e prescrições que criou |
+| Auditoria de ações | ✅ Concluído | Log de criação, edição, exclusão, login e logout — acessível ao admin |
+| Conformidade LGPD | 🔨 Em desenvolvimento | Acesso segmentado, rastreabilidade, inativação lógica (em andamento) |
 
 > **Legenda:** ✅ Concluído · 🔨 Em desenvolvimento · 📌 Planejado
 
@@ -73,17 +89,18 @@ O projeto nasceu como Trabalho de Conclusão de Curso (TCC) do curso de ADS, mas
 ┌─────────────────────────────────────────────────────┐
 │                    FRONTEND                          │
 │   Materialize (PixInvent) · Bootstrap 5 · Blade     │
-│   ApexCharts · DataTables · Select2 · SweetAlert2   │
+│   ApexCharts · Select2 · fetch() AJAX               │
 ├─────────────────────────────────────────────────────┤
 │                    BACKEND                           │
 │   Laravel 10 · PHP 8.2 · Eloquent ORM              │
-│   Auth Guards · Middleware · FormRequests · Policies │
+│   Auth Guards · Middleware · FormRequests            │
+│   AuditObserver · SearchService · CheckNivel         │
 ├─────────────────────────────────────────────────────┤
 │                  BANCO DE DADOS                      │
 │   MySQL 8.0 · Migrations · Foreign Keys · Seeders   │
 ├─────────────────────────────────────────────────────┤
 │                   INFRAESTRUTURA                     │
-│   Docker · Laravel Sail · Git (branching strategy)   │
+│   Docker · Laravel Sail · Git (branching strategy)  │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -93,21 +110,25 @@ O projeto nasceu como Trabalho de Conclusão de Curso (TCC) do curso de ADS, mas
 | **Frontend** | Materialize (PixInvent) | Template admin baseado em Material Design e Bootstrap 5 |
 | **Banco de Dados** | MySQL 8.0 | Armazenamento relacional com integridade referencial |
 | **Ambiente** | Docker + Laravel Sail | Containerização para desenvolvimento reprodutível |
-| **Versionamento** | Git + GitHub | Branches `master` (estável) e `dev-stg1` (desenvolvimento) |
+| **Versionamento** | Git + GitHub | Branch `main` (estável) e `dev-stg1` (desenvolvimento) |
 
 ---
 
-## Modelo de Dados (Simplificado)
+## Modelo de Dados
 
 ```
-Usuário (users)
- ├── Profissional (1:1) ─── especialidade, contato, registro
- │    └── Consultas (1:N) ── data, queixa, diagnóstico, conduta
- │         ├── Prescrições (1:N) ── medicamento, dosagem, frequência
- │         └── Exames (1:N) ─────── tipo, resultado, observação
+Usuário (users) ──N:N── Roles (nivel 0–5)
  │
- └── Paciente ── nome, matrícula, curso, data_nascimento
-      └── Consultas (1:N) ── histórico completo de atendimentos
+ ├── Profissional (1:1) ── especialidade, registro, contato
+ │    └── Atendimentos (1:N) ── paciente, status (aberto/fechado), datas
+ │         └── Consultas (1:N) ── SOAP, tipo, criado_por_id
+ │              ├── Prescrições (1:N) ── medicamento, dosagem, frequência
+ │              └── Exames (1:N) ──────── tipo, resultado, observação
+ │
+ └── Paciente (1:1) ── matrícula, curso, data_nascimento, endereço
+      └── (consultado via atendimentos e consultas)
+
+AuditLog ── user_id, action, model, model_id, old_values, new_values, ip
 ```
 
 ---
@@ -116,7 +137,7 @@ Usuário (users)
 
 ### Com Docker (Recomendado)
 
-O jeito mais rápido de rodar o projeto. Você só precisa ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado.
+O jeito mais rápido de rodar o projeto. Você precisa ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado.
 
 ```bash
 # 1. Clone o repositório
@@ -125,11 +146,11 @@ cd proj-prontuario-eletronio-laravel-materializer
 
 # 2. Crie o arquivo .env
 cp .env.example .env
-# Configure DB_HOST=mysql, DB_USERNAME=sail, DB_PASSWORD=password, DB_DATABASE=prontu_if
+# Configure: DB_HOST=mysql, DB_USERNAME=sail, DB_PASSWORD=password, DB_DATABASE=prontu_if
 # Adicione: WWWUSER=1000 e WWWGROUP=1000
 
 # 3. Instale as dependências PHP (via container temporário)
-docker run --rm -v $(pwd):/var/www/html -w /var/www/html laravelsail/php82-composer:latest composer install --ignore-platform-reqs
+MSYS_NO_PATHCONV=1 docker run --rm -v $(pwd):/var/www/html -w /var/www/html laravelsail/php82-composer:latest composer install --ignore-platform-reqs
 
 # 4. Suba os containers
 docker-compose up -d
@@ -137,23 +158,21 @@ docker-compose up -d
 # 5. Gere a chave da aplicação
 docker-compose exec laravel.test php artisan key:generate
 
-# 6. Instale as dependências do frontend
+# 6. Execute migrations e popule o banco com dados de demonstração
+docker-compose exec laravel.test php artisan migrate:fresh --seed
+
+# 7. Instale e compile os assets
 docker-compose exec laravel.test npm install
-
-# 7. Execute as migrations
-docker-compose exec laravel.test php artisan migrate
-
-# 8. Compile os assets (demora ~15 minutos)
 docker-compose exec laravel.test npm run production
 
-# 9. Acesse: http://localhost
+# 8. Acesse: http://localhost
 ```
 
-> **Nota para Windows (Git Bash):** Use `MSYS_NO_PATHCONV=1` antes do comando `docker run` no passo 3 para evitar conversão de paths.
+> **Nota:** A compilação dos assets (`npm run production`) pode demorar ~15 minutos no Docker na primeira execução.
 
 ### Sem Docker (Manual)
 
-Pré-requisitos: PHP >= 8.1, Composer, Node.js, npm, MySQL.
+Pré-requisitos: PHP >= 8.2, Composer, Node.js, npm, MySQL 8.0.
 
 ```bash
 git clone https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer.git
@@ -162,60 +181,40 @@ composer install
 npm install
 cp .env.example .env     # Configure o banco de dados
 php artisan key:generate
-php artisan migrate
+php artisan migrate:fresh --seed
 npm run production
 php artisan serve         # Acesse: http://localhost:8000
 ```
 
 ---
 
-## Roadmap de Desenvolvimento
+## Credenciais de Demonstração
 
-O desenvolvimento do Prontu IF segue um plano incremental em 4 fases, priorizando o que é crítico para a segurança e integridade do sistema antes de expandir funcionalidades.
+Após executar `migrate:fresh --seed`, o banco é populado com 16 usuários, 55 pacientes e ~400 registros clínicos para cobrir todos os cenários de teste.
 
-### Fase 1: Fundação 🏗️
-> Corrigir a base técnica do projeto
-
-- [x] Configuração do ambiente Docker (Sail)
-- [ ] Autenticação segura com Auth facade do Laravel (bcrypt + sessões)
-- [ ] Proteção de rotas com middleware
-- [ ] Redesenho do banco de dados com foreign keys e tipos corretos
-- [ ] Refatoração: lógica de rotas movida para Resource Controllers
-- [ ] Validação de dados com FormRequests
-- [ ] Definição de relacionamentos Eloquent nos Models
-
-### Fase 2: Funcionalidades Core 🩺
-> Implementar o coração do prontuário
-
-- [ ] Módulo de Consultas (atendimentos) — entidade central
-- [ ] Vinculação de prescrições e exames a consultas
-- [ ] Controle de acesso por perfil (RBAC com Gates/Policies)
-
-### Fase 3: Complementos 📊
-> Funcionalidades que agregam valor
-
-- [ ] Histórico completo do paciente (timeline)
-- [ ] Dashboard com gráficos e indicadores (ApexCharts)
-- [ ] Relatórios com filtros e exportação em PDF
-- [ ] Auditoria de ações (log de quem fez o quê)
-
-### Fase 4: Polimento ✨
-> Qualidade e apresentação
-
-- [ ] Testes automatizados (PHPUnit — Feature e Unit)
-- [ ] Seeders e Factories para dados de demonstração
-- [ ] Mensagens de feedback (sucesso, erro, validação)
-- [ ] Revisão de responsividade e consistência visual
+| Usuário | E-mail | Senha | Nível |
+|---|---|---|---|
+| Admin | admin@prontuif.com | senha123 | Administrador |
+| Recepcionista | recepcao@ifnmg.edu.br | senha123 | Recepcionista |
+| Dr. Carlos Silva | dr.silva@ifnmg.edu.br | senha123 | Clínico Geral |
+| Dra. Ana Oliveira | dra.ana@ifnmg.edu.br | senha123 | Odontologia |
+| Dr. Pedro Santos | dr.pedro@ifnmg.edu.br | senha123 | Psicologia |
+| Maria Fernanda Costa | maria.costa@aluno.ifnmg.edu.br | senha123 | Paciente |
 
 ---
 
 ## Utilização
 
 1. Acesse `http://localhost` (Docker) ou `http://localhost:8000` (manual)
-2. Faça login com suas credenciais
-3. Navegue pelos módulos de acordo com seu perfil de acesso:
-   - **Administrador:** acesso total — gerenciar usuários, profissionais, relatórios e logs
-   - **Profissional de Saúde:** registrar consultas, prescrever medicamentos, solicitar exames, consultar histórico
+2. Faça login com as credenciais de demonstração acima
+3. Navegue pelos módulos de acordo com o perfil de acesso:
+
+| Perfil | O que pode fazer |
+|---|---|
+| **Administrador** | Acesso total — gerenciar usuários, profissionais, pacientes, ver logs de auditoria |
+| **Recepcionista** | Cadastrar e atualizar dados de pacientes |
+| **Profissional de Saúde** | Abrir atendimentos, registrar consultas com SOAP, prescrever, solicitar exames, encerrar atendimentos |
+| **Paciente** | Visualizar o próprio prontuário em "Meu Prontuário" |
 
 ---
 
@@ -224,32 +223,50 @@ O desenvolvimento do Prontu IF segue um plano incremental em 4 fases, priorizand
 ```
 prontu-if/
 ├── app/
-│   ├── Http/Controllers/    # Controllers (lógica de cada módulo)
-│   ├── Models/              # Models Eloquent (Paciente, Profissional, Consulta...)
-│   └── Helpers/             # Helpers do template Materialize
+│   ├── Http/
+│   │   ├── Controllers/     # 9 controllers (Login, Consulta, Atendimento, Paciente...)
+│   │   ├── Middleware/      # CheckNivel (RBAC por nível numérico)
+│   │   └── Requests/        # 12 FormRequests com validação em português
+│   ├── Models/              # Eloquent (User, Profissional, Paciente, Atendimento, Consulta...)
+│   ├── Observers/           # AuditObserver (log automático em todos os models)
+│   └── Services/            # SearchService (autocomplete AJAX reutilizável)
 ├── database/
-│   ├── migrations/          # Versionamento do schema do banco
-│   ├── factories/           # Factories para testes
-│   └── seeders/             # Dados iniciais
-├── resources/
-│   ├── views/               # Templates Blade
-│   └── menu/                # Configuração do menu lateral (JSON)
-├── routes/
-│   └── web.php              # Definição de rotas da aplicação
-├── docker/                  # Configuração Docker (PHP 8.2)
-├── docker-compose.yml       # Orquestração dos containers
-└── .env                     # Variáveis de ambiente (não versionado)
+│   ├── migrations/          # 17 migrations com FK e índices
+│   └── seeders/             # 5 sub-seeders orquestrados pelo DatabaseSeeder
+├── resources/views/
+│   ├── content/pages/       # Todas as views Blade do sistema
+│   │   └── partials/        # Partials reutilizáveis (_breadcrumb, _consulta_header)
+│   └── layouts/             # Layouts base (contentNavbar, blank)
+├── routes/web.php            # 35+ rotas protegidas por auth + CheckNivel
+└── docs_desenvolvimento/     # Documentação técnica, roteiros de teste e roadmap
 ```
+
+---
+
+## Roadmap de Desenvolvimento
+
+O desenvolvimento segue o [ROADMAP_MASTER.md](docs_desenvolvimento/ROADMAP_MASTER.md) com versionamento incremental.
+
+| Fase | Status | Descrição |
+|---|---|---|
+| Fase 1 — Fundação | ✅ Concluída (v0.1.0) | Autenticação, schema, MVC, validação, relacionamentos |
+| Fase 2 — Core Funcional | ✅ Concluída (v0.2.x) | Consultas, exames, prescrições, RBAC, Meu Prontuário |
+| Fase 3 — Qualidade e Auditoria | ✅ Concluída (v0.3.x) | Audit logs, módulo de atendimentos, autoria, correções de fluxo |
+| Sprint UX (v0.4.x) | ✅ Concluída (v0.4.2) | Perfil do paciente, histórico inline, listagem refatorada, seeders de teste |
+| Agendamentos | 📌 Backlog (ST-09) | Calendário FullCalendar, ciclo pendente→confirmado→realizado |
+| Perfil do usuário | 📌 Backlog (ST-10) | Upload de avatar, edição de dados pessoais |
+| Governança / Inativação | 📌 Backlog (ST-07) | Inativação lógica de pacientes e profissionais |
 
 ---
 
 ## Contexto Acadêmico
 
-Este projeto foi desenvolvido por **Ithalo Sena** e **Raissa Alves** como Trabalho de Conclusão de Curso (TCC) do curso de **Análise e Desenvolvimento de Sistemas (ADS)** no **Instituto Federal do Norte de Minas Gerais (IFNMG)**.
+Este projeto foi desenvolvido por **Ithalo Aquino** como Trabalho de Conclusão de Curso (TCC) do curso de **Análise e Desenvolvimento de Sistemas (ADS)** no **Instituto Federal do Norte de Minas Gerais (IFNMG)**.
 
-O Prontu IF não é apenas um exercício acadêmico — foi pensado para resolver uma necessidade real do campus, contribuindo para a melhoria da gestão de saúde dos alunos. O desenvolvimento envolveu decisões técnicas fundamentadas em conceitos de Engenharia de Software, Banco de Dados, Segurança da Informação e legislação (LGPD), documentadas na monografia que acompanha este repositório.
+O Prontu IF não é apenas um exercício acadêmico — foi pensado para resolver uma necessidade real do campus, contribuindo para a melhoria da gestão de saúde dos alunos. O desenvolvimento envolveu decisões técnicas fundamentadas em Engenharia de Software, Banco de Dados, Segurança da Informação e legislação (LGPD), documentadas na monografia que acompanha este repositório.
 
-### Referências técnicas que guiam o projeto
+### Referências técnicas
+
 - **Padrão MVC** — Separação de responsabilidades (Gamma et al., 1994)
 - **OWASP Top 10** — Boas práticas de segurança web
 - **LGPD (Lei 13.709/2018)** — Proteção de dados pessoais sensíveis
@@ -263,29 +280,19 @@ O Prontu IF não é apenas um exercício acadêmico — foi pensado para resolve
 | Recurso | Link |
 |---|---|
 | Laravel 10 | [laravel.com/docs/10.x](https://laravel.com/docs/10.x) |
-| Materialize (PixInvent) | [pixinvent.com/materialize-material-design-bootstrap-admin-template](https://pixinvent.com/materialize-material-design-bootstrap-admin-template/) |
+| Materialize (PixInvent) | [pixinvent.com/materialize-material-design-admin-template](https://pixinvent.com/materialize-material-design-admin-template/) |
 | Docker | [docs.docker.com](https://docs.docker.com/) |
 | OWASP Top 10 | [owasp.org/Top10](https://owasp.org/Top10/) |
-| LGPD | [planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm](http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm) |
-
----
-
-## Contribuição
-
-Contribuições são bem-vindas! Se quiser sugerir melhorias ou reportar bugs:
-
-1. Abra uma [issue](https://github.com/ithalosena/proj-prontuario-eletronio-laravel-materializer/issues)
-2. Ou envie um pull request
+| LGPD | [planalto.gov.br — Lei 13.709/2018](http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm) |
 
 ---
 
 ## Contato
 
-**Ithalo Silva Sena Aquino**
+### Ithalo Aquino
+
 - Email: ithalosena@gmail.com
 - GitHub: [@ithalosena](https://github.com/ithalosena)
-
-**Raissa Alves**
 
 ---
 

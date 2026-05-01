@@ -116,6 +116,8 @@ Route::middleware('auth')->group(function () {
     // ------------------------------------------------------------------
     Route::middleware('nivel:4')->group(function () {
         Route::get('/pacientes',                    [PacienteController::class, 'index']);
+        // UX-14: rota de perfil DEVE vir antes de /historico para evitar conflito de pattern
+        Route::get('/pacientes/{id}',               [PacienteController::class, 'show']);
         Route::get('/pacientes/{id}/historico',     [PacienteController::class, 'historico']);
         Route::get('/cadastro-paciente',            [PacienteController::class, 'create']);
         Route::post('/cadastrar-paciente',          [PacienteController::class, 'store']);
