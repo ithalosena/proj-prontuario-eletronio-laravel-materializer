@@ -6,56 +6,93 @@ $configData = Helper::appClasses();
 
 @section('title', 'Atendimentos')
 
+{{-- Breadcrumb: Início > Atendimentos --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',       'url' => '/'],
+      ['label' => 'Atendimentos', 'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">
 
-  {{-- ============================================================
-       Cabeçalho da página
-       O aviso "exibindo seus atendimentos" aparece apenas para
-       profissional_saude (nivel 3), que tem visão filtrada pelo
-       controller (só vê os atendimentos em que ele é responsável).
-       ============================================================ --}}
-  <div class="card mb-3">
-    <div class="card-header header-elements">
-      <h3 class="align-text-bottom-2">
-        Atendimentos
-        @if(Auth::user()->nivelAcesso() == 3)
-          <small class="text-muted fw-normal fs-6 ms-2">— exibindo seus atendimentos</small>
-        @endif
-      </h3>
-      <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
-        <a href="/cadastro-atendimento" class="btn btn-primary">
-          <i class="mdi mdi-plus-circle-outline mdi-24px me-2"></i>Novo Atendimento
-        </a>
-      </div>
+  {{-- ================================================================ --}}
+  {{-- HEADER DA PÁGINA                                                  --}}
+  {{-- ================================================================ --}}
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h4 class="mb-0">Listagem de Atendimentos</h4>
+      <p class="text-muted small mb-0 mt-1">Gerencie os atendimentos do sistema</p>
     </div>
+    @if(Auth::user()->nivelAcesso() <= 3)
+    <a href="/cadastro-atendimento" class="btn btn-primary">
+      <i class="mdi mdi-plus-circle-outline me-1"></i>Novo Atendimento
+    </a>
+    @endif
   </div>
 
-  {{-- Alertas de sessão: aparecem após redirecionamento com ->with('success'/'error') --}}
+  {{-- Flash messages --}}
   @if(session('success'))
-  <div class="alert alert-success alert-dismissible mb-3" role="alert">
+  <div class="alert alert-success alert-dismissible mb-4" role="alert">
     {{ session('success') }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
   </div>
   @endif
-
   @if(session('error'))
-  <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+  <div class="alert alert-danger alert-dismissible mb-4" role="alert">
     {{ session('error') }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
   </div>
   @endif
 
-  {{-- ============================================================
-       Tabela de atendimentos com paginação
-       Os dados já chegam paginados do controller (paginate(15)),
-       então o @forelse itera apenas sobre a página atual.
-       ============================================================ --}}
-  <div class="card mt-1">
+  {{-- ================================================================ --}}
+  {{-- MINI-INDICADORES                                                  --}}
+  {{-- ================================================================ --}}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <span class="badge bg-label-primary fs-6 px-3 py-2">
+      <i class="mdi mdi-folder-multiple-outline me-1"></i>
+      {{ $totalAtendimentos }} {{ $totalAtendimentos == 1 ? 'atendimento cadastrado' : 'atendimentos cadastrados' }}
+    </span>
+    @if(!is_null($abertosDoUsuario))
+    <span class="badge bg-label-success fs-6 px-3 py-2">
+      <i class="mdi mdi-folder-open-outline me-1"></i>
+      {{ $abertosDoUsuario }} {{ $abertosDoUsuario == 1 ? 'atendimento aberto' : 'atendimentos abertos' }} (seus)
+    </span>
+    @endif
+  </div>
+
+  <div class="card">
     <div class="card-body">
+
+      {{-- Campo de busca: debounce 400ms via JS --}}
+      <form method="GET" action="/atendimentos" id="busca-form" class="mb-3">
+        <div class="input-group">
+          <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+          <input type="text" name="busca" id="input-busca" class="form-control"
+            placeholder="Buscar por nome ou matrícula do paciente..."
+            value="{{ $busca ?? '' }}" autocomplete="off">
+          @if($busca)
+          <a href="/atendimentos" class="btn btn-outline-secondary" title="Limpar busca">
+            <i class="mdi mdi-close"></i>
+          </a>
+          @endif
+        </div>
+      </form>
+
+      {{-- Contador de resultados --}}
+      @if($atendimentos->total() > 0)
+      <p class="text-muted small mb-3">
+        Exibindo {{ $atendimentos->firstItem() }}–{{ $atendimentos->lastItem() }} de {{ $atendimentos->total() }}
+        {{ $busca ? 'resultado(s) para "' . $busca . '"' : 'atendimento(s)' }}
+      </p>
+      @endif
+
       <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover align-middle">
           <thead class="table-light">
             <tr>
               <th>Paciente</th>
@@ -63,47 +100,47 @@ $configData = Helper::appClasses();
               <th>Aberto por</th>
               <th>Status</th>
               <th>Data</th>
-              <th>Ações</th>
+              <th class="text-end">Ações</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
 
             @forelse($atendimentos as $atendimento)
             <tr>
-              {{-- Paciente: nome em destaque e matrícula como subtexto --}}
-              {{-- UX-06: link para histórico — excluído para paciente (nivel 5) --}}
+              {{-- Paciente: nome e matrícula --}}
               <td>
                 @if(Auth::user()->nivelAcesso() <= 4 && $atendimento->paciente)
                   <a href="/pacientes/{{ $atendimento->paciente->id }}/historico"
-                     class="fw-medium text-body text-decoration-none">{{ $atendimento->paciente->nome }}</a>
+                     class="fw-medium text-body text-decoration-none"
+                     style="border-bottom: 1px dashed currentColor;">
+                    {{ $atendimento->paciente->nome }}
+                  </a>
                 @else
                   <span class="fw-medium">{{ $atendimento->paciente->nome ?? '-' }}</span>
                 @endif
-                @if($atendimento->paciente->matricula)
+                @if(optional($atendimento->paciente)->matricula)
                   <br><small class="text-muted">{{ $atendimento->paciente->matricula }}</small>
                 @endif
               </td>
 
-              {{-- Profissional: nome e especialidade --}}
+              {{-- Profissional e especialidade --}}
               <td>
                 {{ $atendimento->profissional->nome ?? '-' }}
-                @if($atendimento->profissional->especialidade)
+                @if(optional($atendimento->profissional)->especialidade)
                   <br><small class="text-muted">{{ $atendimento->profissional->especialidade }}</small>
                 @endif
               </td>
 
-              {{-- "Aberto por": exibe o nome de quem criou o atendimento,
-                   mas só quando é diferente do próprio profissional responsável.
-                   Evita exibir informação redundante quando o profissional abriu o próprio atendimento. --}}
+              {{-- Aberto por: só exibe quando diferente do próprio profissional --}}
               <td>
-                @if($atendimento->criadoPor && $atendimento->criadoPor->id !== $atendimento->profissional?->user_id)
+                @if($atendimento->criadoPor && $atendimento->criadoPor->id !== optional($atendimento->profissional)->user_id)
                   <span class="text-muted small">{{ $atendimento->criadoPor->name }}</span>
                 @else
                   <span class="text-muted small">—</span>
                 @endif
               </td>
 
-              {{-- Status: badge verde para aberto, cinza para fechado --}}
+              {{-- Status --}}
               <td>
                 @if($atendimento->status === 'aberto')
                   <span class="badge rounded-pill bg-label-success">Aberto</span>
@@ -112,25 +149,53 @@ $configData = Helper::appClasses();
                 @endif
               </td>
 
-              {{-- Data de abertura: dia/mês/ano + hora separados para melhor leitura --}}
+              {{-- Data de abertura --}}
               <td>
                 <span class="text-nowrap">{{ $atendimento->created_at->format('d/m/Y') }}</span>
                 <br><small class="text-muted">{{ $atendimento->created_at->format('H:i') }}</small>
               </td>
 
-              <td>
-                <a href="/atendimentos/{{ $atendimento->id }}" class="btn btn-sm btn-outline-secondary">
-                  <i class="mdi mdi-eye-outline me-1"></i>Detalhes
-                </a>
+              {{-- Ações: kebab --}}
+              <td class="text-end">
+                <div class="dropdown">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                          title="Mais ações">
+                    <i class="mdi mdi-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <a class="dropdown-item" href="/atendimentos/{{ $atendimento->id }}">
+                        <i class="mdi mdi-eye-outline me-2"></i>Ver detalhes
+                      </a>
+                    </li>
+                    {{-- Encerrar: dono do atendimento (nivel 3) com status aberto --}}
+                    @if(Auth::user()->nivelAcesso() <= 3 && $atendimento->status === 'aberto'
+                        && optional(Auth::user()->profissional)->id == $atendimento->profissional_id)
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <button type="button" class="dropdown-item text-warning"
+                              data-bs-toggle="modal"
+                              data-bs-target="#fechar-{{ $atendimento->id }}">
+                        <i class="mdi mdi-folder-lock-outline me-2"></i>Encerrar atendimento
+                      </button>
+                    </li>
+                    @endif
+                  </ul>
+                </div>
               </td>
             </tr>
-
-            {{-- Estado vazio: mostrado quando não há atendimentos no banco (ou filtro sem resultado) --}}
             @empty
             <tr>
               <td colspan="6" class="text-center text-muted py-5">
-                <i class="mdi mdi-folder-open-outline mdi-36px d-block mb-2 opacity-50"></i>
-                Nenhum atendimento encontrado.
+                <i class="mdi mdi-folder-search-outline mdi-48px d-block mb-2 opacity-25"></i>
+                @if($busca)
+                  Nenhum atendimento encontrado para "<strong>{{ $busca }}</strong>".
+                @else
+                  Nenhum atendimento cadastrado.
+                @endif
               </td>
             </tr>
             @endforelse
@@ -139,12 +204,65 @@ $configData = Helper::appClasses();
         </table>
       </div>
 
-      {{-- Links de paginação gerados automaticamente pelo Laravel com Bootstrap 5 --}}
       <div class="mt-3">
         {{ $atendimentos->links() }}
       </div>
     </div>
   </div>
+
 </div>
 
+{{-- Modais de confirmação de encerramento (fora da tabela para evitar problemas de z-index) --}}
+@foreach($atendimentos as $atendimento)
+  @if(Auth::user()->nivelAcesso() <= 3 && $atendimento->status === 'aberto'
+      && optional(Auth::user()->profissional)->id == $atendimento->profissional_id)
+  <div class="modal fade" id="fechar-{{ $atendimento->id }}" tabindex="-1"
+       data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Encerrar Atendimento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Deseja encerrar o atendimento de <strong>{{ optional($atendimento->paciente)->nome }}</strong>?</p>
+          <p class="text-muted small mb-0">As consultas vinculadas ficam em modo somente leitura após o encerramento.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form action="/atendimentos/{{ $atendimento->id }}/fechar" method="POST" style="display:inline">
+            @csrf
+            @method('PATCH')
+            <button type="submit" class="btn btn-warning">
+              <i class="mdi mdi-folder-lock-outline me-1"></i>Encerrar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  @endif
+@endforeach
+
+@endsection
+
+@section('page-script')
+<script>
+(function () {
+  // Debounce: submete o form de busca 400ms após o usuário parar de digitar
+  var input = document.getElementById('input-busca');
+  var form  = document.getElementById('busca-form');
+  var timer = null;
+  if (!input) return;
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { form.submit(); }, 400);
+  });
+
+  // Ativa tooltips do Bootstrap nos botões de kebab
+  document.querySelectorAll('[title="Mais ações"]').forEach(function (el) {
+    new bootstrap.Tooltip(el, { trigger: 'hover' });
+  });
+})();
+</script>
 @endsection

@@ -6,6 +6,17 @@ $configData = Helper::appClasses();
 
 @section('title', 'Detalhes do Atendimento')
 
+{{-- Breadcrumb: Início > Atendimentos > Atendimento #ID --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',                       'url' => '/'],
+      ['label' => 'Atendimentos',                 'url' => '/atendimentos'],
+      ['label' => 'Atendimento #' . $atendimento->id, 'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

@@ -46,9 +46,12 @@ class ConsultaController extends Controller
      */
     public function index()
     {
+        $busca = request('busca');
+
         $query = Consulta::with('paciente', 'profissional')
             ->orderBy('data_hora', 'desc');
 
+        // Profissional de saúde só enxerga as suas próprias consultas
         if (Auth::user()->nivelAcesso() == 3) {
             $profissional = Auth::user()->profissional;
             if ($profissional) {
@@ -56,9 +59,28 @@ class ConsultaController extends Controller
             }
         }
 
-        $consultas = $query->paginate(15);
+        // Filtro de busca por nome do paciente
+        if ($busca) {
+            $query->whereHas('paciente', function ($q) use ($busca) {
+                $q->where('nome', 'like', "%{$busca}%");
+            });
+        }
 
-        return view('content.pages.listagem_consultas', ['consultas' => $consultas]);
+        $consultas       = $query->paginate(15)->appends(['busca' => $busca]);
+        $totalConsultas  = $consultas->total(); // total pós-filtro de nível
+        $minhasConsultas = null;
+
+        // Mini-indicador de consultas do profissional logado
+        if (Auth::user()->nivelAcesso() == 3) {
+            $prof = Auth::user()->profissional;
+            if ($prof) {
+                $minhasConsultas = Consulta::where('profissional_id', $prof->id)->count();
+            }
+        }
+
+        return view('content.pages.listagem_consultas', compact(
+            'consultas', 'busca', 'totalConsultas', 'minhasConsultas'
+        ));
     }
 
     /*

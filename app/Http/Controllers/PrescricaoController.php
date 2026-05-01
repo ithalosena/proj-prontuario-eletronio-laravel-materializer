@@ -34,8 +34,9 @@ class PrescricaoController extends Controller
      */
     public function index()
     {
-        $prescricoes = Prescricao::with('consulta.paciente', 'consulta.profissional')->paginate(15);
-        return view('content.pages.listagem_prescricoes', ['prescricoes' => $prescricoes]);
+        $prescricoes      = Prescricao::with('consulta.paciente', 'consulta.profissional')->paginate(15);
+        $totalPrescricoes = Prescricao::count();
+        return view('content.pages.listagem_prescricoes', compact('prescricoes', 'totalPrescricoes'));
     }
 
     /*

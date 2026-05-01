@@ -6,6 +6,17 @@ $configData = Helper::appClasses();
 
 @section('title', 'Editar Prescricao')
 
+{{-- Breadcrumb: Início > Prescrições > Editar --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',      'url' => '/'],
+      ['label' => 'Prescrições', 'url' => '/prescricoes'],
+      ['label' => 'Editar',      'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

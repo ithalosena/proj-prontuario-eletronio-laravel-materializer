@@ -6,6 +6,17 @@ $configData = Helper::appClasses();
 
 @section('title', 'Editar Profissional')
 
+{{-- Breadcrumb: Início > Profissionais > Editar --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',        'url' => '/'],
+      ['label' => 'Profissionais', 'url' => '/profissionais'],
+      ['label' => 'Editar',        'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

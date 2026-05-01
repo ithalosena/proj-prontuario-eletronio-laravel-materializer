@@ -6,117 +6,234 @@ $configData = Helper::appClasses();
 
 @section('title', 'Consultas')
 
+{{-- Breadcrumb: Início > Consultas --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',    'url' => '/'],
+      ['label' => 'Consultas', 'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">
-  <div class="row">
-    <div class="col-md-12">
-      <div class="card mb-3">
-        <div class="card-header header-elements">
-          <h3 class="align-text-bottom-2">
-            Consultas
-            @if(Auth::user()->nivelAcesso() == 3)
-              <small class="text-muted fw-normal fs-6 ms-2">— exibindo suas consultas</small>
-            @endif
-          </h3>
-          <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
-            <a href="/cadastro-consulta" class="btn btn-primary">
-              <i class="mdi mdi-plus-circle-outline mdi-24px me-2"></i>Nova Consulta
-            </a>
-          </div>
-        </div>
-      </div>
+
+  {{-- ================================================================ --}}
+  {{-- HEADER DA PÁGINA                                                  --}}
+  {{-- ================================================================ --}}
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h4 class="mb-0">Listagem de Consultas</h4>
+      <p class="text-muted small mb-0 mt-1">Gerencie as consultas clínicas registradas</p>
     </div>
+    @if(Auth::user()->nivelAcesso() <= 3 && Auth::user()->profissional)
+    <a href="/cadastro-consulta" class="btn btn-primary">
+      <i class="mdi mdi-stethoscope me-1"></i>Nova Consulta
+    </a>
+    @endif
   </div>
 
+  {{-- Flash messages --}}
   @if(session('success'))
-  <div class="alert alert-success alert-dismissible mb-3" role="alert">
+  <div class="alert alert-success alert-dismissible mb-4" role="alert">
     {{ session('success') }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
   </div>
   @endif
 
-  <div class="card mt-1">
+  {{-- ================================================================ --}}
+  {{-- MINI-INDICADORES                                                  --}}
+  {{-- ================================================================ --}}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <span class="badge bg-label-primary fs-6 px-3 py-2">
+      <i class="mdi mdi-file-document-multiple-outline me-1"></i>
+      {{ $totalConsultas }} {{ $totalConsultas == 1 ? 'consulta registrada' : 'consultas registradas' }}
+    </span>
+    @if(!is_null($minhasConsultas))
+    <span class="badge bg-label-info fs-6 px-3 py-2">
+      <i class="mdi mdi-stethoscope me-1"></i>
+      {{ $minhasConsultas }} {{ $minhasConsultas == 1 ? 'consulta sua' : 'consultas suas' }}
+    </span>
+    @endif
+  </div>
+
+  <div class="card">
     <div class="card-body">
-      <div class="table-responsive text-nowrap">
-        <table class="table table-hover">
+
+      {{-- Campo de busca: debounce 400ms via JS --}}
+      <form method="GET" action="/consultas" id="busca-form" class="mb-3">
+        <div class="input-group">
+          <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+          <input type="text" name="busca" id="input-busca" class="form-control"
+            placeholder="Buscar por nome do paciente..."
+            value="{{ $busca ?? '' }}" autocomplete="off">
+          @if($busca)
+          <a href="/consultas" class="btn btn-outline-secondary" title="Limpar busca">
+            <i class="mdi mdi-close"></i>
+          </a>
+          @endif
+        </div>
+      </form>
+
+      {{-- Contador de resultados --}}
+      @if($consultas->total() > 0)
+      <p class="text-muted small mb-3">
+        Exibindo {{ $consultas->firstItem() }}–{{ $consultas->lastItem() }} de {{ $consultas->total() }}
+        {{ $busca ? 'resultado(s) para "' . $busca . '"' : 'consulta(s)' }}
+      </p>
+      @endif
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
           <thead class="table-light">
             <tr>
               <th>Data / Hora</th>
               <th>Paciente</th>
               <th>Tipo</th>
-              <th>Ações</th>
+              <th>Profissional</th>
+              <th class="text-end">Ações</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
             @forelse($consultas as $consulta)
             <tr>
-              <td><span class="fw-medium">{{ $consulta->data_hora->format('d/m/Y H:i') }}</span></td>
-              {{-- UX-06: link para histórico — excluído para paciente (nivel 5) --}}
+              <td>
+                <span class="fw-medium text-nowrap">{{ $consulta->data_hora->format('d/m/Y') }}</span>
+                <br><small class="text-muted">{{ $consulta->data_hora->format('H:i') }}</small>
+              </td>
+
+              {{-- Paciente: link para histórico (exceto para o próprio paciente) --}}
               <td>
                 @if(Auth::user()->nivelAcesso() <= 4 && $consulta->paciente)
                   <a href="/pacientes/{{ $consulta->paciente->id }}/historico"
-                     class="text-body text-decoration-none">{{ $consulta->paciente->nome }}</a>
+                     class="fw-medium text-body text-decoration-none"
+                     style="border-bottom: 1px dashed currentColor;">
+                    {{ $consulta->paciente->nome }}
+                  </a>
                 @else
-                  {{ $consulta->paciente->nome ?? '-' }}
+                  <span class="fw-medium">{{ optional($consulta->paciente)->nome ?? '-' }}</span>
                 @endif
               </td>
+
               <td><span class="badge rounded-pill bg-label-primary">{{ $consulta->tipo }}</span></td>
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  <a href="/consultas/{{ $consulta->id }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="mdi mdi-file-document-outline me-1"></i>Ver Prontuário
-                  </a>
-                  @if(Auth::user()->nivelAcesso() <= 2)
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-3" data-bs-toggle="modal" data-bs-target="#deletar-{{ $consulta->id }}">
-                    <i class="mdi mdi-trash-can-outline me-1"></i>Deletar
+
+              <td class="text-muted">{{ optional($consulta->profissional)->nome ?? '-' }}</td>
+
+              {{-- Ações: kebab --}}
+              <td class="text-end">
+                <div class="dropdown">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                          title="Mais ações">
+                    <i class="mdi mdi-dots-vertical"></i>
                   </button>
-                  @endif
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <a class="dropdown-item" href="/consultas/{{ $consulta->id }}">
+                        <i class="mdi mdi-file-document-outline me-2"></i>Ver prontuário
+                      </a>
+                    </li>
+                    {{-- Excluir: autor com atendimento aberto, ou admin --}}
+                    @if(Auth::user()->nivelAcesso() <= 1
+                        || (Auth::user()->id == $consulta->criado_por_id
+                            && optional($consulta->atendimento)->status === 'aberto'))
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <button type="button" class="dropdown-item text-danger"
+                              data-bs-toggle="modal"
+                              data-bs-target="#deletar-{{ $consulta->id }}">
+                        <i class="mdi mdi-trash-can-outline me-2"></i>Excluir consulta
+                      </button>
+                    </li>
+                    @endif
+                  </ul>
                 </div>
-
-                {{-- Modal Deletar --}}
-                <div class="modal fade" id="deletar-{{ $consulta->id }}" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title">Deletar Consulta</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                      </div>
-                      <div class="modal-body">
-                        <p>Deseja deletar a consulta de <strong>{{ $consulta->paciente->nome ?? '-' }}</strong>
-                          em {{ $consulta->data_hora->format('d/m/Y') }}?</p>
-                        <p class="text-danger small mb-0">
-                          <i class="mdi mdi-alert-outline me-1"></i>
-                          Exames e prescrições vinculados também serão removidos.
-                        </p>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
-                        <form action="/deletar-consulta/{{ $consulta->id }}" method="POST" style="display:inline">
-                          @csrf
-                          @method('DELETE')
-                          <button type="submit" class="btn btn-danger">Excluir</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
               </td>
             </tr>
             @empty
             <tr>
-              <td colspan="4" class="text-center text-muted py-4">Nenhuma consulta registrada.</td>
+              <td colspan="5" class="text-center text-muted py-5">
+                <i class="mdi mdi-file-search-outline mdi-48px d-block mb-2 opacity-25"></i>
+                @if($busca)
+                  Nenhuma consulta encontrada para "<strong>{{ $busca }}</strong>".
+                @else
+                  Nenhuma consulta registrada.
+                @endif
+              </td>
             </tr>
             @endforelse
           </tbody>
         </table>
       </div>
+
       <div class="mt-3">
         {{ $consultas->links() }}
       </div>
     </div>
   </div>
+
 </div>
 
+{{-- Modais de confirmação de exclusão (fora da tabela para evitar problemas de z-index) --}}
+@foreach($consultas as $consulta)
+  @if(Auth::user()->nivelAcesso() <= 1
+      || (Auth::user()->id == $consulta->criado_por_id
+          && optional($consulta->atendimento)->status === 'aberto'))
+  <div class="modal fade" id="deletar-{{ $consulta->id }}" tabindex="-1"
+       data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Excluir Consulta</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Deseja excluir a consulta de <strong>{{ optional($consulta->paciente)->nome ?? '-' }}</strong>
+            em {{ $consulta->data_hora->format('d/m/Y') }}?</p>
+          <p class="text-danger small mb-0">
+            <i class="mdi mdi-alert-outline me-1"></i>
+            Exames e prescrições vinculados também serão removidos.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form action="/deletar-consulta/{{ $consulta->id }}" method="POST" style="display:inline">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger">
+              <i class="mdi mdi-trash-can-outline me-1"></i>Excluir
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  @endif
+@endforeach
+
+@endsection
+
+@section('page-script')
+<script>
+(function () {
+  // Debounce: submete o form de busca 400ms após o usuário parar de digitar
+  var input = document.getElementById('input-busca');
+  var form  = document.getElementById('busca-form');
+  var timer = null;
+  if (!input) return;
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { form.submit(); }, 400);
+  });
+
+  // Ativa tooltips do Bootstrap nos botões de kebab
+  document.querySelectorAll('[title="Mais ações"]').forEach(function (el) {
+    new bootstrap.Tooltip(el, { trigger: 'hover' });
+  });
+})();
+</script>
 @endsection

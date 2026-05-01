@@ -11,6 +11,17 @@ $iniciais    = collect(explode(' ', $consulta->paciente->nome ?? 'P'))
 
 @section('title', 'Editar Consulta')
 
+{{-- Breadcrumb: Início > Consultas > Editar --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',    'url' => '/'],
+      ['label' => 'Consultas', 'url' => '/consultas'],
+      ['label' => 'Editar',    'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

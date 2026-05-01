@@ -6,6 +6,16 @@ $configData = Helper::appClasses();
 
 @section('title', 'Meu Prontuário')
 
+{{-- Breadcrumb: Início > Meu Prontuário --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',         'url' => '/'],
+      ['label' => 'Meu Prontuário', 'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

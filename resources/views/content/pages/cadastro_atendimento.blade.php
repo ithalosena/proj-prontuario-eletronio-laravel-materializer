@@ -15,6 +15,17 @@ $iniciaisProf = $profissionalLogado
 
 @section('title', 'Novo Atendimento')
 
+{{-- Breadcrumb: Início > Atendimentos > Novo Atendimento --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',           'url' => '/'],
+      ['label' => 'Atendimentos',     'url' => '/atendimentos'],
+      ['label' => 'Novo Atendimento', 'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

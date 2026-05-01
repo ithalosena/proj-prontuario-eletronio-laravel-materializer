@@ -38,6 +38,8 @@ class AtendimentoController extends Controller
      */
     public function index()
     {
+        $busca = request('busca');
+
         $query = Atendimento::with('paciente', 'profissional', 'criadoPor')
             ->orderBy('created_at', 'desc');
 
@@ -49,9 +51,31 @@ class AtendimentoController extends Controller
             }
         }
 
-        $atendimentos = $query->paginate(15);
+        // Filtro de busca por nome ou matrícula do paciente
+        if ($busca) {
+            $query->whereHas('paciente', function ($q) use ($busca) {
+                $q->where('nome', 'like', "%{$busca}%")
+                  ->orWhere('matricula', 'like', "%{$busca}%");
+            });
+        }
 
-        return view('content.pages.listagem_atendimentos', compact('atendimentos'));
+        $atendimentos      = $query->paginate(15)->appends(['busca' => $busca]);
+        $totalAtendimentos = Atendimento::count();
+        $abertosDoUsuario  = null;
+
+        // Mini-indicador de atendimentos abertos exibido apenas para o profissional logado
+        if (Auth::user()->nivelAcesso() == 3) {
+            $prof = Auth::user()->profissional;
+            if ($prof) {
+                $abertosDoUsuario = Atendimento::where('profissional_id', $prof->id)
+                    ->where('status', 'aberto')
+                    ->count();
+            }
+        }
+
+        return view('content.pages.listagem_atendimentos', compact(
+            'atendimentos', 'busca', 'totalAtendimentos', 'abertosDoUsuario'
+        ));
     }
 
     /*

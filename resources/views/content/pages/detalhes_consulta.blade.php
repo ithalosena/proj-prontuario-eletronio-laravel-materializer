@@ -12,6 +12,17 @@ $atendAberto = $atendimento?->isAberto() ?? true;
 
 @section('title', 'Prontuário da Consulta')
 
+{{-- Breadcrumb: Início > Consultas > Consulta #ID --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',                    'url' => '/'],
+      ['label' => 'Consultas',                 'url' => '/consultas'],
+      ['label' => 'Consulta #' . $consulta->id, 'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

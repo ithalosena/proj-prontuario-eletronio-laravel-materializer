@@ -34,8 +34,9 @@ class ExameController extends Controller
      */
     public function index()
     {
-        $exames = Exame::with('consulta.paciente', 'consulta.profissional')->paginate(15);
-        return view('content.pages.listagem_exames', ['exames' => $exames]);
+        $exames      = Exame::with('consulta.paciente', 'consulta.profissional')->paginate(15);
+        $totalExames = Exame::count();
+        return view('content.pages.listagem_exames', compact('exames', 'totalExames'));
     }
 
     /*

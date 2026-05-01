@@ -15,8 +15,24 @@ class ProfissionalController extends Controller
 {
     public function index()
     {
-        $profissionais = Profissional::with('user')->paginate(15);
-        return view('content.pages.listagem_profissionais', ['profissionais' => $profissionais]);
+        $busca = request('busca');
+
+        $query = Profissional::with('user');
+
+        // Filtro de busca por nome ou especialidade
+        if ($busca) {
+            $query->where(function ($q) use ($busca) {
+                $q->where('nome', 'like', "%{$busca}%")
+                  ->orWhere('especialidade', 'like', "%{$busca}%");
+            });
+        }
+
+        $profissionais      = $query->paginate(15)->appends(['busca' => $busca]);
+        $totalProfissionais = Profissional::count();
+
+        return view('content.pages.listagem_profissionais', compact(
+            'profissionais', 'busca', 'totalProfissionais'
+        ));
     }
 
     public function create()
