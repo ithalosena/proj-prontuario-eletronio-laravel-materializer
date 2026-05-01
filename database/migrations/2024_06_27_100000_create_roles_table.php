@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('prescricaos', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            $table->string('nome_medicamento');
-            $table->string('dosagem');
-            $table->string('frequencia');
-            $table->string('duracao');
+            $table->string('nome');
+            $table->string('slug')->unique();
+            $table->integer('nivel')->unique();
+            $table->string('descricao')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('roles');
     }
 };

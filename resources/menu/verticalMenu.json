@@ -4,84 +4,83 @@
       "url": "/",
       "name": "Home",
       "icon": "menu-icon tf-icons mdi mdi-home-outline",
-      "slug": "pages-home"
+      "slug": "pages-home",
+      "nivel_minimo": 5
     },
     {
+      "url": "/profissionais",
       "name": "Profissionais",
-      "icon": "menu-icon tf-icons mdi mdi-pencil-box-multiple-outline",
+      "icon": "menu-icon tf-icons mdi mdi-doctor",
       "slug": "profissionais",
-      "submenu": [
-        {
-          "url": "/profissionais",
-          "name": "Listar Profissionais",
-          "slug": "profissionais-lista"
-        },
-        {
-          "url": "/cadastro-profissional",
-          "name": "Cadastrar Profissional",
-          "slug": "profissionais-cadastro"
-        }
-      ]
+      "nivel_minimo": 1
     },
     {
-      "icon": "menu-icon tf-icons mdi mdi-file-document-outline",
+      "url": "/pacientes",
       "name": "Pacientes",
+      "icon": "menu-icon tf-icons mdi mdi-account-group-outline",
       "slug": "pacientes",
-      "submenu": [
-        {
-          "url": "/pacientes",
-          "name": "Listar pacientes",
-          "slug": "pacientes-lista"
-        },
-        {
-          "url": "/cadastro-pacientes",
-          "name": "Cadastrar pacientes",
-          "slug": "pacientes-cadastro"
-        }
-      ]
+      "nivel_minimo": 4
     },
     {
-      "icon": "menu-icon tf-icons mdi mdi-file-document-outline",
-      "name": "Prontuário",
+      "url": "/atendimentos",
+      "name": "Atendimentos",
+      "icon": "menu-icon tf-icons mdi mdi-folder-open-outline",
+      "slug": "atendimentos",
+      "nivel_minimo": 3
+    },
+    {
+      "url": "/consultas",
+      "name": "Consultas",
+      "icon": "menu-icon tf-icons mdi mdi-calendar-check-outline",
+      "slug": "consultas",
+      "nivel_minimo": 3
+    },
+    {
+      "icon": "menu-icon tf-icons mdi mdi-clipboard-pulse-outline",
+      "name": "Prontuario",
       "slug": "prontuarios",
+      "nivel_minimo": 3,
       "submenu": [
-        {
-          "url": "/prescricoes",
-          "name": "Prescricões",
-          "slug": "prescricoes-lista"
-        },
         {
           "url": "/exames",
-          "name": "Listar Exames",
+          "name": "Exames",
           "slug": "exames-lista"
         },
         {
-          "url": "/exames-profissional",
-          "name": "Cadastrar Profissional",
-          "slug": "exames-cadastro"
+          "url": "/prescricoes",
+          "name": "Prescricoes",
+          "slug": "prescricoes-lista"
         }
       ]
     },
     {
       "url": "/relatorios",
       "name": "Relatorios",
-      "icon": "menu-icon tf-icons mdi mdi-alert-circle-outline",
+      "icon": "menu-icon tf-icons mdi mdi-chart-bar",
       "slug": "relatorios",
-      "target": "_blank"
+      "nivel_minimo": 2
     },
     {
-      "url": "/auth/login-basic",
-      "name": "Login",
-      "icon": "menu-icon tf-icons mdi mdi-login",
-      "slug": "auth-login-basic",
-      "target": "_blank"
+      "url": "/audit-logs",
+      "name": "Auditoria",
+      "icon": "menu-icon tf-icons mdi mdi-shield-check-outline",
+      "slug": "audit-logs",
+      "nivel_minimo": 1
     },
     {
-      "url": "/auth/register-basic",
-      "name": "Register",
-      "icon": "menu-icon tf-icons mdi mdi-account-outline",
-      "slug": "auth-register-basic",
-      "target": "_blank"
+      "url": "/meu-prontuario",
+      "name": "Meu Prontuario",
+      "icon": "menu-icon tf-icons mdi mdi-folder-account-outline",
+      "slug": "meu-prontuario",
+      "nivel_minimo": 5,
+      "requer_paciente": true
+    },
+    {
+      "url": "/logout",
+      "name": "Sair",
+      "icon": "menu-icon tf-icons mdi mdi-logout",
+      "slug": "logout",
+      "nivel_minimo": 5
     }
   ]
 }

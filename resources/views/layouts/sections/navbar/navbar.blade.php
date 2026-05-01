@@ -73,118 +73,32 @@ $navbarDetached = ($navbarDetached ?? '');
         <li class="nav-item navbar-dropdown dropdown-user dropdown">
           <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
             <div class="avatar avatar-online">
-              <img src="{{ Auth::user() ? Auth::user()->profile_photo_url : asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle">
+              <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle">
             </div>
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li>
-              <a class="dropdown-item" href="{{ Route::has('profile.show') ? route('profile.show') : 'javascript:void(0);' }}">
+              <a class="dropdown-item" href="javascript:void(0);">
                 <div class="d-flex">
                   <div class="flex-shrink-0 me-3">
                     <div class="avatar avatar-online">
-                      <img src="{{ Auth::user() ? Auth::user()->profile_photo_url : asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle">
+                      <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle">
                     </div>
                   </div>
                   <div class="flex-grow-1">
-                    <span class="fw-medium d-block">
-                      @if (Auth::check())
-                      {{ Auth::user()->name }}
-                      @else
-                      John Doe
-                      @endif
-                    </span>
-                    <small class="text-muted">Admin</small>
+                    <span class="fw-medium d-block">{{ Auth::check() ? Auth::user()->name : '' }}</span>
+                    <small class="text-muted">{{ Auth::check() ? Auth::user()->email : '' }}</small>
                   </div>
                 </div>
               </a>
             </li>
+            <li><div class="dropdown-divider"></div></li>
             <li>
-              <div class="dropdown-divider"></div>
-            </li>
-            <li>
-              <a class="dropdown-item" href="{{ Route::has('profile.show') ? route('profile.show') : 'javascript:void(0);' }}">
-                <i class="mdi mdi-account-outline me-2"></i>
-                <span class="align-middle">My Profile</span>
-              </a>
-            </li>
-            @if (Auth::check() && Laravel\Jetstream\Jetstream::hasApiFeatures())
-            <li>
-              <a class="dropdown-item" href="{{ route('api-tokens.index') }}">
-                <i class='mdi mdi-key-outline me-2'></i>
-                <span class="align-middle">API Tokens</span>
-              </a>
-            </li>
-            @endif
-            <li>
-              <a class="dropdown-item" href="javascript:void(0);">
-                <i class="mdi mdi-credit-card-outline me-2"></i>
-                <span class="align-middle">Billing</span>
-              </a>
-            </li>
-            @if (Auth::User() && Laravel\Jetstream\Jetstream::hasTeamFeatures())
-            <li>
-              <div class="dropdown-divider"></div>
-            </li>
-            <li>
-              <h6 class="dropdown-header">Manage Team</h6>
-            </li>
-            <li>
-              <div class="dropdown-divider"></div>
-            </li>
-            <li>
-              <a class="dropdown-item" href="{{ Auth::user() ? route('teams.show', Auth::user()->currentTeam->id) : 'javascript:void(0)' }}">
-                <i class='mdi mdi-cog-outline me-2'></i>
-                <span class="align-middle">Team Settings</span>
-              </a>
-            </li>
-            @can('create', Laravel\Jetstream\Jetstream::newTeamModel())
-            <li>
-              <a class="dropdown-item" href="{{ route('teams.create') }}">
-                <i class='mdi mdi-account-outline me-2'></i>
-                <span class="align-middle">Create New Team</span>
-              </a>
-            </li>
-            @endcan
-            @if (Auth::user()->allTeams()->count() > 1)
-            <li>
-              <div class="dropdown-divider"></div>
-            </li>
-            <li>
-              <h6 class="dropdown-header">Switch Teams</h6>
-            </li>
-            <li>
-              <div class="dropdown-divider"></div>
-            </li>
-            @endif
-            @if (Auth::user())
-            @foreach (Auth::user()->allTeams() as $team)
-            {{-- Below commented code read by artisan command while installing jetstream. !! Do not remove if you want to use jetstream. --}}
-
-            {{-- <x-switchable-team :team="$team" /> --}}
-            @endforeach
-            @endif
-            @endif
-            <li>
-              <div class="dropdown-divider"></div>
-            </li>
-            @if (Auth::check())
-            <li>
-              <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+              <a class="dropdown-item" href="/logout">
                 <i class='mdi mdi-logout me-2'></i>
-                <span class="align-middle">Logout</span>
+                <span class="align-middle">Sair</span>
               </a>
             </li>
-            <form method="POST" id="logout-form" action="{{ route('logout') }}">
-              @csrf
-            </form>
-            @else
-            <li>
-              <a class="dropdown-item" href="{{ Route::has('login') ? route('login') : url('auth/login-basic') }}">
-                <i class='mdi mdi-login me-2'></i>
-                <span class="align-middle">Login</span>
-              </a>
-            </li>
-            @endif
           </ul>
         </li>
         <!--/ User -->
