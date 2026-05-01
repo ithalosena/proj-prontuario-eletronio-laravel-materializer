@@ -31,7 +31,7 @@ Route::get('lang/{locale}', [LanguageController::class, 'swap']);
 // ==========================================================================
 
 Route::get('/login',      [LoginController::class, 'showLogin'])->name('login');
-Route::post('/fazer-login', [LoginController::class, 'login']);
+Route::post('/fazer-login', [LoginController::class, 'login'])->middleware('throttle:5,1');
 Route::get('/logout',     [LoginController::class, 'logout']);
 
 // authentication views (template Materialize)
