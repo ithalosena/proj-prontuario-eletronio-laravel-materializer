@@ -133,10 +133,10 @@ $iniciais    = collect(explode(' ', $consulta->paciente->nome ?? 'P'))
                   <select name="tipo" id="tipo"
                     class="form-select @error('tipo') is-invalid @enderror" required>
                     <option disabled value="">Tipo</option>
-                    @foreach(['Clinico Geral' => 'Clínico Geral', 'Odontologia' => 'Odontologia', 'Psicologia' => 'Psicologia', 'Nutricionista' => 'Nutricionista', 'Fisioterapeuta' => 'Fisioterapeuta'] as $value => $label)
-                    <option value="{{ $value }}"
-                      {{ old('tipo', $consulta->tipo) == $value ? 'selected' : '' }}>
-                      {{ $label }}
+                    @foreach($tiposConsulta as $t)
+                    <option value="{{ $t->nome }}"
+                      {{ old('tipo', $consulta->tipo) == $t->nome ? 'selected' : '' }}>
+                      {{ $t->nome }}
                     </option>
                     @endforeach
                   </select>

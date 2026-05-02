@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProfissionalRequest;
 use App\Http\Requests\UpdateProfissionalRequest;
+use App\Models\Especialidade;
 use App\Models\Profissional;
 use App\Models\User;
 use App\Services\SearchService;
@@ -37,7 +38,8 @@ class ProfissionalController extends Controller
 
     public function create()
     {
-        return view('content.pages.cadastro-profissional');
+        $especialidades = Especialidade::ativo()->ordenado()->get();
+        return view('content.pages.cadastro-profissional', compact('especialidades'));
     }
 
     public function store(StoreProfissionalRequest $request)
@@ -63,8 +65,9 @@ class ProfissionalController extends Controller
 
     public function edit($id)
     {
-        $prof = Profissional::with('user')->findOrFail($id);
-        return view('content.pages.editar_profissional', ['prof' => $prof]);
+        $prof           = Profissional::with('user')->findOrFail($id);
+        $especialidades = Especialidade::ativo()->ordenado()->get();
+        return view('content.pages.editar_profissional', compact('prof', 'especialidades'));
     }
 
     public function update(UpdateProfissionalRequest $request, $id)

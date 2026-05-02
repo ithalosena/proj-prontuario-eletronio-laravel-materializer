@@ -16,6 +16,8 @@ use App\Http\Controllers\RelatorioController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AtendimentoController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\EspecialidadeController;
+use App\Http\Controllers\TipoConsultaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +65,21 @@ Route::middleware('auth')->group(function () {
     // AUDIT LOGS (admin e acima: nivel <= 1)
     // ------------------------------------------------------------------
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('nivel:1');
+
+    // ------------------------------------------------------------------
+    // CONFIGURAÇÕES — Especialidades e Tipos de Consulta (coordenador e acima: nivel <= 2)
+    // ------------------------------------------------------------------
+    Route::middleware('nivel:2')->group(function () {
+        Route::get('/configuracoes/especialidades',                           [EspecialidadeController::class, 'index']);
+        Route::post('/configuracoes/especialidades',                          [EspecialidadeController::class, 'store']);
+        Route::put('/configuracoes/especialidades/{especialidade}',           [EspecialidadeController::class, 'update']);
+        Route::patch('/configuracoes/especialidades/{especialidade}/toggle',  [EspecialidadeController::class, 'toggleAtivo']);
+
+        Route::get('/configuracoes/tipos-consulta',                          [TipoConsultaController::class, 'index']);
+        Route::post('/configuracoes/tipos-consulta',                         [TipoConsultaController::class, 'store']);
+        Route::put('/configuracoes/tipos-consulta/{tipoConsulta}',           [TipoConsultaController::class, 'update']);
+        Route::patch('/configuracoes/tipos-consulta/{tipoConsulta}/toggle',  [TipoConsultaController::class, 'toggleAtivo']);
+    });
 
     // ------------------------------------------------------------------
     // AUTOCOMPLETE AJAX (profissional e acima: nivel <= 3)

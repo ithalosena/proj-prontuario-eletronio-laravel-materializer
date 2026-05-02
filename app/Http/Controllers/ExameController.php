@@ -84,12 +84,9 @@ class ExameController extends Controller
      */
     public function edit($id)
     {
-        $exame       = Exame::with('consulta.atendimento')->findOrFail($id);
-        $atendimento = $exame->consulta->atendimento ?? null;
+        $exame = Exame::with('consulta.atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($exame, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para editar este exame.');
-        }
+        $this->authorize('update', $exame);
 
         $consultas = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
         return view('content.pages.editar_exame', ['exame' => $exame, 'consultas' => $consultas]);
@@ -101,12 +98,9 @@ class ExameController extends Controller
      */
     public function update(UpdateExameRequest $request, $id)
     {
-        $exame       = Exame::with('consulta.atendimento')->findOrFail($id);
-        $atendimento = $exame->consulta->atendimento ?? null;
+        $exame = Exame::with('consulta.atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($exame, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para editar este exame.');
-        }
+        $this->authorize('update', $exame);
 
         $exame->consulta_id      = $request->consulta_id;
         $exame->tipo             = $request->tipo;
@@ -125,55 +119,13 @@ class ExameController extends Controller
      */
     public function destroy($id)
     {
-        $exame       = Exame::with('consulta.atendimento')->findOrFail($id);
-        $atendimento = $exame->consulta->atendimento ?? null;
+        $exame = Exame::with('consulta.atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($exame, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para excluir este exame.');
-        }
+        $this->authorize('delete', $exame);
 
         $exame->delete();
 
         return redirect('/exames')->with('success', 'Exame removido com sucesso!');
     }
 
-    // =========================================================
-    // Helpers privados
-    // =========================================================
-
-    /*
-     * Verifica se o usuário logado pode editar ou deletar este exame.
-     *
-     * Regras (ST-08):
-     * 1. Admin (nivel <= 1) sempre pode — sem restrição
-     * 2. Para outros níveis: só o criador original pode mexer
-     * 3. Com atendimento fechado: bloqueado para todos exceto admin
-     * 4. Sem atendimento (exame legado): somente autoria importa
-     *
-     * @param  Exame            $exame
-     * @param  Atendimento|null $atendimento
-     * @return bool
-     */
-    private function podeModificar($exame, $atendimento = null): bool
-    {
-        $user = Auth::user();
-
-        // Admin sempre pode — auditoria captura a ação de qualquer forma
-        if ($user->nivelAcesso() <= 1) {
-            return true;
-        }
-
-        // Para outros níveis: somente o criador original pode mexer
-        if ($user->id !== $exame->criado_por_id) {
-            return false;
-        }
-
-        // Exame sem atendimento vinculado (legado): autor pode editar
-        if (is_null($atendimento)) {
-            return true;
-        }
-
-        // Com atendimento: só edita se ainda estiver aberto
-        return $atendimento->isAberto();
-    }
 }

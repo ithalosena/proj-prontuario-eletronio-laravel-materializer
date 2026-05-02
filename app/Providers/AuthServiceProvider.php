@@ -2,18 +2,21 @@
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
+use App\Models\Consulta;
+use App\Models\Exame;
+use App\Models\Prescricao;
+use App\Policies\ConsultaPolicy;
+use App\Policies\ExamePolicy;
+use App\Policies\PrescricaoPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
 {
-    /**
-     * The model to policy mappings for the application.
-     *
-     * @var array<class-string, class-string>
-     */
+    // Mapeamento model → policy (DT-03: controle de autoria por recurso)
     protected $policies = [
-        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        Consulta::class   => ConsultaPolicy::class,
+        Exame::class      => ExamePolicy::class,
+        Prescricao::class => PrescricaoPolicy::class,
     ];
 
     /**

@@ -144,13 +144,12 @@ $atendAberto = $atendimento?->isAberto() ?? true;
               @else
                 <span class="badge bg-label-warning">Pendente</span>
               @endif
-              {{-- ST-08: verifica autoria do exame individualmente --}}
-              {{-- Cada exame pode ter sido criado por um profissional diferente --}}
-              @if($atendAberto && (Auth::id() == $exame->criado_por_id || Auth::user()->nivelAcesso() <= 1))
+              {{-- DT-03: ExamePolicy — admin sempre pode; outros: só autor com atendimento aberto --}}
+              @can('update', $exame)
               <a href="/editar-exame/{{ $exame->id }}" class="btn btn-xs btn-outline-secondary">
                 <i class="mdi mdi-pencil-outline me-1"></i>Editar
               </a>
-              @endif
+              @endcan
             </div>
           </div>
           @empty
@@ -198,14 +197,14 @@ $atendAberto = $atendimento?->isAberto() ?? true;
                 <small class="text-muted fst-italic d-block mt-1">{{ $prescricao->observacao }}</small>
               @endif
             </div>
-            {{-- ST-08: verifica autoria da prescrição individualmente --}}
-            @if($atendAberto && (Auth::id() == $prescricao->criado_por_id || Auth::user()->nivelAcesso() <= 1))
+            {{-- DT-03: PrescricaoPolicy — admin sempre pode; outros: só autor com atendimento aberto --}}
+            @can('update', $prescricao)
             <div class="ms-3 flex-shrink-0">
               <a href="/editar-prescricao/{{ $prescricao->id }}" class="btn btn-xs btn-outline-secondary">
                 <i class="mdi mdi-pencil-outline me-1"></i>Editar
               </a>
             </div>
-            @endif
+            @endcan
           </div>
           @empty
           <div class="p-4 text-center text-muted">

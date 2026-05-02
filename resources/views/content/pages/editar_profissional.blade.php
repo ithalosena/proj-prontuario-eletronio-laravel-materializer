@@ -62,13 +62,13 @@ $configData = Helper::appClasses();
           <label for="contato">Contato</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <select name="especialidade" class="form-select" id="especialidade" required>
-            <option value="Clinico Geral" {{ $prof->especialidade == 'Clinico Geral' ? 'selected' : '' }}>Clinico Geral</option>
-            <option value="Odontologia" {{ $prof->especialidade == 'Odontologia' ? 'selected' : '' }}>Odontologia</option>
-            <option value="Psicologia" {{ $prof->especialidade == 'Psicologia' ? 'selected' : '' }}>Psicologia</option>
-            <option value="Nutricionista" {{ $prof->especialidade == 'Nutricionista' ? 'selected' : '' }}>Nutricionista</option>
-            <option value="Fisioterapeuta" {{ $prof->especialidade == 'Fisioterapeuta' ? 'selected' : '' }}>Fisioterapeuta</option>
+          <select name="especialidade" class="form-select @error('especialidade') is-invalid @enderror" id="especialidade" required>
+            <option disabled value="">Selecione a Especialidade</option>
+            @foreach($especialidades as $e)
+            <option value="{{ $e->nome }}" {{ old('especialidade', $prof->especialidade) == $e->nome ? 'selected' : '' }}>{{ $e->nome }}</option>
+            @endforeach
           </select>
+          @error('especialidade')<div class="invalid-feedback">{{ $message }}</div>@enderror
           <label for="especialidade">Especialidade</label>
         </div>
         <div class="form-floating form-floating-outline mb-6 mt-3">

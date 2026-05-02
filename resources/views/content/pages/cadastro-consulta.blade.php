@@ -267,10 +267,10 @@ $iniciais = $atendimento
                   <select name="tipo" id="tipo"
                     class="form-select @error('tipo') is-invalid @enderror" required>
                     <option disabled {{ (old('tipo') || $especialidade) ? '' : 'selected' }} value="">Selecione</option>
-                    @foreach(['Clínico Geral','Odontologia','Psicologia','Nutricionista','Fisioterapia'] as $opcao)
-                    <option value="{{ $opcao }}"
-                      {{ (old('tipo') ?? $especialidade) == $opcao ? 'selected' : '' }}>
-                      {{ $opcao }}
+                    @foreach($tiposConsulta as $t)
+                    <option value="{{ $t->nome }}"
+                      {{ (old('tipo') ?? $especialidade) == $t->nome ? 'selected' : '' }}>
+                      {{ $t->nome }}
                     </option>
                     @endforeach
                   </select>

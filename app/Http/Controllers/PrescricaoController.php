@@ -85,12 +85,9 @@ class PrescricaoController extends Controller
      */
     public function edit($id)
     {
-        $prescricao  = Prescricao::with('consulta.atendimento')->findOrFail($id);
-        $atendimento = $prescricao->consulta->atendimento ?? null;
+        $prescricao = Prescricao::with('consulta.atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($prescricao, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para editar esta prescrição.');
-        }
+        $this->authorize('update', $prescricao);
 
         $consultas = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
         return view('content.pages.editar_prescricao', ['prescricao' => $prescricao, 'consultas' => $consultas]);
@@ -102,12 +99,9 @@ class PrescricaoController extends Controller
      */
     public function update(UpdatePrescricaoRequest $request, $id)
     {
-        $prescricao  = Prescricao::with('consulta.atendimento')->findOrFail($id);
-        $atendimento = $prescricao->consulta->atendimento ?? null;
+        $prescricao = Prescricao::with('consulta.atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($prescricao, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para editar esta prescrição.');
-        }
+        $this->authorize('update', $prescricao);
 
         $prescricao->consulta_id      = $request->consulta_id;
         $prescricao->nome_medicamento = $request->nome_medicamento;
@@ -126,55 +120,13 @@ class PrescricaoController extends Controller
      */
     public function destroy($id)
     {
-        $prescricao  = Prescricao::with('consulta.atendimento')->findOrFail($id);
-        $atendimento = $prescricao->consulta->atendimento ?? null;
+        $prescricao = Prescricao::with('consulta.atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($prescricao, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para excluir esta prescrição.');
-        }
+        $this->authorize('delete', $prescricao);
 
         $prescricao->delete();
 
         return redirect('/prescricoes')->with('success', 'Prescrição removida com sucesso!');
     }
 
-    // =========================================================
-    // Helpers privados
-    // =========================================================
-
-    /*
-     * Verifica se o usuário logado pode editar ou deletar esta prescrição.
-     *
-     * Regras (ST-08):
-     * 1. Admin (nivel <= 1) sempre pode — sem restrição
-     * 2. Para outros níveis: só o criador original pode mexer
-     * 3. Com atendimento fechado: bloqueado para todos exceto admin
-     * 4. Sem atendimento (prescrição legada): somente autoria importa
-     *
-     * @param  Prescricao       $prescricao
-     * @param  Atendimento|null $atendimento
-     * @return bool
-     */
-    private function podeModificar($prescricao, $atendimento = null): bool
-    {
-        $user = Auth::user();
-
-        // Admin sempre pode — auditoria captura a ação de qualquer forma
-        if ($user->nivelAcesso() <= 1) {
-            return true;
-        }
-
-        // Para outros níveis: somente o criador original pode mexer
-        if ($user->id !== $prescricao->criado_por_id) {
-            return false;
-        }
-
-        // Prescrição sem atendimento vinculado (legada): autor pode editar
-        if (is_null($atendimento)) {
-            return true;
-        }
-
-        // Com atendimento: só edita se ainda estiver aberto
-        return $atendimento->isAberto();
-    }
 }

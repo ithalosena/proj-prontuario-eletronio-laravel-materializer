@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Especialidade;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateProfissionalRequest extends FormRequest
 {
@@ -16,7 +18,7 @@ class UpdateProfissionalRequest extends FormRequest
         return [
             'nome'                  => 'required|string|max:255',
             'email'                 => 'nullable|email',
-            'especialidade'         => 'required|string|max:255',
+            'especialidade'         => ['required', Rule::in(Especialidade::pluck('nome'))],
             'registro_profissional' => 'required|string|max:50',
             'contato'               => 'nullable|string|max:20',
         ];
@@ -28,6 +30,7 @@ class UpdateProfissionalRequest extends FormRequest
             'nome.required'                  => 'O nome é obrigatório.',
             'email.email'                    => 'Informe um e-mail válido.',
             'especialidade.required'         => 'A especialidade é obrigatória.',
+            'especialidade.in'               => 'Especialidade inválida.',
             'registro_profissional.required' => 'O registro profissional é obrigatório.',
         ];
     }

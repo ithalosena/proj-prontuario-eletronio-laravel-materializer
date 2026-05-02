@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\TipoConsulta;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /*
  * FormRequest: StoreConsultaRequest
@@ -40,7 +42,7 @@ class StoreConsultaRequest extends FormRequest
             'profissional_id'                  => 'required|exists:profissionais,id',
             'paciente_id'                      => 'required|exists:pacientes,id',
             'data_hora'                        => 'required|date',
-            'tipo'                             => 'required|string|max:100',
+            'tipo'                             => ['required', Rule::in(TipoConsulta::pluck('nome'))],
             'queixa'                           => 'required|string|max:1000',
             'anamnese'                         => 'nullable|string',
             'diagnostico'                      => 'nullable|string',
@@ -73,6 +75,7 @@ class StoreConsultaRequest extends FormRequest
             'data_hora.required'       => 'A data e hora são obrigatórias.',
             'data_hora.date'           => 'Informe uma data e hora válidas.',
             'tipo.required'            => 'O tipo de consulta é obrigatório.',
+            'tipo.in'                  => 'Tipo de consulta inválido.',
             'queixa.required'          => 'A queixa principal é obrigatória.',
         ];
     }
