@@ -11,6 +11,17 @@ $idade      = $paciente->data_nascimento
 
 @section('title', 'Perfil do Paciente')
 
+{{-- Breadcrumb: Início > Pacientes > Nome do Paciente --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',           'url' => '/'],
+      ['label' => 'Pacientes',        'url' => '/pacientes'],
+      ['label' => $paciente->nome,    'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

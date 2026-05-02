@@ -8,6 +8,18 @@ $iniciais   = collect(explode(' ', $paciente->nome ?? 'P'))
 
 @section('title', 'Histórico do Paciente')
 
+{{-- Breadcrumb: Início > Pacientes > Nome > Histórico --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',                                   'url' => '/'],
+      ['label' => 'Pacientes',                                'url' => '/pacientes'],
+      ['label' => $paciente->nome,                            'url' => '/pacientes/' . $paciente->id],
+      ['label' => 'Histórico',                                'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">

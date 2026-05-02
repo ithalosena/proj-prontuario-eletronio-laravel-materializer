@@ -3,28 +3,29 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Throwable;
 
 class Handler extends ExceptionHandler
 {
-    /**
-     * The list of the inputs that are never flashed to the session on validation exceptions.
-     *
-     * @var array<int, string>
-     */
+    // Campos que nunca são re-preenchidos na sessão após erro de validação
     protected $dontFlash = [
         'current_password',
         'password',
         'password_confirmation',
     ];
 
-    /**
-     * Register the exception handling callbacks for the application.
-     */
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        // Intercepta o 429 do throttle na rota de login e redireciona com mensagem em português
+        $this->renderable(function (ThrottleRequestsException $e) {
+            $segundos = $e->getHeaders()['Retry-After'] ?? 60;
+            return redirect()->route('login')
+                ->with('error', "Muitas tentativas de login. Aguarde {$segundos} segundo(s) e tente novamente.");
         });
     }
 }

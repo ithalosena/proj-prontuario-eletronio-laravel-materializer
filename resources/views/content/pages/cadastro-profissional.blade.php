@@ -6,6 +6,17 @@ $configData = Helper::appClasses();
 
 @section('title', 'Cadastrar Profissional')
 
+{{-- Breadcrumb: Início > Profissionais > Cadastrar --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',        'url' => '/'],
+      ['label' => 'Profissionais', 'url' => '/profissionais'],
+      ['label' => 'Cadastrar',     'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -75,11 +86,9 @@ $configData = Helper::appClasses();
           <select name="especialidade" class="form-select @error('especialidade') is-invalid @enderror"
             id="especialidade" required>
             <option disabled {{ old('especialidade') ? '' : 'selected' }} value="">Selecione a Especialidade</option>
-            <option value="Clinico Geral"  {{ old('especialidade') == 'Clinico Geral'  ? 'selected' : '' }}>Clínico Geral</option>
-            <option value="Odontologia"    {{ old('especialidade') == 'Odontologia'    ? 'selected' : '' }}>Odontologia</option>
-            <option value="Psicologia"     {{ old('especialidade') == 'Psicologia'     ? 'selected' : '' }}>Psicologia</option>
-            <option value="Nutricionista"  {{ old('especialidade') == 'Nutricionista'  ? 'selected' : '' }}>Nutricionista</option>
-            <option value="Fisioterapeuta" {{ old('especialidade') == 'Fisioterapeuta' ? 'selected' : '' }}>Fisioterapeuta</option>
+            @foreach($especialidades as $e)
+            <option value="{{ $e->nome }}" {{ old('especialidade') == $e->nome ? 'selected' : '' }}>{{ $e->nome }}</option>
+            @endforeach
           </select>
           <label for="especialidade">Especialidade</label>
           @error('especialidade')<div class="invalid-feedback">{{ $message }}</div>@enderror

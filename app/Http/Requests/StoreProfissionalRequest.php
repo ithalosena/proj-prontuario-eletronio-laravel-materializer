@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Especialidade;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreProfissionalRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class StoreProfissionalRequest extends FormRequest
             'nome'                  => 'required|string|max:255',
             'email'                 => 'required|email|unique:users,email',
             'senha'                 => 'required|string|min:8',
-            'especialidade'         => 'required|string|max:255',
+            'especialidade'         => ['required', Rule::in(Especialidade::pluck('nome'))],
             'registro_profissional' => 'required|string|max:50',
             'contato'               => 'nullable|string|max:20',
         ];
@@ -33,6 +35,7 @@ class StoreProfissionalRequest extends FormRequest
             'senha.required'                 => 'A senha é obrigatória.',
             'senha.min'                      => 'A senha deve ter no mínimo 8 caracteres.',
             'especialidade.required'         => 'A especialidade é obrigatória.',
+            'especialidade.in'               => 'Especialidade inválida.',
             'registro_profissional.required' => 'O registro profissional é obrigatório.',
         ];
     }

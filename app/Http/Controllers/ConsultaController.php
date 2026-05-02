@@ -10,6 +10,7 @@ use App\Models\Exame;
 use App\Models\Paciente;
 use App\Models\Prescricao;
 use App\Models\Profissional;
+use App\Models\TipoConsulta;
 use App\Services\SearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,9 +47,12 @@ class ConsultaController extends Controller
      */
     public function index()
     {
+        $busca = request('busca');
+
         $query = Consulta::with('paciente', 'profissional')
             ->orderBy('data_hora', 'desc');
 
+        // Profissional de saúde só enxerga as suas próprias consultas
         if (Auth::user()->nivelAcesso() == 3) {
             $profissional = Auth::user()->profissional;
             if ($profissional) {
@@ -56,9 +60,28 @@ class ConsultaController extends Controller
             }
         }
 
-        $consultas = $query->paginate(15);
+        // Filtro de busca por nome do paciente
+        if ($busca) {
+            $query->whereHas('paciente', function ($q) use ($busca) {
+                $q->where('nome', 'like', "%{$busca}%");
+            });
+        }
 
-        return view('content.pages.listagem_consultas', ['consultas' => $consultas]);
+        $consultas       = $query->paginate(15)->appends(['busca' => $busca]);
+        $totalConsultas  = $consultas->total(); // total pós-filtro de nível
+        $minhasConsultas = null;
+
+        // Mini-indicador de consultas do profissional logado
+        if (Auth::user()->nivelAcesso() == 3) {
+            $prof = Auth::user()->profissional;
+            if ($prof) {
+                $minhasConsultas = Consulta::where('profissional_id', $prof->id)->count();
+            }
+        }
+
+        return view('content.pages.listagem_consultas', compact(
+            'consultas', 'busca', 'totalConsultas', 'minhasConsultas'
+        ));
     }
 
     /*
@@ -73,6 +96,7 @@ class ConsultaController extends Controller
     {
         $pacientes          = Paciente::orderBy('nome')->get();
         $profissionais      = Profissional::orderBy('nome')->get();
+        $tiposConsulta      = TipoConsulta::ativo()->ordenado()->get();
         $atendimento        = null;
         $pacientePreSelecionado = null;
         $profissionalLogado = Auth::user()->profissional;
@@ -85,7 +109,7 @@ class ConsultaController extends Controller
         }
 
         return view('content.pages.cadastro-consulta', compact(
-            'pacientes', 'profissionais', 'atendimento', 'profissionalLogado', 'pacientePreSelecionado'
+            'pacientes', 'profissionais', 'tiposConsulta', 'atendimento', 'profissionalLogado', 'pacientePreSelecionado'
         ));
     }
 
@@ -182,7 +206,7 @@ class ConsultaController extends Controller
             'prescricoes'
         )->findOrFail($id);
 
-        $autorizado = $this->podeModificar($consulta, $consulta->atendimento ?? null);
+        $autorizado = Auth::user()->can('update', $consulta);
 
         // ST-12: seleciona view especializada pelo slug da especialidade do profissional.
         // view()->exists() garante degradação graciosa: especialidade sem view implementada
@@ -201,15 +225,12 @@ class ConsultaController extends Controller
     public function edit($id)
     {
         // Carrega paciente e profissional para o header read-only + exames/prescrições para a sidebar
-        $consulta    = Consulta::with('paciente', 'profissional', 'atendimento', 'exames', 'prescricoes')->findOrFail($id);
-        $atendimento = $consulta->atendimento ?? null;
+        $consulta = Consulta::with('paciente', 'profissional', 'atendimento', 'exames', 'prescricoes')->findOrFail($id);
 
-        // Verifica autoria e status do atendimento antes de mostrar o formulário
-        if (!$this->podeModificar($consulta, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para editar esta consulta.');
-        }
+        $this->authorize('update', $consulta);
 
-        return view('content.pages.editar_consulta', compact('consulta'));
+        $tiposConsulta = TipoConsulta::ativo()->ordenado()->get();
+        return view('content.pages.editar_consulta', compact('consulta', 'tiposConsulta'));
     }
 
     /*
@@ -219,12 +240,9 @@ class ConsultaController extends Controller
      */
     public function update(UpdateConsultaRequest $request, $id)
     {
-        $consulta    = Consulta::with('atendimento')->findOrFail($id);
-        $atendimento = $consulta->atendimento ?? null;
+        $consulta = Consulta::with('atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($consulta, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para editar esta consulta.');
-        }
+        $this->authorize('update', $consulta);
 
         $consulta->data_hora       = $request->data_hora;
         $consulta->tipo            = $request->tipo;
@@ -248,57 +266,13 @@ class ConsultaController extends Controller
      */
     public function destroy($id)
     {
-        $consulta    = Consulta::with('atendimento')->findOrFail($id);
-        $atendimento = $consulta->atendimento ?? null;
+        $consulta = Consulta::with('atendimento')->findOrFail($id);
 
-        if (!$this->podeModificar($consulta, $atendimento)) {
-            return redirect()->back()->with('error', 'Você não tem permissão para excluir esta consulta.');
-        }
+        $this->authorize('delete', $consulta);
 
         $consulta->delete();
 
         return redirect('/consultas')->with('success', 'Consulta removida com sucesso!');
-    }
-
-    // =========================================================
-    // Helpers privados
-    // =========================================================
-
-    /*
-     * Verifica se o usuário logado pode editar ou deletar um registro.
-     *
-     * Regras (ST-08):
-     * 1. Admin (nivel <= 1) sempre pode — sem restrição
-     * 2. Para qualquer outro nível: só o criador pode mexer no registro
-     * 3. Se o registro está em um atendimento fechado, ninguém além do admin pode editar
-     * 4. Se não há atendimento vinculado (registro legado), somente autoria importa
-     *
-     * @param  mixed       $registro     Model com campo criado_por_id
-     * @param  Atendimento|null $atendimento  Atendimento vinculado (ou null para legados)
-     * @return bool
-     */
-    private function podeModificar($registro, $atendimento = null): bool
-    {
-        $user = Auth::user();
-
-        // Admin sempre pode — auditoria captura a ação de qualquer forma
-        if ($user->nivelAcesso() <= 1) {
-            return true;
-        }
-
-        // Para outros níveis: só o criador original pode mexer no registro
-        if ($user->id !== $registro->criado_por_id) {
-            return false;
-        }
-
-        // Sem atendimento vinculado (consulta legada criada antes do ST-06)?
-        // Permitimos que o autor edite — não queremos bloquear registros antigos
-        if (is_null($atendimento)) {
-            return true;
-        }
-
-        // Com atendimento vinculado: só pode editar se o atendimento ainda estiver aberto
-        return $atendimento->isAberto();
     }
 
     /*

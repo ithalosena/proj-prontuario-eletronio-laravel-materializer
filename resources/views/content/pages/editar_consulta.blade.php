@@ -11,6 +11,17 @@ $iniciais    = collect(explode(' ', $consulta->paciente->nome ?? 'P'))
 
 @section('title', 'Editar Consulta')
 
+{{-- Breadcrumb: Início > Consultas > Editar --}}
+@push('breadcrumbs')
+  @include('content.pages.partials._breadcrumb', [
+    'breadcrumbs' => [
+      ['label' => 'Início',    'url' => '/'],
+      ['label' => 'Consultas', 'url' => '/consultas'],
+      ['label' => 'Editar',    'url' => null],
+    ]
+  ])
+@endpush
+
 @section('content')
 
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -122,10 +133,10 @@ $iniciais    = collect(explode(' ', $consulta->paciente->nome ?? 'P'))
                   <select name="tipo" id="tipo"
                     class="form-select @error('tipo') is-invalid @enderror" required>
                     <option disabled value="">Tipo</option>
-                    @foreach(['Clinico Geral' => 'Clínico Geral', 'Odontologia' => 'Odontologia', 'Psicologia' => 'Psicologia', 'Nutricionista' => 'Nutricionista', 'Fisioterapeuta' => 'Fisioterapeuta'] as $value => $label)
-                    <option value="{{ $value }}"
-                      {{ old('tipo', $consulta->tipo) == $value ? 'selected' : '' }}>
-                      {{ $label }}
+                    @foreach($tiposConsulta as $t)
+                    <option value="{{ $t->nome }}"
+                      {{ old('tipo', $consulta->tipo) == $t->nome ? 'selected' : '' }}>
+                      {{ $t->nome }}
                     </option>
                     @endforeach
                   </select>
