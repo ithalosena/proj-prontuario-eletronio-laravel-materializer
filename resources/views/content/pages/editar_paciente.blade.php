@@ -42,48 +42,111 @@ $configData = Helper::appClasses();
       </div>
       @endif
 
+      {{-- UX-24: aviso para roles sem acesso a dados sensíveis --}}
+      @if(!$podeEditarSensivel)
+      <div class="alert alert-info mb-4" role="alert">
+        <i class="mdi mdi-information-outline me-2"></i>
+        Você pode atualizar <strong>contato</strong> e <strong>endereço</strong>. Os demais dados são restritos a administradores.
+      </div>
+      @endif
+
       <h5 class="card-title">1. Dados Pessoais</h5>
       <form class="browser-default-validation" action="/atualizar-paciente/{{ $paciente->id }}" method="POST">
         @csrf
         @method("PUT")
+
+        {{-- Nome — sensível --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->nome }}" name="nome" type="text" class="form-control" id="nome" placeholder="Nome completo">
-          <label for="nome">Nome</label>
+          <input value="{{ $paciente->nome }}" name="nome" type="text"
+                 class="form-control {{ !$podeEditarSensivel ? 'bg-light' : '' }}"
+                 id="nome" placeholder="Nome completo"
+                 {{ !$podeEditarSensivel ? 'readonly' : 'required' }}>
+          <label for="nome">
+            Nome
+            @if(!$podeEditarSensivel)<span class="badge bg-label-secondary ms-1 small">Restrito</span>@endif
+          </label>
         </div>
+
+        {{-- Contato — complementar, editável por todos --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->contato }}" name="contato" type="text" class="form-control" id="contato" placeholder="(00) 90000-0000">
+          <input value="{{ $paciente->contato }}" name="contato" type="text" class="form-control" id="contato" placeholder="(00) 90000-0000">
           <label for="contato">Contato</label>
         </div>
+
+        {{-- Documento — sensível --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->documento }}" name="documento" type="text" class="form-control" id="documento" placeholder="000.000.000-00">
-          <label for="documento">Documento (CPF)</label>
+          <input value="{{ $paciente->documento }}" name="documento" type="text"
+                 class="form-control {{ !$podeEditarSensivel ? 'bg-light' : '' }}"
+                 id="documento" placeholder="000.000.000-00"
+                 {{ !$podeEditarSensivel ? 'readonly' : 'required' }}>
+          <label for="documento">
+            Documento (CPF)
+            @if(!$podeEditarSensivel)<span class="badge bg-label-secondary ms-1 small">Restrito</span>@endif
+          </label>
         </div>
+
+        {{-- Data de nascimento — sensível --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->data_nascimento ? $paciente->data_nascimento->format('Y-m-d') : '' }}" name="data_nascimento" type="date" class="form-control" id="data_nascimento">
-          <label for="data_nascimento">Data de Nascimento</label>
+          <input value="{{ $paciente->data_nascimento ? $paciente->data_nascimento->format('Y-m-d') : '' }}"
+                 name="data_nascimento" type="date"
+                 class="form-control {{ !$podeEditarSensivel ? 'bg-light' : '' }}"
+                 id="data_nascimento"
+                 {{ !$podeEditarSensivel ? 'readonly' : 'required' }}>
+          <label for="data_nascimento">
+            Data de Nascimento
+            @if(!$podeEditarSensivel)<span class="badge bg-label-secondary ms-1 small">Restrito</span>@endif
+          </label>
         </div>
+
+        {{-- Sexo — sensível; disabled + hidden para não perder o valor no submit --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <select name="sexo" class="form-select" id="sexo" required>
+          @if(!$podeEditarSensivel)
+            <input type="hidden" name="sexo" value="{{ $paciente->sexo }}">
+          @endif
+          <select name="{{ $podeEditarSensivel ? 'sexo' : '_sexo_display' }}"
+                  class="form-select {{ !$podeEditarSensivel ? 'bg-light' : '' }}"
+                  id="sexo"
+                  {{ !$podeEditarSensivel ? 'disabled' : 'required' }}>
             <option value="F" {{ $paciente->sexo == 'F' ? 'selected' : '' }}>Feminino</option>
             <option value="M" {{ $paciente->sexo == 'M' ? 'selected' : '' }}>Masculino</option>
             <option value="outro" {{ $paciente->sexo == 'outro' ? 'selected' : '' }}>Outro</option>
           </select>
-          <label for="sexo">Sexo</label>
+          <label for="sexo">
+            Sexo
+            @if(!$podeEditarSensivel)<span class="badge bg-label-secondary ms-1 small">Restrito</span>@endif
+          </label>
         </div>
+
+        {{-- Endereço — complementar, editável por todos --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
           <input value="{{ $paciente->endereco }}" name="endereco" type="text" class="form-control" id="endereco" placeholder="Rua, numero - Cidade/UF">
-          <label for="endereco">Endereco</label>
+          <label for="endereco">Endereço</label>
         </div>
 
-        <h5 class="card-title">2. Dados Academicos</h5>
+        <h5 class="card-title">2. Dados Acadêmicos</h5>
 
+        {{-- Matrícula — sensível --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->matricula }}" name="matricula" type="text" class="form-control" id="matricula" placeholder="2024001">
-          <label for="matricula">Matricula</label>
+          <input value="{{ $paciente->matricula }}" name="matricula" type="text"
+                 class="form-control {{ !$podeEditarSensivel ? 'bg-light' : '' }}"
+                 id="matricula" placeholder="2024001"
+                 {{ !$podeEditarSensivel ? 'readonly' : 'required' }}>
+          <label for="matricula">
+            Matrícula
+            @if(!$podeEditarSensivel)<span class="badge bg-label-secondary ms-1 small">Restrito</span>@endif
+          </label>
         </div>
+
+        {{-- Curso — sensível --}}
         <div class="form-floating form-floating-outline mb-6 mt-3">
-          <input required value="{{ $paciente->curso }}" name="curso" type="text" class="form-control" id="curso" placeholder="Analise e Desenvolvimento de Sistemas">
-          <label for="curso">Curso</label>
+          <input value="{{ $paciente->curso }}" name="curso" type="text"
+                 class="form-control {{ !$podeEditarSensivel ? 'bg-light' : '' }}"
+                 id="curso" placeholder="Analise e Desenvolvimento de Sistemas"
+                 {{ !$podeEditarSensivel ? 'readonly' : 'required' }}>
+          <label for="curso">
+            Curso
+            @if(!$podeEditarSensivel)<span class="badge bg-label-secondary ms-1 small">Restrito</span>@endif
+          </label>
         </div>
 
         <div class="mt-4">

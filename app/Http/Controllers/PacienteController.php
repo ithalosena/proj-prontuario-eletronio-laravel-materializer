@@ -78,27 +78,35 @@ class PacienteController extends Controller
     public function edit($id)
     {
         $paciente = Paciente::with('user')->findOrFail($id);
-        return view('content.pages.editar_paciente', ['paciente' => $paciente]);
+        $podeEditarSensivel = Auth::user()->nivelAcesso() <= 2;
+        return view('content.pages.editar_paciente', compact('paciente', 'podeEditarSensivel'));
     }
 
     public function update(UpdatePacienteRequest $request, $id)
     {
         $paciente = Paciente::findOrFail($id);
+        $podeEditarSensivel = Auth::user()->nivelAcesso() <= 2;
 
-        $paciente->nome            = $request->nome;
-        $paciente->contato         = $request->contato;
-        $paciente->documento       = $request->documento;
-        $paciente->data_nascimento = $request->data_nascimento;
-        $paciente->sexo            = $request->sexo;
-        $paciente->endereco        = $request->endereco;
-        $paciente->matricula       = $request->matricula;
-        $paciente->curso           = $request->curso;
-        $paciente->save();
+        // Campos complementares — editáveis por qualquer role autenticada (UX-24)
+        $paciente->contato  = $request->contato;
+        $paciente->endereco = $request->endereco;
 
-        if ($paciente->user) {
-            $paciente->user->name = $request->nome;
-            $paciente->user->save();
+        // Campos sensíveis — somente admin/gerente (nivel <= 2)
+        if ($podeEditarSensivel) {
+            $paciente->nome            = $request->nome;
+            $paciente->documento       = $request->documento;
+            $paciente->data_nascimento = $request->data_nascimento;
+            $paciente->sexo            = $request->sexo;
+            $paciente->matricula       = $request->matricula;
+            $paciente->curso           = $request->curso;
+
+            if ($paciente->user) {
+                $paciente->user->name = $request->nome;
+                $paciente->user->save();
+            }
         }
+
+        $paciente->save();
 
         return redirect('/pacientes')->with('success', 'Paciente atualizado com sucesso!');
     }
