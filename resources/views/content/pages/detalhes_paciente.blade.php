@@ -73,7 +73,7 @@ $idade      = $paciente->data_nascimento
           <a href="/pacientes/{{ $paciente->id }}/historico" class="btn btn-outline-primary btn-sm">
             <i class="mdi mdi-history me-1"></i>Ver Histórico Completo
           </a>
-          @if(Auth::user()->nivelAcesso() <= 2)
+          @if(Auth::user()->nivelAcesso() <= 4)
           <a href="/editar-paciente/{{ $paciente->id }}" class="btn btn-outline-secondary btn-sm">
             <i class="mdi mdi-pencil-outline me-1"></i>Editar Paciente
           </a>

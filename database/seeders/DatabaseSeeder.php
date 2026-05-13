@@ -13,13 +13,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            EspecialidadesSeeder::class, // 6 especialidades canônicas
-            TiposConsultaSeeder::class,  // 7 tipos de consulta canônicos
-            RolesSeeder::class,          // 6 papéis RBAC
-            UsuariosBaseSeeder::class,   // 2 admins + 2 recepcionistas + 8 profissionais
-            PacientesSeeder::class,      // 55 pacientes com grupos curados para testes
-            AtendimentosSeeder::class,   // ~100 atendimentos em cenários específicos
-            ConsultasSeeder::class,      // ~120 consultas + exames + prescrições
+            EspecialidadesSeeder::class,     // 6 especialidades canônicas
+            TiposConsultaSeeder::class,      // 7 tipos de consulta canônicos
+            RolesSeeder::class,              // 6 papéis RBAC
+            UsuariosBaseSeeder::class,       // 2 admins + 2 recepcionistas + 8 profissionais
+            PacientesSeeder::class,          // 55 pacientes com grupos curados para testes
+            AtendimentosSeeder::class,       // ~100 atendimentos em cenários específicos
+            ConsultasSeeder::class,          // ~120 consultas + exames + prescrições
+            DisponibilidadesSeeder::class,   // horários padrão dos 8 profissionais (ST-09)
         ]);
 
         $this->command->info('');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreConsultaRequest;
 use App\Http\Requests\UpdateConsultaRequest;
+use App\Models\Agendamento;
 use App\Models\Atendimento;
 use App\Models\Consulta;
 use App\Models\Exame;
@@ -101,6 +102,13 @@ class ConsultaController extends Controller
         $pacientePreSelecionado = null;
         $profissionalLogado = Auth::user()->profissional;
 
+        // Origem via agendamento realizado (ST-09): pré-preenche paciente, profissional e tipo
+        $agendamentoOrigem = null;
+        if (request('agendamento_id')) {
+            $agendamentoOrigem = Agendamento::with('paciente', 'profissional')
+                ->find(request('agendamento_id'));
+        }
+
         if (request('atendimento_id')) {
             $atendimento = Atendimento::with('paciente', 'profissional')->find(request('atendimento_id'));
         } elseif (request('paciente_id')) {
@@ -109,7 +117,8 @@ class ConsultaController extends Controller
         }
 
         return view('content.pages.cadastro-consulta', compact(
-            'pacientes', 'profissionais', 'tiposConsulta', 'atendimento', 'profissionalLogado', 'pacientePreSelecionado'
+            'pacientes', 'profissionais', 'tiposConsulta', 'atendimento', 'profissionalLogado',
+            'pacientePreSelecionado', 'agendamentoOrigem'
         ));
     }
 
@@ -176,12 +185,20 @@ class ConsultaController extends Controller
             return $consulta;
         });
 
-        // intent=realize → detalhes da consulta
-        // intent=schedule → mesmo destino por enquanto (ST-09 ainda não implementado);
-        //   quando ST-09 existir, substituir pelo redirect para /cadastro-agendamento
+        // ST-09: se a consulta veio de um agendamento, marca-o como realizado
+        if ($request->agendamento_id) {
+            Agendamento::where('id', $request->agendamento_id)->update([
+                'consulta_id' => $consulta->id,
+                'status'      => 'realizado',
+            ]);
+        }
+
+        // UX-07 fix (ST-09): intent=schedule agora redireciona para criar novo agendamento
         if ($request->input('intent') === 'schedule') {
-            return redirect('/consultas/' . $consulta->id)
-                ->with('success', 'Consulta registrada. O módulo de Agendamentos será implementado em breve (ST-09).');
+            return redirect('/cadastro-agendamento?' . http_build_query([
+                'paciente_id' => $consulta->paciente_id,
+                'tipo'        => $consulta->tipo,
+            ]))->with('success', 'Consulta registrada! Agende o retorno abaixo.');
         }
 
         return redirect('/consultas/' . $consulta->id)->with('success', 'Consulta registrada com sucesso!');

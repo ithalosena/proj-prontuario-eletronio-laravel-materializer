@@ -16,7 +16,10 @@ use App\Http\Controllers\RelatorioController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AtendimentoController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\AgendamentoController;
+use App\Http\Controllers\DisponibilidadeController;
 use App\Http\Controllers\EspecialidadeController;
+use App\Http\Controllers\MeuAgendamentoController;
 use App\Http\Controllers\TipoConsultaController;
 
 /*
@@ -90,6 +93,37 @@ Route::middleware('auth')->group(function () {
         Route::get('/pacientes/buscar',    [PacienteController::class,    'buscar']);
         Route::get('/profissionais/buscar',[ProfissionalController::class,'buscar']);
         Route::get('/consultas/buscar',   [ConsultaController::class,    'buscar']);
+    });
+
+    // ------------------------------------------------------------------
+    // AGENDAMENTOS — staff (profissional e acima: nivel <= 3)
+    // IMPORTANTE: rotas estáticas (eventos, slots) ANTES de {id}
+    // ------------------------------------------------------------------
+    Route::middleware('nivel:3')->group(function () {
+        Route::get('/agendamentos',                                          [AgendamentoController::class, 'index']);
+        Route::get('/agendamentos/eventos',                                  [AgendamentoController::class, 'eventos']);
+        Route::get('/agendamentos/slots/{profissional}/{data}',              [AgendamentoController::class, 'slots']);
+        Route::get('/cadastro-agendamento',                                  [AgendamentoController::class, 'create']);
+        Route::post('/cadastrar-agendamento',                                [AgendamentoController::class, 'store']);
+        Route::get('/agendamentos/{id}',                                     [AgendamentoController::class, 'show']);
+        Route::patch('/agendamentos/{id}/confirmar',                         [AgendamentoController::class, 'confirmar']);
+        Route::patch('/agendamentos/{id}/cancelar',                          [AgendamentoController::class, 'cancelar']);
+        Route::patch('/agendamentos/{id}/realizar',                          [AgendamentoController::class, 'realizar']);
+        Route::get('/disponibilidade',                                       [DisponibilidadeController::class, 'index']);
+        Route::post('/disponibilidade',                                      [DisponibilidadeController::class, 'store']);
+        Route::post('/disponibilidade/excecoes',                             [DisponibilidadeController::class, 'storeExcecao']);
+        Route::patch('/disponibilidade/excecoes/{id}',                       [DisponibilidadeController::class, 'updateExcecao']);
+        Route::delete('/disponibilidade/excecoes/{id}',                      [DisponibilidadeController::class, 'destroyExcecao']);
+    });
+
+    // ------------------------------------------------------------------
+    // AGENDAMENTOS — paciente (nivel 5)
+    // ------------------------------------------------------------------
+    Route::middleware('nivel:5')->group(function () {
+        Route::get('/meus-agendamentos',                                     [MeuAgendamentoController::class, 'index']);
+        Route::get('/agendar-consulta',                                      [MeuAgendamentoController::class, 'create']);
+        Route::post('/agendar-consulta',                                     [MeuAgendamentoController::class, 'store']);
+        Route::patch('/meus-agendamentos/{id}/cancelar',                     [MeuAgendamentoController::class, 'cancelar']);
     });
 
     // ------------------------------------------------------------------

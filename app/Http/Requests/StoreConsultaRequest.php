@@ -39,6 +39,7 @@ class StoreConsultaRequest extends FormRequest
         return [
             // Campos principais da consulta
             'atendimento_id'                   => 'nullable|exists:atendimentos,id',
+            'agendamento_id'                   => 'nullable|exists:agendamentos,id',
             'profissional_id'                  => 'required|exists:profissionais,id',
             'paciente_id'                      => 'required|exists:pacientes,id',
             'data_hora'                        => 'required|date',

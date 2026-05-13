@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use App\Models\Agendamento;
 use App\Models\Atendimento;
 use App\Models\Consulta;
 use App\Models\Exame;
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
   {
     Paginator::useBootstrapFive();
 
+    Agendamento::observe(AuditObserver::class);
     Atendimento::observe(AuditObserver::class);
     Consulta::observe(AuditObserver::class);
     Paciente::observe(AuditObserver::class);
