@@ -69,12 +69,39 @@ $navbarDetached = ($navbarDetached ?? '');
 
       <ul class="navbar-nav flex-row align-items-center ms-auto">
 
+        {{-- Sino de notificações (badge funcional em Sprint v0.8.0) --}}
+        <li class="nav-item me-2">
+          <a href="#" class="nav-link btn btn-text-secondary rounded-pill btn-icon">
+            <i class="mdi mdi-bell-outline mdi-24px"></i>
+          </a>
+        </li>
+
         <!-- User -->
         <li class="nav-item navbar-dropdown dropdown-user dropdown">
-          <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
-            <div class="avatar avatar-online">
-              <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle">
+          <a class="nav-link dropdown-toggle hide-arrow d-flex align-items-center" href="javascript:void(0);" data-bs-toggle="dropdown">
+            {{-- Nome e badge de papel (visível só em telas xl+) --}}
+            @if(Auth::check())
+            @php
+              $nivelNav = Auth::user()->nivelAcesso();
+              [$papelLabel, $papelClass] = match($nivelNav) {
+                1 => ['Administrador',         'bg-label-danger'],
+                2 => ['Coordenador',           'bg-label-warning'],
+                3 => ['Profissional de Saúde', 'bg-label-primary'],
+                4 => ['Recepcionista',         'bg-label-info'],
+                default => ['Paciente',        'bg-label-success'],
+              };
+            @endphp
+            <div class="d-none d-xl-flex flex-column align-items-end me-2">
+              <span class="fw-semibold lh-1 small">{{ Auth::user()->name }}</span>
+              <span class="badge {{ $papelClass }} mt-1" style="font-size:0.65rem">{{ $papelLabel }}</span>
             </div>
+            {{-- Avatar com iniciais --}}
+            <div class="avatar avatar-online">
+              <span class="avatar-initial rounded-circle bg-label-primary">
+                {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
+              </span>
+            </div>
+            @endif
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li>
@@ -82,7 +109,11 @@ $navbarDetached = ($navbarDetached ?? '');
                 <div class="d-flex">
                   <div class="flex-shrink-0 me-3">
                     <div class="avatar avatar-online">
-                      <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle">
+                      <span class="avatar-initial rounded-circle bg-label-primary">
+                        @if(Auth::check())
+                          {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
+                        @endif
+                      </span>
                     </div>
                   </div>
                   <div class="flex-grow-1">

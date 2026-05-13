@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAgendamentoRequest;
+use App\Models\AgendaConfig;
 use App\Models\Agendamento;
-use App\Models\Disponibilidade;
+use App\Models\DisponibilidadeBloco;
+use App\Models\DisponibilidadeExcecao;
 use App\Models\Paciente;
 use App\Models\Profissional;
 use App\Models\TipoConsulta;
@@ -51,14 +53,15 @@ class AgendamentoController extends Controller
         $cancelados  = (clone $statsQuery)->where('status', 'cancelado')->count();
         $total       = (clone $statsQuery)->count();
 
-        // Lista de profissionais para o filtro server-side (admin/coordenador apenas)
-        $profissionais = collect();
-        if ($nivel <= 2) {
-            $profissionais = Profissional::orderBy('nome')->get();
-        }
+        // Lista de profissionais para o filtro (admin/coord/recepcionista habilitado; profissional vê só o próprio)
+        $profissionalLogado = ($nivel == 3) ? $user->profissional : null;
+        $profissionais      = ($nivel <= 2 || $nivel == 4)
+            ? Profissional::orderBy('nome')->get()
+            : collect();
 
         return view('content.pages.agendamentos', compact(
-            'pendentes', 'confirmados', 'realizados', 'cancelados', 'total', 'profissionais'
+            'pendentes', 'confirmados', 'realizados', 'cancelados', 'total',
+            'profissionais', 'profissionalLogado'
         ));
     }
 
@@ -77,24 +80,18 @@ class AgendamentoController extends Controller
 
         if ($nivel == 3 && $user->profissional) {
             $query->where('profissional_id', $user->profissional->id);
-        } elseif ($nivel <= 2 && request('profissional_id')) {
+        } elseif ($nivel <= 4 && request('profissional_id')) {
+            // Admin, coordenador e recepcionista podem filtrar por profissional
             $query->where('profissional_id', request('profissional_id'));
         }
 
-        $cores = [
-            'pendente'   => '#fdb528',
-            'confirmado' => '#666cff',
-            'realizado'  => '#72e128',
-            'cancelado'  => '#ff4d49',
-        ];
-
-        $eventos = $query->get()->map(function (Agendamento $ag) use ($cores) {
+        $eventos = $query->get()->map(function (Agendamento $ag) {
             $primeiroNome = explode(' ', $ag->paciente->nome ?? '?')[0];
             return [
                 'id'            => $ag->id,
-                'title'         => $ag->data_hora->format('H:i') . ' ' . $primeiroNome,
+                'title'         => $primeiroNome,
                 'start'         => $ag->data_hora->toIso8601String(),
-                'color'         => $cores[$ag->status] ?? '#aaa',
+                'classNames'    => ['fc-event-' . $ag->status],
                 'url'           => '/agendamentos/' . $ag->id,
                 'extendedProps' => ['status' => $ag->status],
             ];
@@ -105,34 +102,103 @@ class AgendamentoController extends Controller
 
     /*
      * Retorna horários livres para um profissional em uma data (JSON para AJAX).
-     * Slots de 30 em 30 minutos, removendo os já ocupados (pendente/confirmado).
+     * Usa DisponibilidadeBloco (múltiplos por dia), DisponibilidadeExcecao e AgendaConfig.
      */
     public function slots($profissionalId, $data)
     {
         $profissional = Profissional::findOrFail($profissionalId);
         $dataCarbon   = Carbon::parse($data);
-        $diaSemana    = $dataCarbon->dayOfWeek; // 0=Dom...6=Sab
+        $diaSemana    = $dataCarbon->dayOfWeek; // 0=Dom ... 6=Sáb
 
-        $disponibilidade = Disponibilidade::where('profissional_id', $profissional->id)
-            ->where('dia_semana', $diaSemana)
-            ->where('ativo', true)
-            ->first();
+        // Configuração de agenda (duracao, buffer, antecedência)
+        $config = AgendaConfig::firstOrNew(
+            ['profissional_id' => $profissional->id],
+            ['duracao_minutos' => 30, 'buffer_minutos' => 0, 'antecedencia_minima_horas' => 1, 'antecedencia_maxima_dias' => 60]
+        );
 
-        if (!$disponibilidade) {
+        // Rejeita datas passadas
+        if ($dataCarbon->lt(now()->startOfDay())) {
             return response()->json([]);
         }
 
-        // Gera todos os slots de 30 minutos no intervalo configurado
-        $inicio  = Carbon::parse($data . ' ' . $disponibilidade->hora_inicio);
-        $fim     = Carbon::parse($data . ' ' . $disponibilidade->hora_fim);
-        $todos   = [];
-
-        while ($inicio->lt($fim)) {
-            $todos[] = $inicio->copy();
-            $inicio->addMinutes(30);
+        // Rejeita datas além da antecedência máxima
+        if ($dataCarbon->gt(now()->addDays($config->antecedencia_maxima_dias)->endOfDay())) {
+            return response()->json([]);
         }
 
-        // Remove slots já agendados (pendente ou confirmado) nessa data/profissional
+        // Busca todos os blocos do dia da semana
+        $blocos = DisponibilidadeBloco::where('profissional_id', $profissional->id)
+            ->where('dia_semana', $diaSemana)
+            ->get();
+
+        if ($blocos->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Exceções que afetam esta data
+        $excecoes = DisponibilidadeExcecao::where('profissional_id', $profissional->id)
+            ->where('data_inicio', '<=', $data)
+            ->where('data_fim',    '>=', $data)
+            ->get();
+
+        $excBloqueios = $excecoes->where('tipo', 'bloqueio');
+        $excExtras    = $excecoes->where('tipo', 'disponivel_extra');
+
+        $duracao   = $config->duracao_minutos;
+        $intervalo = $duracao + $config->buffer_minutos;
+
+        $todos = collect();
+
+        // Gera slots a partir dos blocos recorrentes
+        foreach ($blocos as $bloco) {
+            // Bloqueio de dia inteiro cancela o bloco por completo
+            if ($excBloqueios->first(fn ($e) => $e->hora_inicio === null)) {
+                continue;
+            }
+
+            $cursor = Carbon::parse($data . ' ' . $bloco->hora_inicio);
+            $fim    = Carbon::parse($data . ' ' . $bloco->hora_fim);
+
+            while ($cursor->copy()->addMinutes($duracao)->lte($fim)) {
+                // Verifica se o slot cai dentro de algum bloqueio parcial
+                $bloqueado = $excBloqueios->contains(function ($exc) use ($cursor, $duracao, $data) {
+                    if ($exc->hora_inicio === null) {
+                        return false; // dia inteiro já tratado antes
+                    }
+                    $excInicio = Carbon::parse($data . ' ' . $exc->hora_inicio);
+                    $excFim    = Carbon::parse($data . ' ' . $exc->hora_fim);
+                    return $cursor->lt($excFim) && $cursor->copy()->addMinutes($duracao)->gt($excInicio);
+                });
+
+                if (!$bloqueado) {
+                    $todos->push($cursor->copy());
+                }
+                $cursor->addMinutes($intervalo);
+            }
+        }
+
+        // Adiciona slots extras (disponivel_extra com hora definida)
+        foreach ($excExtras as $exc) {
+            if ($exc->hora_inicio === null) {
+                continue; // extra de dia inteiro não gera slots individuais
+            }
+            $cursor = Carbon::parse($data . ' ' . $exc->hora_inicio);
+            $fim    = Carbon::parse($data . ' ' . $exc->hora_fim);
+
+            while ($cursor->copy()->addMinutes($duracao)->lte($fim)) {
+                $horaCursor = $cursor->format('H:i');
+                if (!$todos->contains(fn ($t) => $t->format('H:i') === $horaCursor)) {
+                    $todos->push($cursor->copy());
+                }
+                $cursor->addMinutes($intervalo);
+            }
+        }
+
+        // Rejeita slots antes da antecedência mínima
+        $minimo = now()->addHours($config->antecedencia_minima_horas);
+        $todos  = $todos->filter(fn ($s) => $s->gt($minimo))->sortBy(fn ($s) => $s->timestamp);
+
+        // Remove slots já ocupados (pendente ou confirmado)
         $ocupados = Agendamento::where('profissional_id', $profissional->id)
             ->whereDate('data_hora', $data)
             ->whereIn('status', ['pendente', 'confirmado'])
@@ -140,7 +206,7 @@ class AgendamentoController extends Controller
             ->map(fn ($dt) => Carbon::parse($dt)->format('H:i'))
             ->toArray();
 
-        $livres = collect($todos)
+        $livres = $todos
             ->filter(fn ($slot) => !in_array($slot->format('H:i'), $ocupados))
             ->map(fn ($slot) => [
                 'value' => $slot->format('Y-m-d H:i:s'),

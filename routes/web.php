@@ -109,8 +109,11 @@ Route::middleware('auth')->group(function () {
         Route::patch('/agendamentos/{id}/confirmar',                         [AgendamentoController::class, 'confirmar']);
         Route::patch('/agendamentos/{id}/cancelar',                          [AgendamentoController::class, 'cancelar']);
         Route::patch('/agendamentos/{id}/realizar',                          [AgendamentoController::class, 'realizar']);
-        Route::get('/disponibilidade',                                       [DisponibilidadeController::class, 'edit']);
-        Route::put('/disponibilidade/{profissional}',                        [DisponibilidadeController::class, 'update']);
+        Route::get('/disponibilidade',                                       [DisponibilidadeController::class, 'index']);
+        Route::post('/disponibilidade',                                      [DisponibilidadeController::class, 'store']);
+        Route::post('/disponibilidade/excecoes',                             [DisponibilidadeController::class, 'storeExcecao']);
+        Route::patch('/disponibilidade/excecoes/{id}',                       [DisponibilidadeController::class, 'updateExcecao']);
+        Route::delete('/disponibilidade/excecoes/{id}',                      [DisponibilidadeController::class, 'destroyExcecao']);
     });
 
     // ------------------------------------------------------------------
