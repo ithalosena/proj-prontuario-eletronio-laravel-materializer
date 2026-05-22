@@ -38,7 +38,7 @@ $configData = Helper::appClasses();
   transition: background 0.3s;
 }
 .wizard-step-dot.active {
-  background: #666cff;
+  background: var(--bs-primary);
 }
 .wizard-step-dot.done {
   background: #72e128;
@@ -54,8 +54,8 @@ $configData = Helper::appClasses();
 }
 .card-opcao:hover,
 .card-opcao.selecionado {
-  border-color: #666cff;
-  background: rgba(102,108,255,.06);
+  border-color: var(--bs-primary);
+  background: rgba(61, 170, 74, .06);
 }
 .card-opcao.selecionado .check-icon {
   display: inline-block !important;

@@ -125,10 +125,14 @@ $navbarDetached = ($navbarDetached ?? '');
             </li>
             <li><div class="dropdown-divider"></div></li>
             <li>
-              <a class="dropdown-item" href="/logout">
-                <i class='mdi mdi-logout me-2'></i>
-                <span class="align-middle">Sair</span>
-              </a>
+              {{-- S-04: logout via POST com CSRF para evitar CSRF logout attack --}}
+              <form method="POST" action="/logout" class="d-inline">
+                @csrf
+                <button type="submit" class="dropdown-item">
+                  <i class='mdi mdi-logout me-2'></i>
+                  <span class="align-middle">Sair</span>
+                </button>
+              </form>
             </li>
           </ul>
         </li>

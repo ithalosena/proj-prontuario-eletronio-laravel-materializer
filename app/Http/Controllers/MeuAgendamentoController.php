@@ -85,8 +85,15 @@ class MeuAgendamentoController extends Controller
      */
     public function cancelar(Request $request, $id)
     {
-        $paciente    = Auth::user()->paciente;
-        $agendamento = Agendamento::where('paciente_id', $paciente?->id)->findOrFail($id);
+        $paciente = Auth::user()->paciente;
+
+        // S-08: guard explícito — se o usuário não tiver perfil de paciente, a query retornaria
+        // WHERE paciente_id = NULL, que pode não lançar 404 corretamente dependendo do driver
+        if (!$paciente) {
+            return redirect('/')->with('error', 'Perfil de paciente não encontrado.');
+        }
+
+        $agendamento = Agendamento::where('paciente_id', $paciente->id)->findOrFail($id);
 
         if ($agendamento->isRealizado() || $agendamento->isCancelado()) {
             return back()->with('error', 'Este agendamento não pode ser cancelado.');

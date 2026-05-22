@@ -23,3 +23,6 @@
 
 <!-- Page Styles -->
 @yield('page-style')
+
+<!-- Paleta de cores Prontu IF (carregada por último para sobrescrever o tema base) -->
+<link rel="stylesheet" href="{{ asset('assets/css/prontuif-theme.css') }}" />

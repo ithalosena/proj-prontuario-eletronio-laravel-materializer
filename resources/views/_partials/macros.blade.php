@@ -1,6 +1,6 @@
 @php
 $width = $width ?? '25';
-$withbg = $withbg ?? '#666cff';
+$withbg = $withbg ?? '#3DAA4A';
 @endphp
 <span>
   <svg width="{{ $width }}" viewBox="0 0 38 20" fill="none" xmlns="http://www.w3.org/2000/svg">

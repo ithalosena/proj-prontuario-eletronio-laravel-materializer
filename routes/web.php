@@ -37,7 +37,6 @@ Route::get('lang/{locale}', [LanguageController::class, 'swap']);
 
 Route::get('/login',      [LoginController::class, 'showLogin'])->name('login');
 Route::post('/fazer-login', [LoginController::class, 'login'])->middleware('throttle:5,1');
-Route::get('/logout',     [LoginController::class, 'logout']);
 
 // authentication views (template Materialize)
 Route::get('/auth/login-basic',    [LoginBasic::class, 'index'])->name('auth-login-basic');
@@ -48,6 +47,9 @@ Route::get('/auth/register-basic', [RegisterBasic::class, 'index'])->name('auth-
 // ==========================================================================
 
 Route::middleware('auth')->group(function () {
+
+    // S-04: logout via POST com CSRF — impede logout forçado por link externo (CSRF logout attack)
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     // Dashboard e paginas internas (qualquer usuario autenticado)
     Route::get('/',                [HomePage::class, 'index'])->name('pages-home');

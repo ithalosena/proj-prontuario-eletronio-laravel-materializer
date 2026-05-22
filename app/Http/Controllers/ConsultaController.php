@@ -223,6 +223,9 @@ class ConsultaController extends Controller
             'prescricoes'
         )->findOrFail($id);
 
+        // S-01: bloqueia IDOR — profissional só vê consultas onde é o responsável (ConsultaPolicy::view)
+        $this->authorize('view', $consulta);
+
         $autorizado = Auth::user()->can('update', $consulta);
 
         // ST-12: seleciona view especializada pelo slug da especialidade do profissional.

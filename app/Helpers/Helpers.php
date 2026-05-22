@@ -96,7 +96,8 @@ class Helpers
       }
     }
     $styleVal = $data['myStyle'] == "dark" ? "dark" : "light";
-    if (isset($_COOKIE['style'])) {
+    // S-07: validar cookie contra whitelist — valor arbitrário seria refletido na classe HTML (XSS)
+    if (isset($_COOKIE['style']) && in_array($_COOKIE['style'], ['light', 'dark', 'system'], true)) {
       $styleVal = $_COOKIE['style'];
     }
     //layout classes
