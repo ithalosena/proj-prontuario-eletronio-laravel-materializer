@@ -29,6 +29,14 @@ $configData = Helper::appClasses();
             <h3 class="align-text-bottom-2 mb-0">Meu Prontuário</h3>
             <small class="text-muted">{{ $paciente->matricula ?? 'Sem matrícula' }} | {{ $paciente->curso ?? '-' }}</small>
           </div>
+          {{-- L-06: Exportar dados — LGPD Art. 18, V (portabilidade) --}}
+          <div class="header-elements-inline">
+            <a href="{{ url('/meu-prontuario/exportar') }}"
+               class="btn btn-sm btn-outline-secondary"
+               title="Exportar meus dados (LGPD Art. 18, V)">
+              <i class="mdi mdi-download-outline me-1"></i>Exportar meus dados
+            </a>
+          </div>
         </div>
       </div>
     </div>

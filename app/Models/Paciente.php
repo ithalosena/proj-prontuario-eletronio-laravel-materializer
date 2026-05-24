@@ -61,4 +61,15 @@ class Paciente extends Model
     {
         return $this->hasManyThrough(Prescricao::class, Consulta::class);
     }
+
+    public function agendamentos()
+    {
+        return $this->hasMany(\App\Models\Agendamento::class);
+    }
+
+    // Consentimentos LGPD do paciente (via user_id do usuário vinculado)
+    public function consentimentos()
+    {
+        return $this->hasMany(Consentimento::class, 'user_id', 'user_id');
+    }
 }

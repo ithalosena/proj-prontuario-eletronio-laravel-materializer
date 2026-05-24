@@ -160,6 +160,99 @@ class PacienteController extends Controller
         return view('content.pages.meu_prontuario', compact('paciente', 'consultas'));
     }
 
+    /*
+     * L-06 (LGPD Art. 18, V): exporta todos os dados do paciente autenticado em JSON.
+     * Retorna download direto — sem view, sem banco adicional.
+     */
+    public function exportarDados()
+    {
+        $paciente = Auth::user()->paciente;
+
+        if (!$paciente) {
+            return redirect('/')->with('error', 'Seu usuário não possui um perfil de paciente vinculado.');
+        }
+
+        $paciente->load([
+            'user',
+            'atendimentos.profissional',
+            'atendimentos.consultas.exames',
+            'atendimentos.consultas.prescricoes',
+            'agendamentos.profissional',
+            'consentimentos',
+        ]);
+
+        // Monta estrutura de exportação por seção (Art. 18, V exige formato interoperável)
+        $payload = [
+            'exportado_em'  => now()->toIso8601String(),
+            'sistema'       => 'Prontu IF — IFNMG',
+            'versao_lgpd'   => 'Lei nº 13.709/2018, Art. 18, V',
+            'titular'       => [
+                'nome'            => $paciente->nome,
+                'email'           => $paciente->user->email,
+                'documento'       => $paciente->documento,
+                'data_nascimento' => $paciente->data_nascimento,
+                'sexo'            => $paciente->sexo,
+                'matricula'       => $paciente->matricula,
+                'curso'           => $paciente->curso,
+                'contato'         => $paciente->contato,
+                'endereco'        => $paciente->endereco,
+                'cadastrado_em'   => $paciente->created_at,
+            ],
+            'consentimentos' => $paciente->consentimentos->map(fn($c) => [
+                'versao_termo' => $c->versao_termo,
+                'aceito_em'    => $c->aceito_em,
+                'ip_address'   => $c->ip_address,
+            ])->toArray(),
+            'atendimentos' => $paciente->atendimentos->map(fn($a) => [
+                'id'             => $a->id,
+                'status'         => $a->status,
+                'profissional'   => $a->profissional->nome ?? null,
+                'especialidade'  => $a->profissional->especialidade ?? null,
+                'created_at'     => $a->created_at,
+                'fechado_em'     => $a->fechado_em,
+                'consultas'      => $a->consultas->map(fn($c) => [
+                    'id'          => $c->id,
+                    'data_hora'   => $c->data_hora,
+                    'tipo'        => $c->tipo,
+                    'queixa'      => $c->queixa,
+                    'anamnese'    => $c->anamnese,
+                    'diagnostico' => $c->diagnostico,
+                    'conduta'     => $c->conduta,
+                    'exames'      => $c->exames->map(fn($e) => [
+                        'tipo'              => $e->tipo,
+                        'data_solicitacao'  => $e->data_solicitacao,
+                        'data_resultado'    => $e->data_resultado,
+                        'resultado'         => $e->resultado,
+                        'observacao'        => $e->observacao,
+                    ])->toArray(),
+                    'prescricoes' => $c->prescricoes->map(fn($p) => [
+                        'nome_medicamento' => $p->nome_medicamento,
+                        'dosagem'          => $p->dosagem,
+                        'frequencia'       => $p->frequencia,
+                        'duracao'          => $p->duracao,
+                        'observacao'       => $p->observacao,
+                    ])->toArray(),
+                ])->toArray(),
+            ])->toArray(),
+            'agendamentos' => $paciente->agendamentos->map(fn($ag) => [
+                'id'                  => $ag->id,
+                'data_hora'           => $ag->data_hora,
+                'tipo'                => $ag->tipo,
+                'status'              => $ag->status,
+                'profissional'        => $ag->profissional->nome ?? null,
+                'observacao'          => $ag->observacao,
+                'motivo_cancelamento' => $ag->motivo_cancelamento,
+            ])->toArray(),
+        ];
+
+        $nomeArquivo = 'prontuif_meus_dados_' . now()->format('Ymd_His') . '.json';
+
+        return response()->json($payload, 200, [
+            'Content-Disposition' => "attachment; filename=\"{$nomeArquivo}\"",
+            'Content-Type'        => 'application/json; charset=utf-8',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+
     public function destroy($id)
     {
         $paciente = Paciente::findOrFail($id);

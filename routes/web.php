@@ -21,6 +21,8 @@ use App\Http\Controllers\DisponibilidadeController;
 use App\Http\Controllers\EspecialidadeController;
 use App\Http\Controllers\MeuAgendamentoController;
 use App\Http\Controllers\TipoConsultaController;
+use App\Http\Controllers\PrivacidadeController;
+use App\Http\Controllers\ConsentimentoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +32,12 @@ use App\Http\Controllers\TipoConsultaController;
 
 // locale
 Route::get('lang/{locale}', [LanguageController::class, 'swap']);
+
+// ==========================================================================
+// ROTA PÚBLICA — Política de Privacidade (LGPD Art. 9º)
+// Acessível sem autenticação para que qualquer titular possa consultar
+// ==========================================================================
+Route::get('/privacidade', [PrivacidadeController::class, 'index']);
 
 // ==========================================================================
 // ROTAS PUBLICAS (sem autenticacao)
@@ -57,9 +65,22 @@ Route::middleware('auth')->group(function () {
     Route::get('/pages/misc-error',[MiscError::class, 'index'])->name('pages-misc-error');
 
     // ------------------------------------------------------------------
-    // MEU PRONTUARIO (qualquer usuario autenticado com perfil de paciente)
+    // CONSENTIMENTO LGPD (paciente — antes do primeiro acesso ao prontuário)
+    // Rotas isentas do middleware CheckConsentimento por definição no próprio middleware
     // ------------------------------------------------------------------
-    Route::get('/meu-prontuario', [PacienteController::class, 'meuProntuario']);
+    Route::get('/consentimento',         [ConsentimentoController::class, 'show']);
+    Route::post('/consentimento/aceitar', [ConsentimentoController::class, 'aceitar']);
+
+    // ------------------------------------------------------------------
+    // MEU PRONTUARIO (qualquer usuario autenticado com perfil de paciente)
+    // Middleware consentimento: redireciona pacientes sem aceite para /consentimento
+    // L-06: /exportar implementa Art. 18, V — portabilidade dos dados
+    // IMPORTANTE: rota /exportar deve vir ANTES de possíveis rotas com {id}
+    // ------------------------------------------------------------------
+    Route::middleware('consentimento')->group(function () {
+        Route::get('/meu-prontuario',          [PacienteController::class, 'meuProntuario']);
+        Route::get('/meu-prontuario/exportar', [PacienteController::class, 'exportarDados']);
+    });
 
     // ------------------------------------------------------------------
     // RELATORIOS (coordenador e acima: nivel <= 2)
@@ -120,8 +141,9 @@ Route::middleware('auth')->group(function () {
 
     // ------------------------------------------------------------------
     // AGENDAMENTOS — paciente (nivel 5)
+    // Middleware consentimento: garante que o paciente consentiu antes de agendar
     // ------------------------------------------------------------------
-    Route::middleware('nivel:5')->group(function () {
+    Route::middleware(['nivel:5', 'consentimento'])->group(function () {
         Route::get('/meus-agendamentos',                                     [MeuAgendamentoController::class, 'index']);
         Route::get('/agendar-consulta',                                      [MeuAgendamentoController::class, 'create']);
         Route::post('/agendar-consulta',                                     [MeuAgendamentoController::class, 'store']);
