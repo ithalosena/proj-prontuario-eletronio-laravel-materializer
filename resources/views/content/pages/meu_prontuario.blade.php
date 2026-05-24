@@ -30,12 +30,21 @@ $configData = Helper::appClasses();
             <small class="text-muted">{{ $paciente->matricula ?? 'Sem matrícula' }} | {{ $paciente->curso ?? '-' }}</small>
           </div>
           {{-- L-06: Exportar dados — LGPD Art. 18, V (portabilidade) --}}
-          <div class="header-elements-inline">
+          {{-- Art. 8º §5º: revogação a qualquer momento via POST com CSRF --}}
+          <div class="header-elements-inline d-flex gap-2">
             <a href="{{ url('/meu-prontuario/exportar') }}"
                class="btn btn-sm btn-outline-secondary"
                title="Exportar meus dados (LGPD Art. 18, V)">
               <i class="mdi mdi-download-outline me-1"></i>Exportar meus dados
             </a>
+            <form method="POST" action="{{ url('/meu-prontuario/revogar-consentimento') }}" class="d-inline">
+              @csrf
+              <button type="submit" class="btn btn-sm btn-outline-danger"
+                onclick="return confirm('Ao revogar, você será desconectado e perderá o acesso ao prontuário até novo aceite. Confirma?')"
+                title="Revogar consentimento (LGPD Art. 8º §5º)">
+                <i class="mdi mdi-shield-off-outline me-1"></i>Revogar consentimento
+              </button>
+            </form>
           </div>
         </div>
       </div>

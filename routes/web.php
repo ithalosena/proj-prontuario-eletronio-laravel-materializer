@@ -43,7 +43,7 @@ Route::get('/privacidade', [PrivacidadeController::class, 'index']);
 // ROTAS PUBLICAS (sem autenticacao)
 // ==========================================================================
 
-Route::get('/login',      [LoginController::class, 'showLogin'])->name('login');
+Route::get('/login',       [LoginController::class, 'showLogin'])->name('login');
 Route::post('/fazer-login', [LoginController::class, 'login'])->middleware('throttle:5,1');
 
 // authentication views (template Materialize)
@@ -51,36 +51,42 @@ Route::get('/auth/login-basic',    [LoginBasic::class, 'index'])->name('auth-log
 Route::get('/auth/register-basic', [RegisterBasic::class, 'index'])->name('auth-register-basic');
 
 // ==========================================================================
-// ROTAS PROTEGIDAS (exigem sessao ativa)
+// ROTAS PROTEGIDAS (exigem sessão ativa + consentimento LGPD)
+// v0.8.2: middleware 'consentimento' adicionado ao grupo externo — cobre todos os perfis (1–5)
+// O próprio middleware gerencia as rotas isentas (ROTAS_ISENTAS) — /consentimento, /logout etc.
 // ==========================================================================
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'consentimento'])->group(function () {
 
-    // S-04: logout via POST com CSRF — impede logout forçado por link externo (CSRF logout attack)
+    // S-04: logout via POST com CSRF — impede logout forçado por link externo
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-    // Dashboard e paginas internas (qualquer usuario autenticado)
-    Route::get('/',                [HomePage::class, 'index'])->name('pages-home');
-    Route::get('/page-2',          [Page2::class, 'index'])->name('pages-page-2');
-    Route::get('/pages/misc-error',[MiscError::class, 'index'])->name('pages-misc-error');
+    // Dashboard e páginas internas (qualquer usuário autenticado com consentimento válido)
+    Route::get('/',         [HomePage::class,  'index'])->name('pages-home');
+    Route::get('/page-2',   [Page2::class,     'index'])->name('pages-page-2');
+    Route::get('/pages/misc-error', [MiscError::class, 'index'])->name('pages-misc-error');
 
     // ------------------------------------------------------------------
-    // CONSENTIMENTO LGPD (paciente — antes do primeiro acesso ao prontuário)
-    // Rotas isentas do middleware CheckConsentimento por definição no próprio middleware
+    // CONSENTIMENTO LGPD
+    // Rotas isentas do CheckConsentimento (declaradas no próprio middleware)
     // ------------------------------------------------------------------
-    Route::get('/consentimento',         [ConsentimentoController::class, 'show']);
+    Route::get('/consentimento',          [ConsentimentoController::class, 'show']);
     Route::post('/consentimento/aceitar', [ConsentimentoController::class, 'aceitar']);
+    Route::post('/consentimento/recusar', [ConsentimentoController::class, 'recusar']);
 
     // ------------------------------------------------------------------
-    // MEU PRONTUARIO (qualquer usuario autenticado com perfil de paciente)
-    // Middleware consentimento: redireciona pacientes sem aceite para /consentimento
+    // MEU PRONTUARIO (paciente com perfil vinculado)
+    // Cache-Control: private, no-store — dados clínicos não devem ser cacheados (Art. 46 LGPD)
     // L-06: /exportar implementa Art. 18, V — portabilidade dos dados
-    // IMPORTANTE: rota /exportar deve vir ANTES de possíveis rotas com {id}
+    // IMPORTANTE: /exportar antes de possíveis rotas com {id}
     // ------------------------------------------------------------------
-    Route::middleware('consentimento')->group(function () {
+    Route::middleware('cache.headers:private;no_store')->group(function () {
         Route::get('/meu-prontuario',          [PacienteController::class, 'meuProntuario']);
         Route::get('/meu-prontuario/exportar', [PacienteController::class, 'exportarDados']);
     });
+
+    // Revogação do consentimento do titular (Art. 8º §5º — "a qualquer momento")
+    Route::post('/meu-prontuario/revogar-consentimento', [ConsentimentoController::class, 'revogar']);
 
     // ------------------------------------------------------------------
     // RELATORIOS (coordenador e acima: nivel <= 2)
@@ -88,85 +94,95 @@ Route::middleware('auth')->group(function () {
     Route::get('/relatorios', [RelatorioController::class, 'index'])->middleware('nivel:2');
 
     // ------------------------------------------------------------------
-    // AUDIT LOGS (admin e acima: nivel <= 1)
+    // AUDIT LOGS (admin: nivel <= 1) — Cache-Control: private para dados de auditoria
     // ------------------------------------------------------------------
-    Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('nivel:1');
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])
+        ->middleware(['nivel:1', 'cache.headers:private;no_store']);
 
     // ------------------------------------------------------------------
     // CONFIGURAÇÕES — Especialidades e Tipos de Consulta (coordenador e acima: nivel <= 2)
     // ------------------------------------------------------------------
     Route::middleware('nivel:2')->group(function () {
-        Route::get('/configuracoes/especialidades',                           [EspecialidadeController::class, 'index']);
-        Route::post('/configuracoes/especialidades',                          [EspecialidadeController::class, 'store']);
-        Route::put('/configuracoes/especialidades/{especialidade}',           [EspecialidadeController::class, 'update']);
-        Route::patch('/configuracoes/especialidades/{especialidade}/toggle',  [EspecialidadeController::class, 'toggleAtivo']);
+        Route::get('/configuracoes/especialidades',                          [EspecialidadeController::class, 'index']);
+        Route::post('/configuracoes/especialidades',                         [EspecialidadeController::class, 'store']);
+        Route::put('/configuracoes/especialidades/{especialidade}',          [EspecialidadeController::class, 'update']);
+        Route::patch('/configuracoes/especialidades/{especialidade}/toggle', [EspecialidadeController::class, 'toggleAtivo']);
 
-        Route::get('/configuracoes/tipos-consulta',                          [TipoConsultaController::class, 'index']);
-        Route::post('/configuracoes/tipos-consulta',                         [TipoConsultaController::class, 'store']);
-        Route::put('/configuracoes/tipos-consulta/{tipoConsulta}',           [TipoConsultaController::class, 'update']);
-        Route::patch('/configuracoes/tipos-consulta/{tipoConsulta}/toggle',  [TipoConsultaController::class, 'toggleAtivo']);
+        Route::get('/configuracoes/tipos-consulta',                         [TipoConsultaController::class, 'index']);
+        Route::post('/configuracoes/tipos-consulta',                        [TipoConsultaController::class, 'store']);
+        Route::put('/configuracoes/tipos-consulta/{tipoConsulta}',          [TipoConsultaController::class, 'update']);
+        Route::patch('/configuracoes/tipos-consulta/{tipoConsulta}/toggle', [TipoConsultaController::class, 'toggleAtivo']);
     });
 
     // ------------------------------------------------------------------
     // AUTOCOMPLETE AJAX (profissional e acima: nivel <= 3)
-    // Endpoints consumidos pelos componentes de busca nas telas de cadastro.
-    // IMPORTANTE: devem vir ANTES das rotas com {id} para evitar conflito de parâmetro.
+    // IMPORTANTE: antes das rotas com {id} para evitar conflito de parâmetro
     // ------------------------------------------------------------------
     Route::middleware('nivel:3')->group(function () {
         Route::get('/pacientes/buscar',    [PacienteController::class,    'buscar']);
         Route::get('/profissionais/buscar',[ProfissionalController::class,'buscar']);
-        Route::get('/consultas/buscar',   [ConsultaController::class,    'buscar']);
+        Route::get('/consultas/buscar',    [ConsultaController::class,    'buscar']);
     });
 
     // ------------------------------------------------------------------
-    // AGENDAMENTOS — staff (profissional e acima: nivel <= 3)
+    // AGENDAMENTOS — recepcionista e acima (nivel <= 4): visualização, criação e cancelamento
     // IMPORTANTE: rotas estáticas (eventos, slots) ANTES de {id}
     // ------------------------------------------------------------------
+    Route::middleware('nivel:4')->group(function () {
+        Route::get('/agendamentos',                             [AgendamentoController::class, 'index']);
+        Route::get('/agendamentos/eventos',                     [AgendamentoController::class, 'eventos'])
+            ->middleware('cache.headers:private;no_store');
+        Route::get('/agendamentos/slots/{profissional}/{data}', [AgendamentoController::class, 'slots']);
+        Route::get('/cadastro-agendamento',                     [AgendamentoController::class, 'create']);
+        Route::post('/cadastrar-agendamento',                   [AgendamentoController::class, 'store']);
+        Route::get('/agendamentos/{id}',                        [AgendamentoController::class, 'show']);
+        Route::patch('/agendamentos/{id}/cancelar',             [AgendamentoController::class, 'cancelar']);
+    });
+
+    // Confirmar e realizar — profissional e acima (nivel <= 3): ações clínicas exclusivas
     Route::middleware('nivel:3')->group(function () {
-        Route::get('/agendamentos',                                          [AgendamentoController::class, 'index']);
-        Route::get('/agendamentos/eventos',                                  [AgendamentoController::class, 'eventos']);
-        Route::get('/agendamentos/slots/{profissional}/{data}',              [AgendamentoController::class, 'slots']);
-        Route::get('/cadastro-agendamento',                                  [AgendamentoController::class, 'create']);
-        Route::post('/cadastrar-agendamento',                                [AgendamentoController::class, 'store']);
-        Route::get('/agendamentos/{id}',                                     [AgendamentoController::class, 'show']);
-        Route::patch('/agendamentos/{id}/confirmar',                         [AgendamentoController::class, 'confirmar']);
-        Route::patch('/agendamentos/{id}/cancelar',                          [AgendamentoController::class, 'cancelar']);
-        Route::patch('/agendamentos/{id}/realizar',                          [AgendamentoController::class, 'realizar']);
-        Route::get('/disponibilidade',                                       [DisponibilidadeController::class, 'index']);
-        Route::post('/disponibilidade',                                      [DisponibilidadeController::class, 'store']);
-        Route::post('/disponibilidade/excecoes',                             [DisponibilidadeController::class, 'storeExcecao']);
-        Route::patch('/disponibilidade/excecoes/{id}',                       [DisponibilidadeController::class, 'updateExcecao']);
-        Route::delete('/disponibilidade/excecoes/{id}',                      [DisponibilidadeController::class, 'destroyExcecao']);
+        Route::patch('/agendamentos/{id}/confirmar',            [AgendamentoController::class, 'confirmar']);
+        Route::patch('/agendamentos/{id}/realizar',             [AgendamentoController::class, 'realizar']);
+    });
+
+    // Disponibilidade — profissional e acima (nivel <= 3)
+    Route::middleware('nivel:3')->group(function () {
+        Route::get('/disponibilidade',                          [DisponibilidadeController::class, 'index']);
+        Route::post('/disponibilidade',                         [DisponibilidadeController::class, 'store']);
+        Route::post('/disponibilidade/excecoes',                [DisponibilidadeController::class, 'storeExcecao']);
+        Route::patch('/disponibilidade/excecoes/{id}',          [DisponibilidadeController::class, 'updateExcecao']);
+        Route::delete('/disponibilidade/excecoes/{id}',         [DisponibilidadeController::class, 'destroyExcecao']);
     });
 
     // ------------------------------------------------------------------
     // AGENDAMENTOS — paciente (nivel 5)
-    // Middleware consentimento: garante que o paciente consentiu antes de agendar
     // ------------------------------------------------------------------
-    Route::middleware(['nivel:5', 'consentimento'])->group(function () {
-        Route::get('/meus-agendamentos',                                     [MeuAgendamentoController::class, 'index']);
-        Route::get('/agendar-consulta',                                      [MeuAgendamentoController::class, 'create']);
-        Route::post('/agendar-consulta',                                     [MeuAgendamentoController::class, 'store']);
-        Route::patch('/meus-agendamentos/{id}/cancelar',                     [MeuAgendamentoController::class, 'cancelar']);
+    Route::middleware('nivel:5')->group(function () {
+        Route::get('/meus-agendamentos',               [MeuAgendamentoController::class, 'index']);
+        Route::get('/agendar-consulta',                [MeuAgendamentoController::class, 'create']);
+        Route::post('/agendar-consulta',               [MeuAgendamentoController::class, 'store']);
+        Route::patch('/meus-agendamentos/{id}/cancelar',[MeuAgendamentoController::class, 'cancelar']);
     });
 
     // ------------------------------------------------------------------
     // ATENDIMENTOS (profissional e acima: nivel <= 3)
     // ------------------------------------------------------------------
     Route::middleware('nivel:3')->group(function () {
-        Route::get('/atendimentos',                       [AtendimentoController::class, 'index']);
-        Route::get('/cadastro-atendimento',               [AtendimentoController::class, 'create']);
-        Route::post('/cadastrar-atendimento',             [AtendimentoController::class, 'store']);
-        Route::get('/atendimentos/{id}',                  [AtendimentoController::class, 'show']);
-        Route::patch('/atendimentos/{id}/fechar',         [AtendimentoController::class, 'fechar']);
+        Route::get('/atendimentos',               [AtendimentoController::class, 'index']);
+        Route::get('/cadastro-atendimento',       [AtendimentoController::class, 'create']);
+        Route::post('/cadastrar-atendimento',     [AtendimentoController::class, 'store']);
+        Route::get('/atendimentos/{id}',          [AtendimentoController::class, 'show']);
+        Route::patch('/atendimentos/{id}/fechar', [AtendimentoController::class, 'fechar']);
     });
 
     // ------------------------------------------------------------------
     // CRUD CONSULTA (profissional e acima: nivel <= 3)
+    // Cache-Control: private em /consultas/{id} — dado clínico sensível
     // ------------------------------------------------------------------
     Route::middleware('nivel:3')->group(function () {
         Route::get('/consultas',               [ConsultaController::class, 'index']);
-        Route::get('/consultas/{id}',          [ConsultaController::class, 'show']);
+        Route::get('/consultas/{id}',          [ConsultaController::class, 'show'])
+            ->middleware('cache.headers:private;no_store');
         Route::get('/cadastro-consulta',       [ConsultaController::class, 'create']);
         Route::post('/cadastrar-consulta',     [ConsultaController::class, 'store']);
         Route::get('/editar-consulta/{id}',    [ConsultaController::class, 'edit']);
@@ -188,17 +204,19 @@ Route::middleware('auth')->group(function () {
 
     // ------------------------------------------------------------------
     // CRUD PACIENTE (recepcionista e acima: nivel <= 4)
+    // Cache-Control: private em /pacientes/{id} — perfil com dados pessoais
     // ------------------------------------------------------------------
     Route::middleware('nivel:4')->group(function () {
-        Route::get('/pacientes',                    [PacienteController::class, 'index']);
+        Route::get('/pacientes',                [PacienteController::class, 'index']);
         // UX-14: rota de perfil DEVE vir antes de /historico para evitar conflito de pattern
-        Route::get('/pacientes/{id}',               [PacienteController::class, 'show']);
-        Route::get('/pacientes/{id}/historico',     [PacienteController::class, 'historico']);
-        Route::get('/cadastro-paciente',            [PacienteController::class, 'create']);
-        Route::post('/cadastrar-paciente',          [PacienteController::class, 'store']);
-        Route::get('/editar-paciente/{id}',         [PacienteController::class, 'edit']);
-        Route::put('/atualizar-paciente/{id}',      [PacienteController::class, 'update']);
-        Route::delete('/deletar-paciente/{id}',     [PacienteController::class, 'destroy']);
+        Route::get('/pacientes/{id}',           [PacienteController::class, 'show'])
+            ->middleware('cache.headers:private;no_store');
+        Route::get('/pacientes/{id}/historico', [PacienteController::class, 'historico']);
+        Route::get('/cadastro-paciente',        [PacienteController::class, 'create']);
+        Route::post('/cadastrar-paciente',      [PacienteController::class, 'store']);
+        Route::get('/editar-paciente/{id}',     [PacienteController::class, 'edit']);
+        Route::put('/atualizar-paciente/{id}',  [PacienteController::class, 'update']);
+        Route::delete('/deletar-paciente/{id}', [PacienteController::class, 'destroy']);
     });
 
     // ------------------------------------------------------------------

@@ -149,6 +149,7 @@ class AcessoConsultaTest extends TestCase
         ]);
 
         $this->actingAs($recep)
+            ->from('/agendamentos')
             ->patch("/agendamentos/{$agendamento->id}/cancelar", [
                 'motivo_cancelamento' => 'Cancelado pela recepção',
             ])

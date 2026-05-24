@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\Consentimento;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Profissional;
@@ -27,6 +28,7 @@ class UsuariosBaseSeeder extends Seeder
             ['name' => 'Administrador', 'password' => 'senha123']
         );
         $admin1->roles()->syncWithoutDetaching([$roleAdmin->id]);
+        $this->aceitarTermoOperador($admin1);
 
         // Admin secundário — para testes de RBAC com múltiplos usuários admin
         $admin2 = User::firstOrCreate(
@@ -34,6 +36,7 @@ class UsuariosBaseSeeder extends Seeder
             ['name' => 'Administrador 2', 'password' => 'senha123']
         );
         $admin2->roles()->syncWithoutDetaching([$roleAdmin->id]);
+        $this->aceitarTermoOperador($admin2);
 
         // === RECEPCIONISTAS ===
         // Resolve a inconsistência I-04 do roteiro: teste 17.8 estava como SKIP por falta de credencial
@@ -42,12 +45,14 @@ class UsuariosBaseSeeder extends Seeder
             ['name' => 'Ana Recepcionista', 'password' => 'senha123']
         );
         $recep1->roles()->syncWithoutDetaching([$roleRecep->id]);
+        $this->aceitarTermoOperador($recep1);
 
         $recep2 = User::firstOrCreate(
             ['email' => 'recepcao2@ifnmg.edu.br'],
             ['name' => 'Carlos Recepcionista', 'password' => 'senha123']
         );
         $recep2->roles()->syncWithoutDetaching([$roleRecep->id]);
+        $this->aceitarTermoOperador($recep2);
 
         // === PROFISSIONAIS ===
         // Âncoras: credenciais fixas dos roteiros de teste
@@ -85,10 +90,22 @@ class UsuariosBaseSeeder extends Seeder
                         'registro_profissional' => $p['reg'],
                     ]);
                 }
+
+                $this->aceitarTermoOperador($user);
             });
         }
 
         $this->command->info('UsuariosBaseSeeder: 2 admins, 2 recepcionistas, 8 profissionais criados/verificados.');
+    }
+
+    // Pré-aceita o termo de operador para um usuário seed — evita que o modal apareça durante demos
+    // Em produção real, todos os operadores devem aceitar manualmente
+    private function aceitarTermoOperador(User $user): void
+    {
+        Consentimento::firstOrCreate(
+            ['user_id' => $user->id, 'versao_termo' => '1.0', 'tipo_termo' => 'operador'],
+            ['ip_address' => '127.0.0.1', 'user_agent' => 'seeder']
+        );
     }
 
     // Gera número de telefone celular no DDD 33 (Vale do Jequitinhonha/MG) de forma reprodutível
