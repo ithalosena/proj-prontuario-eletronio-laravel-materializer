@@ -61,6 +61,9 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
     // S-04: logout via POST com CSRF — impede logout forçado por link externo
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+    // Ping de sessão — renova a sessão via AJAX sem recarregar a página (usado pelo timer de inatividade)
+    Route::get('/session/ping', fn () => response()->json(['ok' => true]))->name('session.ping');
+
     // Dashboard e páginas internas (qualquer usuário autenticado com consentimento válido)
     Route::get('/',         [HomePage::class,  'index'])->name('pages-home');
     Route::get('/page-2',   [Page2::class,     'index'])->name('pages-page-2');
