@@ -231,5 +231,8 @@ $container = ($configData['contentLayout'] === 'compact') ? 'container-xxl' : 'c
   });
   </script>
 
+  {{-- Offcanvas lateral de notificações --}}
+  @include('content.pages.partials._offcanvas_notificacoes')
+
   @endauth
   @endsection

@@ -75,6 +75,9 @@ class MeuAgendamentoController extends Controller
             'observacao'      => $request->observacao,
         ]);
 
+        // Notifica o profissional sobre o novo agendamento
+        $agendamento->profissional->user?->notify(new \App\Notifications\NovoAgendamentoNotification($agendamento));
+
         return redirect('/meus-agendamentos')
             ->with('success', 'Agendamento solicitado! Aguarde a confirmação do setor de saúde.');
     }
@@ -109,6 +112,9 @@ class MeuAgendamentoController extends Controller
             'motivo_cancelamento' => 'Cancelado pelo paciente',
             'cancelado_em'        => now(),
         ]);
+
+        // Notifica o profissional que o paciente cancelou
+        $agendamento->profissional->user?->notify(new \App\Notifications\AgendamentoCanceladoNotification($agendamento, Auth::user()));
 
         return back()->with('success', 'Agendamento cancelado.');
     }

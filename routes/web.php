@@ -23,6 +23,7 @@ use App\Http\Controllers\MeuAgendamentoController;
 use App\Http\Controllers\TipoConsultaController;
 use App\Http\Controllers\PrivacidadeController;
 use App\Http\Controllers\ConsentimentoController;
+use App\Http\Controllers\NotificacaoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,18 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
 
     // Ping de sessão — renova a sessão via AJAX sem recarregar a página (usado pelo timer de inatividade)
     Route::get('/session/ping', fn () => response()->json(['ok' => true]))->name('session.ping');
+
+    // Slots de disponibilidade — AJAX acessível por todos os perfis (paciente usa no wizard)
+    // IMPORTANTE: fora do grupo nivel:4 — pacientes (nivel 5) precisam desta rota
+    Route::get('/agendamentos/slots/{profissional}/{data}', [AgendamentoController::class, 'slots']);
+
+    // ------------------------------------------------------------------
+    // NOTIFICAÇÕES IN-APP (todos os perfis autenticados 1–5)
+    // IMPORTANTE: ler-todas ANTES de {id}/ler para evitar captura do parâmetro
+    // ------------------------------------------------------------------
+    Route::patch('/notificacoes/ler-todas',    [NotificacaoController::class, 'marcarTodas']);
+    Route::redirect('/notificacoes', '/', 301);
+    Route::patch('/notificacoes/{id}/ler',     [NotificacaoController::class, 'marcarLida']);
 
     // Dashboard e páginas internas (qualquer usuário autenticado com consentimento válido)
     Route::get('/',         [HomePage::class,  'index'])->name('pages-home');
@@ -135,7 +148,6 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
         Route::get('/agendamentos',                             [AgendamentoController::class, 'index']);
         Route::get('/agendamentos/eventos',                     [AgendamentoController::class, 'eventos'])
             ->middleware('cache.headers:private;no_store');
-        Route::get('/agendamentos/slots/{profissional}/{data}', [AgendamentoController::class, 'slots']);
         Route::get('/cadastro-agendamento',                     [AgendamentoController::class, 'create']);
         Route::post('/cadastrar-agendamento',                   [AgendamentoController::class, 'store']);
         Route::get('/agendamentos/{id}',                        [AgendamentoController::class, 'show']);

@@ -285,6 +285,9 @@ class AgendamentoController extends Controller
 
         $agendamento->update(['status' => 'confirmado']);
 
+        // Notifica o paciente sobre a confirmação
+        $agendamento->paciente->user?->notify(new \App\Notifications\AgendamentoConfirmadoNotification($agendamento));
+
         return back()->with('success', 'Agendamento confirmado.');
     }
 
@@ -312,6 +315,11 @@ class AgendamentoController extends Controller
             'motivo_cancelamento' => $request->motivo_cancelamento,
             'cancelado_em'        => now(),
         ]);
+
+        // Notifica a outra parte: profissional notifica paciente, outros notificam o profissional
+        $ehProfissional = Auth::user()->nivelAcesso() === 3;
+        $outraParte = $ehProfissional ? $agendamento->paciente->user : $agendamento->profissional->user;
+        $outraParte?->notify(new \App\Notifications\AgendamentoCanceladoNotification($agendamento, Auth::user()));
 
         return redirect('/agendamentos')->with('success', 'Agendamento cancelado.');
     }
