@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\Consentimento;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Paciente;
@@ -165,23 +166,125 @@ class PacientesSeeder extends Seeder
                 );
                 $user->roles()->syncWithoutDetaching([$rolePaciente->id]);
 
+                // ST-15: marca onboarding e consentimento completos para a demo
+                $user->update(['onboarding_completo' => true]);
+                $this->aceitarTermoTitular($user);
+
                 if (!$user->paciente()->exists()) {
-                    Paciente::create([
-                        'user_id'         => $user->id,
-                        'nome'            => $p['name'],
-                        'contato'         => $this->gerarTelefone($i),
-                        'documento'       => $cpf,
-                        'data_nascimento' => $p['nasc'],
-                        'sexo'            => $p['sexo'],
-                        'endereco'        => $this->gerarEndereco($p['cidade'], $i),
-                        'matricula'       => $p['mat'],
-                        'curso'           => $p['curso'],
-                    ]);
+                    $nasc = new \DateTime($p['nasc']);
+                    $hoje = new \DateTime();
+                    $idade = (int) $hoje->diff($nasc)->y;
+
+                    Paciente::create(array_merge(
+                        [
+                            'user_id'         => $user->id,
+                            'nome'            => $p['name'],
+                            'contato'         => $this->gerarTelefone($i),
+                            'documento'       => $cpf,
+                            'data_nascimento' => $p['nasc'],
+                            'sexo'            => $p['sexo'],
+                            'endereco'        => $this->gerarEndereco($p['cidade'], $i),
+                            'matricula'       => $p['mat'],
+                            'curso'           => $p['curso'],
+                        ],
+                        $this->gerarEnderecoEstruturado($p['cidade'], $i),
+                        $this->gerarContatoEmergencia($i),
+                        $idade < 18 ? $this->gerarResponsavel($i) : [],
+                        $i % 5 < 2  ? $this->gerarDadosClinicos($i) : []
+                    ));
                 }
             });
         }
 
         $this->command->info('PacientesSeeder: 55 pacientes criados/verificados.');
+    }
+
+    // ST-15: pré-aceita o termo de titular para pacientes seed
+    private function aceitarTermoTitular(User $user): void
+    {
+        Consentimento::firstOrCreate(
+            ['user_id' => $user->id, 'versao_termo' => '1.0', 'tipo_termo' => 'titular'],
+            ['ip_address' => '127.0.0.1', 'user_agent' => 'seeder']
+        );
+    }
+
+    // ST-15: endereço estruturado com CEPs fictícios do Baixo Jequitinhonha
+    private function gerarEnderecoEstruturado(string $cidade, int $idx): array
+    {
+        $cepBase = match($cidade) {
+            'Almenara'     => '39900',
+            'Jequitinhonha'=> '39960',
+            'Rubim'        => '39940',
+            'Mata Verde'   => '39980',
+            'Felisburgo'   => '39970',
+            default        => '39900',
+        };
+        $cepSufixo = str_pad(($idx * 7) % 1000, 3, '0', STR_PAD_LEFT);
+        $ruas = [
+            'Rua Coronel Belarmino', 'Rua das Acácias', 'Av. Jequitinhonha',
+            'Rua Sete de Setembro',  'Rua Padre Serafim','Rua José Honório',
+            'Rua Barão do Rio Branco','Rua da Saudade',  'Av. Brasil',
+            'Rua Santa Cruz',        'Rua São Francisco','Rua Tiradentes',
+        ];
+        $bairros = ['Centro', 'Bela Vista', 'São João', 'Progresso', 'Santa Cruz', 'Jardim das Flores'];
+        return [
+            'cep'       => $cepBase . '-' . $cepSufixo,
+            'logradouro'=> $ruas[$idx % count($ruas)],
+            'numero'    => (string)(100 + ($idx * 17) % 900),
+            'bairro'    => $bairros[$idx % count($bairros)],
+            'cidade'    => $cidade,
+            'uf'        => 'MG',
+        ];
+    }
+
+    // ST-15: contato de emergência primário
+    private function gerarContatoEmergencia(int $idx): array
+    {
+        $nomes = ['Ana Paula Silva', 'Carlos Eduardo Souza', 'Maria Aparecida Costa', 'José Roberto Lima',
+                  'Francisca Nunes', 'Antonio Pereira', 'Rosângela Barbosa', 'Raimundo Oliveira'];
+        $parentescos = ['mae', 'pai', 'irmao', 'conjuge', 'tio', 'avo', 'amigo', 'outro'];
+        $p1 = 9100 + ($idx * 37) % 900;
+        $p2 = 2000 + ($idx * 53) % 8000;
+        return [
+            'contato_emergencia_nome'       => $nomes[$idx % count($nomes)],
+            'contato_emergencia_telefone'   => "(33) {$p1}-{$p2}",
+            'contato_emergencia_parentesco' => $parentescos[$idx % count($parentescos)],
+        ];
+    }
+
+    // ST-15: responsável legal (para pacientes menores de 18)
+    private function gerarResponsavel(int $idx): array
+    {
+        $nomes = ['Ana Lúcia Pereira', 'José Carlos Almeida', 'Márcia Cristina Santos', 'Paulo Roberto Silva'];
+        $p1 = 9200 + ($idx * 29) % 800;
+        $p2 = 3000 + ($idx * 61) % 7000;
+        return [
+            'responsavel_nome'       => $nomes[$idx % count($nomes)],
+            'responsavel_cpf'        => $this->cpfValido($idx + 200),
+            'responsavel_telefone'   => "(33) {$p1}-{$p2}",
+            'responsavel_email'      => 'responsavel.' . $idx . '@email.com',
+            'responsavel_parentesco' => $idx % 2 === 0 ? 'mae' : 'pai',
+        ];
+    }
+
+    // ST-15: dados clínicos plausíveis para ~40% dos pacientes
+    private function gerarDadosClinicos(int $idx): array
+    {
+        $tiposSanguineos = ['A+', 'A-', 'B+', 'O+', 'AB+', 'O-'];
+        $alergias = [
+            'Dipirona (causa urticária)', 'Penicilina', 'Frutos do mar', null, 'Látex', null,
+        ];
+        $condicoes = [
+            'Hipertensão arterial controlada', 'Asma leve intermitente', null,
+            'Diabetes Mellitus tipo 2', null, 'Rinite alérgica',
+        ];
+        return array_filter([
+            'tipo_sanguineo' => $tiposSanguineos[$idx % count($tiposSanguineos)],
+            'peso_kg'        => 55.0 + ($idx * 3.7) % 50,
+            'altura_cm'      => 155  + ($idx * 7)   % 40,
+            'alergias'       => $alergias[$idx % count($alergias)],
+            'condicoes_cronicas' => $condicoes[$idx % count($condicoes)],
+        ], fn($v) => $v !== null);
     }
 
     // Gera CPF válido pelo algoritmo oficial a partir de um índice reprodutível.

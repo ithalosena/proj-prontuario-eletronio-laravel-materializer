@@ -10,6 +10,14 @@ $configData = Helper::appClasses();
 
 <div class="container-xxl flex-grow-1 container-p-y">
 
+  {{-- Banner informativo: exibido para perfis ainda sem dashboard contextual (v0.9.1b) --}}
+  @if($avisoMigracao ?? false)
+  <div class="alert alert-info d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="mdi mdi-information-outline fs-5 flex-shrink-0"></i>
+    <span>Sua visão personalizada está em desenvolvimento — versão completa disponível na próxima atualização.</span>
+  </div>
+  @endif
+
   {{-- Saudação --}}
   <div class="row mb-2">
     <div class="col-md-12">
@@ -78,35 +86,35 @@ $configData = Helper::appClasses();
   <div class="row ms-1">
 
     <div class="card me-4 mt-3" style="width: 16rem;">
-      <img src="assets/img/illustrations/home-profissionais.png" class="card-img-top">
+      <img src="{{ asset('assets/img/illustrations/home-profissionais.png') }}" class="card-img-top">
       <div class="card-body align-self-center">
         <a href="/profissionais" type="button" class="btn btn-primary">Profissionais</a>
       </div>
     </div>
 
     <div class="card me-4 mt-3" style="width: 16rem;">
-      <img src="assets/img/illustrations/home-pacientes.png" class="card-img-top">
+      <img src="{{ asset('assets/img/illustrations/home-pacientes.png') }}" class="card-img-top">
       <div class="card-body align-self-center">
         <a href="/pacientes" type="button" class="btn btn-primary btn-block">Pacientes</a>
       </div>
     </div>
 
     <div class="card me-4 mt-3" style="width: 16rem;">
-      <img src="assets/img/illustrations/home-prontuario.png" class="card-img-top">
+      <img src="{{ asset('assets/img/illustrations/home-prontuario.png') }}" class="card-img-top">
       <div class="card-body align-self-center">
         <a href="/exames" type="button" class="btn btn-primary btn-block">Prontuário</a>
       </div>
     </div>
 
     <div class="card me-4 mt-3" style="width: 16rem;">
-      <img src="assets/img/illustrations/home-prescricao.png" class="card-img-top">
+      <img src="{{ asset('assets/img/illustrations/home-prescricao.png') }}" class="card-img-top">
       <div class="card-body align-self-center">
         <a href="/prescricoes" type="button" class="btn btn-primary btn-block">Prescrições</a>
       </div>
     </div>
 
     <div class="card me-3 mt-3" style="width: 16rem;">
-      <img src="assets/img/illustrations/home-relatorio.png" class="card-img-top">
+      <img src="{{ asset('assets/img/illustrations/home-relatorio.png') }}" class="card-img-top">
       <div class="card-body align-self-center">
         <a href="relatorios" type="button" class="btn btn-primary btn-block">Relatórios</a>
       </div>

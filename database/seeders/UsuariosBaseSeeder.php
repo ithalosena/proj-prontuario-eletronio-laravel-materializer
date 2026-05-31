@@ -18,6 +18,7 @@ class UsuariosBaseSeeder extends Seeder
     public function run(): void
     {
         $roleAdmin = Role::where('slug', 'admin')->firstOrFail();
+        $roleCoord = Role::where('slug', 'coordenador_saude')->firstOrFail();
         $roleRecep = Role::where('slug', 'recepcionista')->firstOrFail();
         $roleProf  = Role::where('slug', 'profissional_saude')->firstOrFail();
 
@@ -29,23 +30,35 @@ class UsuariosBaseSeeder extends Seeder
         );
         $admin1->roles()->syncWithoutDetaching([$roleAdmin->id]);
         $this->aceitarTermoOperador($admin1);
+        $this->marcarOnboardingCompleto($admin1);
 
-        // Admin secundário — para testes de RBAC com múltiplos usuários admin
         $admin2 = User::firstOrCreate(
             ['email' => 'admin2@prontuif.com'],
             ['name' => 'Administrador 2', 'password' => 'senha123']
         );
         $admin2->roles()->syncWithoutDetaching([$roleAdmin->id]);
         $this->aceitarTermoOperador($admin2);
+        $this->marcarOnboardingCompleto($admin2);
+
+        // === COORDENADOR (nivel 2) ===
+        // v0.10.1: credencial de demo do coordenador (faltava no seed — necessária para testar
+        // o dashboard do coordenador e o menu Configurações por nível).
+        $coord = User::firstOrCreate(
+            ['email' => 'coordenador@ifnmg.edu.br'],
+            ['name' => 'Coordenador de Saúde', 'password' => 'senha123']
+        );
+        $coord->roles()->syncWithoutDetaching([$roleCoord->id]);
+        $this->aceitarTermoOperador($coord);
+        $this->marcarOnboardingCompleto($coord);
 
         // === RECEPCIONISTAS ===
-        // Resolve a inconsistência I-04 do roteiro: teste 17.8 estava como SKIP por falta de credencial
         $recep1 = User::firstOrCreate(
             ['email' => 'recepcao@ifnmg.edu.br'],
             ['name' => 'Ana Recepcionista', 'password' => 'senha123']
         );
         $recep1->roles()->syncWithoutDetaching([$roleRecep->id]);
         $this->aceitarTermoOperador($recep1);
+        $this->marcarOnboardingCompleto($recep1);
 
         $recep2 = User::firstOrCreate(
             ['email' => 'recepcao2@ifnmg.edu.br'],
@@ -53,6 +66,7 @@ class UsuariosBaseSeeder extends Seeder
         );
         $recep2->roles()->syncWithoutDetaching([$roleRecep->id]);
         $this->aceitarTermoOperador($recep2);
+        $this->marcarOnboardingCompleto($recep2);
 
         // === PROFISSIONAIS ===
         // Âncoras: credenciais fixas dos roteiros de teste
@@ -92,6 +106,7 @@ class UsuariosBaseSeeder extends Seeder
                 }
 
                 $this->aceitarTermoOperador($user);
+                $this->marcarOnboardingCompleto($user);
             });
         }
 
@@ -106,6 +121,12 @@ class UsuariosBaseSeeder extends Seeder
             ['user_id' => $user->id, 'versao_termo' => '1.0', 'tipo_termo' => 'operador'],
             ['ip_address' => '127.0.0.1', 'user_agent' => 'seeder']
         );
+    }
+
+    // ST-15: marca onboarding_completo=true para usuários seed — evita que o wizard apareça nas demos
+    private function marcarOnboardingCompleto(User $user): void
+    {
+        $user->update(['onboarding_completo' => true]);
     }
 
     // Gera número de telefone celular no DDD 33 (Vale do Jequitinhonha/MG) de forma reprodutível

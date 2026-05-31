@@ -11,10 +11,26 @@ class NavbarComposer
     {
         $user = Auth::user();
 
+        if (!$user) {
+            $view->with([
+                'notificacoesCount'    => 0,
+                'notificacoesRecentes' => collect(),
+                'notificacoesLista'    => collect(),
+            ]);
+            return;
+        }
+
+        // COUNT(*) separado evita carregar todos os modelos em memória
+        $count    = $user->unreadNotifications()->count();
+        $recentes = $count > 0
+            ? $user->unreadNotifications()->latest()->take(5)->get()
+            : collect();
+        $lista    = $user->notifications()->latest()->take(50)->get();
+
         $view->with([
-            'notificacoesCount'    => $user ? $user->unreadNotifications->count() : 0,
-            'notificacoesRecentes' => $user ? $user->unreadNotifications->take(5) : collect(),
-            'notificacoesLista'    => $user ? $user->notifications()->latest()->take(50)->get() : collect(),
+            'notificacoesCount'    => $count,
+            'notificacoesRecentes' => $recentes,
+            'notificacoesLista'    => $lista,
         ]);
     }
 }

@@ -148,11 +148,17 @@ $navbarDetached = ($navbarDetached ?? '');
               <span class="fw-semibold lh-1 small">{{ Auth::user()->name }}</span>
               <span class="badge {{ $papelClass }} mt-1" style="font-size:0.65rem">{{ $papelLabel }}</span>
             </div>
-            {{-- Avatar com iniciais --}}
+            {{-- Avatar: foto se existir, senão iniciais --}}
             <div class="avatar avatar-online">
-              <span class="avatar-initial rounded-circle bg-label-primary">
-                {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
-              </span>
+              @if(Auth::user()->avatar && Storage::disk('public')->exists(Auth::user()->avatar))
+                <img src="{{ Storage::url(Auth::user()->avatar) }}"
+                     alt="{{ Auth::user()->name }}"
+                     class="rounded-circle" style="width:38px; height:38px; object-fit:cover;">
+              @else
+                <span class="avatar-initial rounded-circle bg-label-primary">
+                  {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
+                </span>
+              @endif
             </div>
             @endif
           </a>
@@ -162,11 +168,17 @@ $navbarDetached = ($navbarDetached ?? '');
                 <div class="d-flex">
                   <div class="flex-shrink-0 me-3">
                     <div class="avatar avatar-online">
-                      <span class="avatar-initial rounded-circle bg-label-primary">
-                        @if(Auth::check())
-                          {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
-                        @endif
-                      </span>
+                      @if(Auth::check() && Auth::user()->avatar && Storage::disk('public')->exists(Auth::user()->avatar))
+                        <img src="{{ Storage::url(Auth::user()->avatar) }}"
+                             alt="{{ Auth::user()->name }}"
+                             class="rounded-circle" style="width:38px; height:38px; object-fit:cover;">
+                      @else
+                        <span class="avatar-initial rounded-circle bg-label-primary">
+                          @if(Auth::check())
+                            {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
+                          @endif
+                        </span>
+                      @endif
                     </div>
                   </div>
                   <div class="flex-grow-1">
@@ -174,6 +186,13 @@ $navbarDetached = ($navbarDetached ?? '');
                     <small class="text-muted">{{ Auth::check() ? Auth::user()->email : '' }}</small>
                   </div>
                 </div>
+              </a>
+            </li>
+            <li><div class="dropdown-divider"></div></li>
+            <li>
+              <a class="dropdown-item" href="/perfil">
+                <i class="mdi mdi-account-cog-outline me-2"></i>
+                <span class="align-middle">Meu Perfil</span>
               </a>
             </li>
             <li><div class="dropdown-divider"></div></li>

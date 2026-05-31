@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\language\LanguageController;
 use App\Http\Controllers\pages\HomePage;
 use App\Http\Controllers\pages\Page2;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\pages\MiscError;
 use App\Http\Controllers\authentications\LoginBasic;
 use App\Http\Controllers\authentications\RegisterBasic;
@@ -24,6 +25,8 @@ use App\Http\Controllers\TipoConsultaController;
 use App\Http\Controllers\PrivacidadeController;
 use App\Http\Controllers\ConsentimentoController;
 use App\Http\Controllers\NotificacaoController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\OnboardingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,7 +60,7 @@ Route::get('/auth/register-basic', [RegisterBasic::class, 'index'])->name('auth-
 // O próprio middleware gerencia as rotas isentas (ROTAS_ISENTAS) — /consentimento, /logout etc.
 // ==========================================================================
 
-Route::middleware(['auth', 'consentimento'])->group(function () {
+Route::middleware(['auth', 'consentimento', 'onboarding'])->group(function () {
 
     // S-04: logout via POST com CSRF — impede logout forçado por link externo
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -67,7 +70,9 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
 
     // Slots de disponibilidade — AJAX acessível por todos os perfis (paciente usa no wizard)
     // IMPORTANTE: fora do grupo nivel:4 — pacientes (nivel 5) precisam desta rota
-    Route::get('/agendamentos/slots/{profissional}/{data}', [AgendamentoController::class, 'slots']);
+    // S-06: throttle 60 req/min por IP — proteção contra scraping de disponibilidade
+    Route::get('/agendamentos/slots/{profissional}/{data}', [AgendamentoController::class, 'slots'])
+        ->middleware('throttle:60,1');
 
     // ------------------------------------------------------------------
     // NOTIFICAÇÕES IN-APP (todos os perfis autenticados 1–5)
@@ -78,9 +83,17 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
     Route::patch('/notificacoes/{id}/ler',     [NotificacaoController::class, 'marcarLida']);
 
     // Dashboard e páginas internas (qualquer usuário autenticado com consentimento válido)
-    Route::get('/',         [HomePage::class,  'index'])->name('pages-home');
+    Route::get('/',         [DashboardController::class, 'index'])->name('pages-home');
     Route::get('/page-2',   [Page2::class,     'index'])->name('pages-page-2');
     Route::get('/pages/misc-error', [MiscError::class, 'index'])->name('pages-misc-error');
+
+    // ------------------------------------------------------------------
+    // PERFIL DO USUÁRIO (ST-10) — qualquer perfil autenticado
+    // ------------------------------------------------------------------
+    Route::get   ('/perfil',          [ProfileController::class, 'edit'])->name('perfil');
+    Route::put   ('/perfil',          [ProfileController::class, 'update']);
+    Route::post  ('/perfil/avatar',   [ProfileController::class, 'uploadAvatar']);
+    Route::delete('/perfil/avatar/remover', [ProfileController::class, 'deleteAvatar']);
 
     // ------------------------------------------------------------------
     // CONSENTIMENTO LGPD
@@ -89,6 +102,14 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
     Route::get('/consentimento',          [ConsentimentoController::class, 'show']);
     Route::post('/consentimento/aceitar', [ConsentimentoController::class, 'aceitar']);
     Route::post('/consentimento/recusar', [ConsentimentoController::class, 'recusar']);
+
+    // ------------------------------------------------------------------
+    // ONBOARDING DE PRIMEIRO ACESSO (ST-15)
+    // Isentas do CheckOnboarding (declaradas no próprio middleware)
+    // ------------------------------------------------------------------
+    Route::get ('/onboarding',                  [OnboardingController::class, 'show']);
+    Route::post('/onboarding/salvar/paciente',   [OnboardingController::class, 'salvarPaciente']);
+    Route::post('/onboarding/salvar/operador',   [OnboardingController::class, 'salvarOperador']);
 
     // ------------------------------------------------------------------
     // MEU PRONTUARIO (paciente com perfil vinculado)
@@ -119,12 +140,13 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
     // CONFIGURAÇÕES — Especialidades e Tipos de Consulta (coordenador e acima: nivel <= 2)
     // ------------------------------------------------------------------
     Route::middleware('nivel:2')->group(function () {
-        Route::get('/configuracoes/especialidades',                          [EspecialidadeController::class, 'index']);
+        // UX-02 (v0.10.1): rotas GET nomeadas para o highlight do item de menu "Configurações"
+        Route::get('/configuracoes/especialidades',                          [EspecialidadeController::class, 'index'])->name('configuracoes-especialidades');
         Route::post('/configuracoes/especialidades',                         [EspecialidadeController::class, 'store']);
         Route::put('/configuracoes/especialidades/{especialidade}',          [EspecialidadeController::class, 'update']);
         Route::patch('/configuracoes/especialidades/{especialidade}/toggle', [EspecialidadeController::class, 'toggleAtivo']);
 
-        Route::get('/configuracoes/tipos-consulta',                         [TipoConsultaController::class, 'index']);
+        Route::get('/configuracoes/tipos-consulta',                         [TipoConsultaController::class, 'index'])->name('configuracoes-tipos-consulta');
         Route::post('/configuracoes/tipos-consulta',                        [TipoConsultaController::class, 'store']);
         Route::put('/configuracoes/tipos-consulta/{tipoConsulta}',          [TipoConsultaController::class, 'update']);
         Route::patch('/configuracoes/tipos-consulta/{tipoConsulta}/toggle', [TipoConsultaController::class, 'toggleAtivo']);
@@ -135,9 +157,10 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
     // IMPORTANTE: antes das rotas com {id} para evitar conflito de parâmetro
     // ------------------------------------------------------------------
     Route::middleware('nivel:3')->group(function () {
-        Route::get('/pacientes/buscar',    [PacienteController::class,    'buscar']);
-        Route::get('/profissionais/buscar',[ProfissionalController::class,'buscar']);
-        Route::get('/consultas/buscar',    [ConsultaController::class,    'buscar']);
+        // S-06: throttle 60 req/min por IP nos endpoints de autocomplete AJAX
+        Route::get('/pacientes/buscar',    [PacienteController::class,    'buscar'])->middleware('throttle:60,1');
+        Route::get('/profissionais/buscar',[ProfissionalController::class,'buscar'])->middleware('throttle:60,1');
+        Route::get('/consultas/buscar',    [ConsultaController::class,    'buscar'])->middleware('throttle:60,1');
     });
 
     // ------------------------------------------------------------------
@@ -146,8 +169,9 @@ Route::middleware(['auth', 'consentimento'])->group(function () {
     // ------------------------------------------------------------------
     Route::middleware('nivel:4')->group(function () {
         Route::get('/agendamentos',                             [AgendamentoController::class, 'index']);
+        // S-06: throttle 60 req/min por IP — feed FullCalendar AJAX
         Route::get('/agendamentos/eventos',                     [AgendamentoController::class, 'eventos'])
-            ->middleware('cache.headers:private;no_store');
+            ->middleware(['cache.headers:private;no_store', 'throttle:60,1']);
         Route::get('/cadastro-agendamento',                     [AgendamentoController::class, 'create']);
         Route::post('/cadastrar-agendamento',                   [AgendamentoController::class, 'store']);
         Route::get('/agendamentos/{id}',                        [AgendamentoController::class, 'show']);
