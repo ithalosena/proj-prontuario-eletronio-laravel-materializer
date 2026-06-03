@@ -1,6 +1,7 @@
-{{-- Página de erro 403 — Acesso Restrito --}}
-{{-- Ativada automaticamente pelo Laravel quando AuthorizationException é lançada. --}}
+{{-- Página de erro 404 — Página não encontrada (UX-01, v0.10.1) --}}
+{{-- Ativada automaticamente pelo Laravel quando NotFoundHttpException é lançada. --}}
 {{-- Autocontida: não estende layout (context de erro não garante $configData). --}}
+{{-- Análoga à errors/403.blade.php, mas o timer redireciona para / (home) em vez de history.back(). --}}
 @php
     /* Reutiliza cookie de tema salvo pelo sistema (mesmo mecanismo do Helpers.php/S-07) */
     $temaErro = (isset($_COOKIE['style']) && in_array($_COOKIE['style'], ['light', 'dark', 'system'], true))
@@ -13,7 +14,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Acesso Restrito | Prontu IF</title>
+    <title>Página não encontrada | Prontu IF</title>
 
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
 
@@ -80,7 +81,7 @@
         }
         .redirect-text strong { color: #3DAA4A; }
 
-        /* ---- Número 403 ---- */
+        /* ---- Número 404 ---- */
         .err-num {
             font-size: 5.5rem;
             font-weight: 700;
@@ -104,11 +105,11 @@
 
     {{-- Coluna de conteúdo --}}
     <div class="err-content">
-        <p class="err-num mb-1">403</p>
-        <h4 class="mb-2">Acesso Restrito</h4>
-        <p class="mb-1">Você não tem permissão para acessar esta área.</p>
+        <p class="err-num mb-1">404</p>
+        <h4 class="mb-2">Página não encontrada</h4>
+        <p class="mb-1">A página que você procura não existe ou foi movida.</p>
         <p class="text-muted mb-4">
-            Se acredita que isso é um engano, fale com a administração.
+            Verifique o endereço ou volte para o início do sistema.
         </p>
 
         {{-- Barra de redirecionamento --}}
@@ -117,7 +118,7 @@
                 <div class="redirect-fill" id="prog"></div>
             </div>
             <p class="redirect-text mt-2" id="rtext">
-                Voltando em <strong id="rsec">15</strong> segundo<span id="rplural">s</span>…
+                Voltando ao início em <strong id="rsec">15</strong> segundo<span id="rplural">s</span>…
             </p>
         </div>
 
@@ -136,7 +137,7 @@
              width="130">
 
         <img src="{{ asset('assets/img/illustrations/misc-error-illustration.png') }}"
-             alt="Ilustração de acesso negado"
+             alt="Ilustração de página não encontrada"
              class="img-fluid"
              width="280">
     </div>
@@ -144,7 +145,7 @@
 </div>
 
 <script>
-    /* Contagem regressiva: 10s → history.back() (última página acessada) */
+    /* Contagem regressiva: 15s → redireciona para / (home) */
     (function () {
         var total = 15, left = total;
         var fill = document.getElementById('prog');
@@ -159,7 +160,7 @@
 
             if (left <= 0) {
                 clearInterval(tick);
-                history.back();
+                window.location.href = '/';
             }
         }, 1000);
     }());

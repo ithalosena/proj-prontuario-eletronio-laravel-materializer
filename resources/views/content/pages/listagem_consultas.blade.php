@@ -62,17 +62,46 @@ $configData = Helper::appClasses();
   <div class="card">
     <div class="card-body">
 
-      {{-- Campo de busca: debounce 400ms via JS --}}
+      {{-- Busca (debounce 400ms via JS) + filtros (UX-05: profissional e tipo) --}}
       <form method="GET" action="/consultas" id="busca-form" class="mb-3">
-        <div class="input-group">
-          <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
-          <input type="text" name="busca" id="input-busca" class="form-control"
-            placeholder="Buscar por nome do paciente..."
-            value="{{ $busca ?? '' }}" autocomplete="off">
-          @if($busca)
-          <a href="/consultas" class="btn btn-outline-secondary" title="Limpar busca">
-            <i class="mdi mdi-close"></i>
-          </a>
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="input-group">
+              <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+              <input type="text" name="busca" id="input-busca" class="form-control"
+                placeholder="Buscar por nome do paciente..."
+                value="{{ $busca ?? '' }}" autocomplete="off">
+            </div>
+          </div>
+
+          {{-- Filtro por profissional: irrelevante para o profissional (nivel 3, vê só as suas) --}}
+          @if(Auth::user()->nivelAcesso() != 3)
+          <div class="col-md-3">
+            <select name="profissional_id" class="form-select" onchange="document.getElementById('busca-form').submit()">
+              <option value="">Todos os profissionais</option>
+              @foreach($profissionais as $p)
+                <option value="{{ $p->id }}" {{ (string)$filtroProfissional === (string)$p->id ? 'selected' : '' }}>{{ $p->nome }}</option>
+              @endforeach
+            </select>
+          </div>
+          @endif
+
+          {{-- Filtro por tipo de consulta --}}
+          <div class="col-md-3">
+            <select name="tipo" class="form-select" onchange="document.getElementById('busca-form').submit()">
+              <option value="">Todos os tipos</option>
+              @foreach($tipos as $t)
+                <option value="{{ $t->nome }}" {{ $filtroTipo === $t->nome ? 'selected' : '' }}>{{ $t->nome }}</option>
+              @endforeach
+            </select>
+          </div>
+
+          @if($busca || $filtroProfissional || $filtroTipo)
+          <div class="col-md-auto">
+            <a href="/consultas" class="btn btn-outline-secondary" title="Limpar filtros">
+              <i class="mdi mdi-close me-1"></i>Limpar
+            </a>
+          </div>
           @endif
         </div>
       </form>
@@ -107,7 +136,8 @@ $configData = Helper::appClasses();
               {{-- Paciente: link para histórico (exceto para o próprio paciente) --}}
               <td>
                 @if(Auth::user()->nivelAcesso() <= 4 && $consulta->paciente)
-                  <a href="/pacientes/{{ $consulta->paciente->id }}/historico"
+                  {{-- ANALISE-04 (v0.10.1): nome do paciente padronizado → perfil /pacientes/{id} --}}
+                  <a href="/pacientes/{{ $consulta->paciente->id }}"
                      class="fw-medium text-body text-decoration-none"
                      style="border-bottom: 1px dashed currentColor;">
                     {{ $consulta->paciente->nome }}

@@ -184,6 +184,56 @@ $idade      = $paciente->data_nascimento
 
   </div>
 
+  {{-- ================================================================
+       UX-04 (v0.10.1): mini-card de atendimentos recentes
+       ================================================================ --}}
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="card-title mb-0"><i class="mdi mdi-folder-open-outline me-2"></i>Atendimentos recentes</h5>
+          <a href="/pacientes/{{ $paciente->id }}/historico" class="btn btn-sm btn-outline-primary">
+            <i class="mdi mdi-history me-1"></i>Ver histórico completo
+          </a>
+        </div>
+        <div class="card-body p-0">
+          @forelse($atendimentosRecentes as $atendimento)
+            @php
+              $abertoBadge = $atendimento->status === 'aberto'
+                ? ['warning', 'Aberto']
+                : ['secondary', 'Fechado'];
+            @endphp
+            <a href="/atendimentos/{{ $atendimento->id }}"
+               class="d-flex align-items-center gap-3 px-4 py-3 text-body text-decoration-none {{ !$loop->last ? 'border-bottom' : '' }}">
+              {{-- Data --}}
+              <div class="text-center flex-shrink-0" style="min-width:54px;">
+                <span class="fw-bold d-block lh-1">{{ $atendimento->created_at->format('d') }}</span>
+                <span class="text-muted small text-uppercase">{{ $atendimento->created_at->isoFormat('MMM') }}</span>
+              </div>
+              <div class="vr mx-1"></div>
+              {{-- Profissional + especialidade --}}
+              <div class="flex-grow-1 min-width-0">
+                <p class="mb-0 fw-medium">{{ $atendimento->profissional->nome ?? 'Profissional não informado' }}</p>
+                <p class="mb-0 text-muted small">
+                  {{ $atendimento->profissional->especialidade ?? 'Especialidade não informada' }}
+                  · {{ $atendimento->created_at->format('d/m/Y H:i') }}
+                </p>
+              </div>
+              {{-- Status --}}
+              <span class="badge bg-label-{{ $abertoBadge[0] }}">{{ $abertoBadge[1] }}</span>
+              <i class="mdi mdi-chevron-right text-muted"></i>
+            </a>
+          @empty
+            <div class="d-flex flex-column align-items-center py-5 text-muted">
+              <i class="mdi mdi-folder-off-outline fs-1 mb-2"></i>
+              <p class="mb-0">Nenhum atendimento registrado para este paciente.</p>
+            </div>
+          @endforelse
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 @endsection

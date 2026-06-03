@@ -87,9 +87,19 @@ class PacienteController extends Controller
         $paciente = Paciente::findOrFail($id);
         $podeEditarSensivel = Auth::user()->nivelAcesso() <= 2;
 
-        // Campos complementares — editáveis por qualquer role autenticada (UX-24)
-        $paciente->contato  = $request->contato;
-        $paciente->endereco = $request->endereco;
+        // Campos complementares — editáveis por qualquer role autenticada (UX-24, nivel ≤ 4)
+        // UX-03 (v0.10.1): inclui endereço estruturado, contatos extras, dados complementares,
+        // emergência e responsável legal (campos adicionados no onboarding ST-15).
+        // Dados CLÍNICOS (tipo_sanguineo, alergias, etc.) NÃO entram aqui — são read-only nesta
+        // tela e serão editados pelo profissional na consulta (ST-17).
+        $paciente->fill($request->only([
+            'contato', 'telefone_alternativo', 'email_alternativo',
+            'endereco', 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'ponto_referencia',
+            'nome_social', 'naturalidade_cidade', 'naturalidade_uf', 'raca_cor', 'estado_civil', 'nome_mae',
+            'contato_emergencia_nome', 'contato_emergencia_telefone', 'contato_emergencia_parentesco',
+            'contato_emergencia2_nome', 'contato_emergencia2_telefone', 'contato_emergencia2_parentesco',
+            'responsavel_nome', 'responsavel_cpf', 'responsavel_telefone', 'responsavel_email', 'responsavel_parentesco',
+        ]));
 
         // Campos sensíveis — somente admin/gerente (nivel <= 2)
         if ($podeEditarSensivel) {
@@ -128,8 +138,16 @@ class PacienteController extends Controller
             'consulta', fn($q) => $q->where('paciente_id', $id)
         )->count();
 
+        // UX-04 (v0.10.1): 5 atendimentos mais recentes do paciente para o mini-card
+        // (eager load do profissional para evitar N+1 ao exibir nome/especialidade)
+        $atendimentosRecentes = $paciente->atendimentos()
+            ->with('profissional')
+            ->latest()
+            ->take(5)
+            ->get();
+
         return view('content.pages.detalhes_paciente', compact(
-            'paciente', 'totalConsultas', 'totalExames', 'totalPrescricoes'
+            'paciente', 'totalConsultas', 'totalExames', 'totalPrescricoes', 'atendimentosRecentes'
         ));
     }
 

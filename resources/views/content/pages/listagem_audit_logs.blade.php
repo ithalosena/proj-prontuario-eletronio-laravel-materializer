@@ -38,6 +38,72 @@ $configData = Helper::appClasses();
     </span>
   </div>
 
+  @php
+    // UX-06: mapeia cada action para [categoria, cor do badge, rótulo legível]
+    $mapAcao = function ($action) {
+      return match (true) {
+        $action === 'login'                       => ['Autenticação', 'info',      'Login'],
+        $action === 'logout'                      => ['Autenticação', 'secondary', 'Logout'],
+        str_contains($action, 'created')          => ['Dados',        'success',   'Criou'],
+        str_contains($action, 'updated')          => ['Dados',        'warning',   'Editou'],
+        str_contains($action, 'deleted')          => ['Dados',        'danger',    'Excluiu'],
+        str_contains($action, 'consentimento')    => ['Consentimento','primary',   ucfirst(str_replace('_', ' ', $action))],
+        default                                   => ['Sistema',      'info',      ucfirst(str_replace('_', ' ', $action))],
+      };
+    };
+  @endphp
+
+  {{-- ================================================================ --}}
+  {{-- FILTROS (UX-06): ação, usuário, entidade, intervalo de datas      --}}
+  {{-- ================================================================ --}}
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="GET" action="/audit-logs" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Ação</label>
+          <select name="action" class="form-select form-select-sm">
+            <option value="">Todas</option>
+            @foreach($acoes as $a)
+              <option value="{{ $a }}" {{ $filtroAction === $a ? 'selected' : '' }}>{{ $mapAcao($a)[2] }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Usuário</label>
+          <select name="user_id" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            @foreach($usuarios as $u)
+              <option value="{{ $u->id }}" {{ (string)$filtroUser === (string)$u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Entidade</label>
+          <select name="model_type" class="form-select form-select-sm">
+            <option value="">Todas</option>
+            @foreach($entidades as $e)
+              <option value="{{ $e }}" {{ $filtroModel === $e ? 'selected' : '' }}>{{ class_basename($e) }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">De</label>
+          <input type="date" name="data_de" class="form-control form-control-sm" value="{{ $dataDe }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Até</label>
+          <input type="date" name="data_ate" class="form-control form-control-sm" value="{{ $dataAte }}">
+        </div>
+        <div class="col-12 d-flex gap-2 mt-2">
+          <button type="submit" class="btn btn-sm btn-primary"><i class="mdi mdi-filter-outline me-1"></i>Filtrar</button>
+          @if($filtroAction || $filtroUser || $filtroModel || $dataDe || $dataAte)
+          <a href="/audit-logs" class="btn btn-sm btn-outline-secondary"><i class="mdi mdi-close me-1"></i>Limpar</a>
+          @endif
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-body">
 
@@ -56,11 +122,13 @@ $configData = Helper::appClasses();
               <th>Usuário</th>
               <th>Ação</th>
               <th>Entidade</th>
+              <th>IP</th>
               <th>Detalhes</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
             @forelse($logs as $log)
+            @php [$categoria, $cor, $rotulo] = $mapAcao($log->action); @endphp
             <tr>
               <td>
                 <span class="fw-medium text-nowrap">{{ $log->created_at->format('d/m/Y') }}</span>
@@ -68,28 +136,18 @@ $configData = Helper::appClasses();
               </td>
               <td class="text-muted">{{ optional($log->user)->name ?? '—' }}</td>
               <td>
-                @php
-                  $badgeMap = [
-                    'login'   => 'bg-label-success',
-                    'logout'  => 'bg-label-secondary',
-                    'created' => 'bg-label-primary',
-                    'updated' => 'bg-label-warning',
-                    'deleted' => 'bg-label-danger',
-                  ];
-                  $badge = $badgeMap[$log->action] ?? 'bg-label-info';
-                @endphp
-                <span class="badge rounded-pill {{ $badge }}">{{ $log->action }}</span>
+                <span class="badge rounded-pill bg-label-{{ $cor }}">{{ $rotulo }}</span>
+                <br><small class="text-muted">{{ $categoria }}</small>
               </td>
               <td>
                 @if($log->model_type)
-                  <span class="text-muted small">{{ $log->model_type }}</span>
-                  @if($log->model_id)
-                    <span class="text-muted small">#{{ $log->model_id }}</span>
-                  @endif
+                  <span class="fw-medium small">{{ class_basename($log->model_type) }}</span>
+                  @if($log->model_id)<span class="text-muted small">#{{ $log->model_id }}</span>@endif
                 @else
                   <span class="text-muted">—</span>
                 @endif
               </td>
+              <td><span class="text-muted small">{{ $log->ip_address ?? '—' }}</span></td>
               <td>
                 @if($log->old_values || $log->new_values)
                   <button type="button" class="btn btn-sm btn-outline-secondary"
@@ -103,9 +161,9 @@ $configData = Helper::appClasses();
             </tr>
             @empty
             <tr>
-              <td colspan="5" class="text-center text-muted py-5">
+              <td colspan="6" class="text-center text-muted py-5">
                 <i class="mdi mdi-shield-search mdi-48px d-block mb-2 opacity-25"></i>
-                Nenhum registro de auditoria encontrado.
+                Nenhum registro de auditoria encontrado para os filtros aplicados.
               </td>
             </tr>
             @endforelse
@@ -130,7 +188,7 @@ $configData = Helper::appClasses();
         <div class="modal-header">
           <h5 class="modal-title">
             <i class="mdi mdi-shield-search me-2"></i>
-            {{ ucfirst($log->action) }} — {{ $log->model_type }} #{{ $log->model_id }}
+            {{ ucfirst(str_replace('_', ' ', $log->action)) }} — {{ class_basename($log->model_type) }} #{{ $log->model_id }}
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>

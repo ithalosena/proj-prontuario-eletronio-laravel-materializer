@@ -41,6 +41,24 @@ class ConsultaTest extends TestCase
         $this->assertDatabaseHas('consultas', ['paciente_id' => $paciente->id, 'tipo' => 'Clínico Geral']);
     }
 
+    // ANALISE-01 (v0.10.1): Admin é somente leitura — não registra consultas (403)
+    public function test_admin_nao_registra_consulta(): void
+    {
+        $admin = $this->criarAdmin();
+
+        $this->actingAs($admin)->get('/cadastro-consulta')->assertForbidden();
+
+        [, $profissional] = $this->criarProfissionalUser();
+        [, $paciente]     = $this->criarPacienteUser();
+        $this->actingAs($admin)->post('/cadastrar-consulta', [
+            'profissional_id' => $profissional->id,
+            'paciente_id'     => $paciente->id,
+            'data_hora'       => now()->format('Y-m-d H:i:s'),
+            'tipo'            => 'Clínico Geral',
+            'queixa'          => 'Teste admin bloqueado.',
+        ])->assertForbidden();
+    }
+
     // Detalhes da consulta retorna 200 com o tipo da consulta
     public function test_detalhes_da_consulta(): void
     {

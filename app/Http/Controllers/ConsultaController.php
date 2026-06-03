@@ -49,6 +49,9 @@ class ConsultaController extends Controller
     public function index()
     {
         $busca = request('busca');
+        // UX-05 (v0.10.1): filtros por profissional e tipo de consulta (GET, preserváveis na URL)
+        $filtroProfissional = request('profissional_id');
+        $filtroTipo         = request('tipo');
 
         $query = Consulta::with('paciente', 'profissional')
             ->orderBy('data_hora', 'desc');
@@ -68,7 +71,12 @@ class ConsultaController extends Controller
             });
         }
 
-        $consultas       = $query->paginate(15)->appends(['busca' => $busca]);
+        // Filtros por profissional e tipo (selects populados do banco)
+        $query->when($filtroProfissional, fn($q) => $q->where('profissional_id', $filtroProfissional))
+              ->when($filtroTipo,         fn($q) => $q->where('tipo', $filtroTipo));
+
+        // withQueryString preserva busca + filtros nos links de paginação
+        $consultas       = $query->paginate(15)->withQueryString();
         $totalConsultas  = $consultas->total(); // total pós-filtro de nível
         $minhasConsultas = null;
 
@@ -80,8 +88,13 @@ class ConsultaController extends Controller
             }
         }
 
+        // Listas para os selects de filtro
+        $profissionais = \App\Models\Profissional::orderBy('nome')->get();
+        $tipos         = \App\Models\TipoConsulta::where('ativo', true)->orderBy('ordem')->get();
+
         return view('content.pages.listagem_consultas', compact(
-            'consultas', 'busca', 'totalConsultas', 'minhasConsultas'
+            'consultas', 'busca', 'totalConsultas', 'minhasConsultas',
+            'profissionais', 'tipos', 'filtroProfissional', 'filtroTipo'
         ));
     }
 
@@ -95,6 +108,11 @@ class ConsultaController extends Controller
      */
     public function create()
     {
+        // ANALISE-01 (v0.10.1): Admin (nivel 1) é somente leitura — não registra consultas.
+        if (Auth::user()->nivelAcesso() === 1) {
+            abort(403);
+        }
+
         $pacientes          = Paciente::orderBy('nome')->get();
         $profissionais      = Profissional::orderBy('nome')->get();
         $tiposConsulta      = TipoConsulta::ativo()->ordenado()->get();
@@ -138,6 +156,11 @@ class ConsultaController extends Controller
      */
     public function store(StoreConsultaRequest $request)
     {
+        // ANALISE-01 (v0.10.1): guard server-side — Admin não registra consultas
+        if (Auth::user()->nivelAcesso() === 1) {
+            abort(403);
+        }
+
         $consulta = DB::transaction(function () use ($request) {
 
             // Cria a consulta principal — registra quem criou (ST-08)

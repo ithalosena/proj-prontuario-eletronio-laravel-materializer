@@ -28,7 +28,8 @@ $configData = Helper::appClasses();
       <h4 class="mb-0">Listagem de Atendimentos</h4>
       <p class="text-muted small mb-0 mt-1">Gerencie os atendimentos do sistema</p>
     </div>
-    @if(Auth::user()->nivelAcesso() <= 3)
+    {{-- ANALISE-01 (v0.10.1): Admin (nivel 1) é somente leitura — coordenador (2) e profissional (3) criam --}}
+    @if(Auth::user()->nivelAcesso() >= 2 && Auth::user()->nivelAcesso() <= 3)
     <a href="/cadastro-atendimento" class="btn btn-primary">
       <i class="mdi mdi-plus-circle-outline me-1"></i>Novo Atendimento
     </a>
@@ -68,17 +69,45 @@ $configData = Helper::appClasses();
   <div class="card">
     <div class="card-body">
 
-      {{-- Campo de busca: debounce 400ms via JS --}}
+      {{-- Busca (debounce 400ms via JS) + filtros (UX-05: profissional e status) --}}
       <form method="GET" action="/atendimentos" id="busca-form" class="mb-3">
-        <div class="input-group">
-          <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
-          <input type="text" name="busca" id="input-busca" class="form-control"
-            placeholder="Buscar por nome ou matrícula do paciente..."
-            value="{{ $busca ?? '' }}" autocomplete="off">
-          @if($busca)
-          <a href="/atendimentos" class="btn btn-outline-secondary" title="Limpar busca">
-            <i class="mdi mdi-close"></i>
-          </a>
+        <div class="row g-2">
+          <div class="col-md">
+            <div class="input-group">
+              <span class="input-group-text"><i class="mdi mdi-magnify"></i></span>
+              <input type="text" name="busca" id="input-busca" class="form-control"
+                placeholder="Buscar por nome ou matrícula do paciente..."
+                value="{{ $busca ?? '' }}" autocomplete="off">
+            </div>
+          </div>
+
+          {{-- Filtro por profissional: irrelevante para o profissional (nivel 3, vê só os seus) --}}
+          @if(Auth::user()->nivelAcesso() != 3)
+          <div class="col-md-3">
+            <select name="profissional_id" class="form-select" onchange="document.getElementById('busca-form').submit()">
+              <option value="">Todos os profissionais</option>
+              @foreach($profissionais as $p)
+                <option value="{{ $p->id }}" {{ (string)$filtroProfissional === (string)$p->id ? 'selected' : '' }}>{{ $p->nome }}</option>
+              @endforeach
+            </select>
+          </div>
+          @endif
+
+          {{-- Filtro por status --}}
+          <div class="col-md-2">
+            <select name="status" class="form-select" onchange="document.getElementById('busca-form').submit()">
+              <option value="">Todos os status</option>
+              <option value="aberto"  {{ $filtroStatus === 'aberto'  ? 'selected' : '' }}>Aberto</option>
+              <option value="fechado" {{ $filtroStatus === 'fechado' ? 'selected' : '' }}>Fechado</option>
+            </select>
+          </div>
+
+          @if($busca || $filtroProfissional || $filtroStatus)
+          <div class="col-md-auto">
+            <a href="/atendimentos" class="btn btn-outline-secondary" title="Limpar filtros">
+              <i class="mdi mdi-close me-1"></i>Limpar
+            </a>
+          </div>
           @endif
         </div>
       </form>
@@ -110,7 +139,8 @@ $configData = Helper::appClasses();
               {{-- Paciente: nome e matrícula --}}
               <td>
                 @if(Auth::user()->nivelAcesso() <= 4 && $atendimento->paciente)
-                  <a href="/pacientes/{{ $atendimento->paciente->id }}/historico"
+                  {{-- ANALISE-04 (v0.10.1): nome do paciente padronizado → perfil /pacientes/{id} --}}
+                  <a href="/pacientes/{{ $atendimento->paciente->id }}"
                      class="fw-medium text-body text-decoration-none"
                      style="border-bottom: 1px dashed currentColor;">
                     {{ $atendimento->paciente->nome }}

@@ -41,7 +41,10 @@ $iniciais   = collect(explode(' ', $paciente->nome ?? 'P'))
         </div>
 
         <div class="flex-grow-1">
-          <h4 class="mb-1">{{ $paciente->nome }}</h4>
+          {{-- ANALISE-04 (v0.10.1): nome agora é link para o perfil (antes não clicava) --}}
+          <h4 class="mb-1">
+            <a href="/pacientes/{{ $paciente->id }}" class="text-body text-decoration-none">{{ $paciente->nome }}</a>
+          </h4>
           <div class="d-flex flex-wrap gap-3 text-muted small">
             @if($paciente->matricula)
               <span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $paciente->matricula }}</span>

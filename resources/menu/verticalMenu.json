@@ -83,6 +83,24 @@
       "nivel_minimo": 1
     },
     {
+      "icon": "menu-icon tf-icons mdi mdi-cog-outline",
+      "name": "Configuracoes",
+      "slug": "configuracoes",
+      "nivel_minimo": 2,
+      "submenu": [
+        {
+          "url": "/configuracoes/especialidades",
+          "name": "Especialidades",
+          "slug": "configuracoes-especialidades"
+        },
+        {
+          "url": "/configuracoes/tipos-consulta",
+          "name": "Tipos de Consulta",
+          "slug": "configuracoes-tipos-consulta"
+        }
+      ]
+    },
+    {
       "url": "/agendar-consulta",
       "name": "Agendar Consulta",
       "icon": "menu-icon tf-icons mdi mdi-calendar-plus",

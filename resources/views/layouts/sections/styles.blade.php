@@ -25,4 +25,6 @@
 @yield('page-style')
 
 <!-- Paleta de cores Prontu IF (carregada por último para sobrescrever o tema base) -->
-<link rel="stylesheet" href="{{ asset('assets/css/prontuif-theme.css') }}" />
+{{-- BUG-04 (v0.10.1): cache-busting via filemtime — força o navegador a baixar a versão nova
+     do CSS sempre que o arquivo muda, eliminando a necessidade de hard refresh manual. --}}
+<link rel="stylesheet" href="{{ asset('assets/css/prontuif-theme.css') }}?v={{ filemtime(public_path('assets/css/prontuif-theme.css')) }}" />

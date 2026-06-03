@@ -8,7 +8,8 @@ $configData = Helper::appClasses();
   @if(!isset($navbarFull))
   <div class="app-brand demo">
     <a href="{{url('/')}}" class="app-brand-link">
-      <span class="app-brand-logo demo"><img src="../assets/img/branding/logo.png" class="w-px-30 h-auto" alt="logo"></span>
+      {{-- BUG-03 (v0.10.1): path absoluto via asset() — o `../assets` relativo quebrava em rotas profundas (ex: /pacientes/{id}/historico) --}}
+      <span class="app-brand-logo demo"><img src="{{ asset('assets/img/branding/logo.png') }}" class="w-px-30 h-auto" alt="logo"></span>
       <span class="app-brand-text demo menu-text fw-bold ms-2">{{config('variables.templateName')}}</span>
     </a>
 

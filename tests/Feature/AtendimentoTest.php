@@ -73,6 +73,21 @@ class AtendimentoTest extends TestCase
         $this->assertDatabaseHas('atendimentos', ['id' => $atendimento->id, 'status' => 'fechado']);
     }
 
+    // ANALISE-01 (v0.10.1): Admin é somente leitura — não abre atendimentos (403)
+    public function test_admin_nao_abre_atendimento(): void
+    {
+        $admin = $this->criarAdmin();
+
+        $this->actingAs($admin)->get('/cadastro-atendimento')->assertForbidden();
+
+        [, $paciente]      = $this->criarPacienteUser();
+        [, $profissional]  = $this->criarProfissionalUser();
+        $this->actingAs($admin)->post('/cadastrar-atendimento', [
+            'paciente_id'     => $paciente->id,
+            'profissional_id' => $profissional->id,
+        ])->assertForbidden();
+    }
+
     // Profissional só enxerga seus próprios atendimentos na listagem
     public function test_profissional_ve_apenas_seus_atendimentos(): void
     {

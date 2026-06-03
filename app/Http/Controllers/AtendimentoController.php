@@ -39,6 +39,9 @@ class AtendimentoController extends Controller
     public function index()
     {
         $busca = request('busca');
+        // UX-05 (v0.10.1): filtros por profissional e status (GET, preserváveis na URL)
+        $filtroProfissional = request('profissional_id');
+        $filtroStatus       = request('status');
 
         $query = Atendimento::with('paciente', 'profissional', 'criadoPor')
             ->orderBy('created_at', 'desc');
@@ -59,7 +62,12 @@ class AtendimentoController extends Controller
             });
         }
 
-        $atendimentos      = $query->paginate(15)->appends(['busca' => $busca]);
+        // Filtros por profissional e status (selects populados do banco)
+        $query->when($filtroProfissional, fn($q) => $q->where('profissional_id', $filtroProfissional))
+              ->when($filtroStatus,       fn($q) => $q->where('status', $filtroStatus));
+
+        // withQueryString preserva busca + filtros nos links de paginação
+        $atendimentos      = $query->paginate(15)->withQueryString();
         $totalAtendimentos = Atendimento::count();
         $abertosDoUsuario  = null;
 
@@ -73,8 +81,12 @@ class AtendimentoController extends Controller
             }
         }
 
+        // Lista de profissionais para o select de filtro (relevante para nivel != 3)
+        $profissionais = \App\Models\Profissional::orderBy('nome')->get();
+
         return view('content.pages.listagem_atendimentos', compact(
-            'atendimentos', 'busca', 'totalAtendimentos', 'abertosDoUsuario'
+            'atendimentos', 'busca', 'totalAtendimentos', 'abertosDoUsuario',
+            'profissionais', 'filtroProfissional', 'filtroStatus'
         ));
     }
 
@@ -88,6 +100,11 @@ class AtendimentoController extends Controller
      */
     public function create()
     {
+        // ANALISE-01 (v0.10.1): Admin (nivel 1) é somente leitura — não abre atendimentos.
+        if (Auth::user()->nivelAcesso() === 1) {
+            abort(403);
+        }
+
         $profissionais      = Profissional::orderBy('nome')->get();
         $profissionalLogado = Auth::user()->profissional; // null se o usuário não for profissional
 
@@ -109,6 +126,11 @@ class AtendimentoController extends Controller
      */
     public function store(StoreAtendimentoRequest $request)
     {
+        // ANALISE-01 (v0.10.1): guard server-side — Admin não cria atendimentos
+        if (Auth::user()->nivelAcesso() === 1) {
+            abort(403);
+        }
+
         $atendimento = Atendimento::create([
             'paciente_id'     => $request->paciente_id,
             'profissional_id' => $request->profissional_id,
