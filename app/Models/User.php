@@ -17,6 +17,9 @@ class User extends Authenticatable
         'email',
         'password',
         'active',
+        'avatar',              // ST-10: caminho relativo em storage/app/public/avatars/
+        'onboarding_completo', // ST-15: wizard de primeiro acesso
+        'tutorial_completo',   // ST-15: placeholder Shepherd.js (pós-TCC)
     ];
 
     protected $hidden = [
@@ -25,9 +28,11 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'active' => 'boolean',
+        'email_verified_at'   => 'datetime',
+        'password'            => 'hashed',
+        'active'              => 'boolean',
+        'onboarding_completo' => 'boolean',
+        'tutorial_completo'   => 'boolean',
     ];
 
     public function profissional()

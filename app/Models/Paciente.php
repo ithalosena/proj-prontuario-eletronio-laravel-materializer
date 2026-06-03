@@ -12,14 +12,24 @@ class Paciente extends Model
 
     protected $fillable = [
         'user_id',
-        'nome',
-        'contato',
-        'documento',
-        'data_nascimento',
-        'sexo',
+        'nome', 'nome_social',
+        'contato', 'telefone_alternativo', 'email_alternativo',
+        'documento', 'data_nascimento', 'sexo',
+        // Endereço — campo legado mantido; campos estruturados adicionados no ST-15
         'endereco',
-        'matricula',
-        'curso',
+        'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'ponto_referencia',
+        // Dados complementares
+        'naturalidade_cidade', 'naturalidade_uf', 'raca_cor', 'estado_civil', 'nome_mae',
+        // Contatos de emergência
+        'contato_emergencia_nome', 'contato_emergencia_telefone', 'contato_emergencia_parentesco',
+        'contato_emergencia2_nome', 'contato_emergencia2_telefone', 'contato_emergencia2_parentesco',
+        // Responsável legal (obrigatório para menores de 18)
+        'responsavel_nome', 'responsavel_cpf', 'responsavel_telefone', 'responsavel_email', 'responsavel_parentesco',
+        // Dados clínicos autorreferidos
+        'tipo_sanguineo', 'peso_kg', 'altura_cm',
+        'alergias', 'medicamentos_uso_continuo', 'condicoes_cronicas', 'cirurgias_previas',
+        'tabagismo', 'etilismo', 'atividade_fisica',
+        'matricula', 'curso',
     ];
 
     protected $casts = [
@@ -60,5 +70,16 @@ class Paciente extends Model
     public function prescricoes()
     {
         return $this->hasManyThrough(Prescricao::class, Consulta::class);
+    }
+
+    public function agendamentos()
+    {
+        return $this->hasMany(\App\Models\Agendamento::class);
+    }
+
+    // Consentimentos LGPD do paciente (via user_id do usuário vinculado)
+    public function consentimentos()
+    {
+        return $this->hasMany(Consentimento::class, 'user_id', 'user_id');
     }
 }

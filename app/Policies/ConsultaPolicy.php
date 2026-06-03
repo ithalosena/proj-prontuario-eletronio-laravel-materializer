@@ -5,10 +5,25 @@ namespace App\Policies;
 use App\Models\Consulta;
 use App\Models\User;
 
-// Regras de autoria para Consulta (DT-03).
-// Admin (nivel <= 1) sempre pode; outros: somente o criador, e apenas se o atendimento estiver aberto.
+// Regras de autorização para Consulta (DT-03 + v0.7.6).
+// view(): profissional só vê consultas do próprio paciente (profissional_id); admin/coord/recep veem tudo.
+// update()/delete(): somente o criador, e apenas com atendimento aberto.
 class ConsultaPolicy
 {
+    // Qualquer profissional com acesso legítimo pode visualizar — mas profissional (nivel 3)
+    // só vê consultas onde é o profissional responsável.
+    public function view(User $user, Consulta $consulta): bool
+    {
+        // Admin (1), coordenador (2), recepcionista (4) veem qualquer consulta
+        $nivel = $user->nivelAcesso();
+        if ($nivel <= 2 || $nivel === 4) {
+            return true;
+        }
+
+        // Profissional (3): apenas as próprias consultas
+        return $user->profissional?->id === $consulta->profissional_id;
+    }
+
     public function update(User $user, Consulta $consulta): bool
     {
         if ($user->nivelAcesso() <= 1) return true;

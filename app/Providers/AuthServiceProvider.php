@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Agendamento;
 use App\Models\Consulta;
 use App\Models\Exame;
 use App\Models\Prescricao;
+use App\Policies\AgendamentoPolicy;
 use App\Policies\ConsultaPolicy;
 use App\Policies\ExamePolicy;
 use App\Policies\PrescricaoPolicy;
@@ -12,11 +14,12 @@ use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvid
 
 class AuthServiceProvider extends ServiceProvider
 {
-    // Mapeamento model → policy (DT-03: controle de autoria por recurso)
+    // Mapeamento model → policy (DT-03 + v0.7.6: controle de autoria por recurso)
     protected $policies = [
-        Consulta::class   => ConsultaPolicy::class,
-        Exame::class      => ExamePolicy::class,
-        Prescricao::class => PrescricaoPolicy::class,
+        Agendamento::class => AgendamentoPolicy::class, // v0.7.6: corrige IDOR S-02
+        Consulta::class    => ConsultaPolicy::class,
+        Exame::class       => ExamePolicy::class,
+        Prescricao::class  => PrescricaoPolicy::class,
     ];
 
     /**

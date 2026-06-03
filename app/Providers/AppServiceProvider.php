@@ -12,6 +12,8 @@ use App\Models\Prescricao;
 use App\Models\Paciente;
 use App\Models\Profissional;
 use App\Observers\AuditObserver;
+use App\View\Composers\NavbarComposer;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,11 @@ class AppServiceProvider extends ServiceProvider
   public function boot(): void
   {
     Paginator::useBootstrapFive();
+
+    View::composer([
+        'layouts.sections.navbar.navbar',
+        'layouts.contentNavbarLayout',
+    ], NavbarComposer::class);
 
     Agendamento::observe(AuditObserver::class);
     Atendimento::observe(AuditObserver::class);

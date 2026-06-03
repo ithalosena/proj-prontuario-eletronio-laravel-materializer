@@ -263,6 +263,9 @@ class AgendamentoController extends Controller
         $agendamento = Agendamento::with('paciente', 'profissional', 'criadoPor', 'canceladoPor', 'consulta')
             ->findOrFail($id);
 
+        // S-02: bloqueia IDOR — profissional só vê agendamentos onde é o responsável
+        $this->authorize('view', $agendamento);
+
         return view('content.pages.detalhes_agendamento', compact('agendamento'));
     }
 
@@ -273,11 +276,17 @@ class AgendamentoController extends Controller
     {
         $agendamento = Agendamento::findOrFail($id);
 
+        // S-02: profissional só confirma os próprios agendamentos
+        $this->authorize('update', $agendamento);
+
         if (!$agendamento->isPendente()) {
             return back()->with('error', 'Apenas agendamentos pendentes podem ser confirmados.');
         }
 
         $agendamento->update(['status' => 'confirmado']);
+
+        // Notifica o paciente sobre a confirmação
+        $agendamento->paciente->user?->notify(new \App\Notifications\AgendamentoConfirmadoNotification($agendamento));
 
         return back()->with('success', 'Agendamento confirmado.');
     }
@@ -293,6 +302,9 @@ class AgendamentoController extends Controller
 
         $agendamento = Agendamento::findOrFail($id);
 
+        // S-02: profissional só cancela os próprios agendamentos
+        $this->authorize('cancelar', $agendamento);
+
         if ($agendamento->isRealizado() || $agendamento->isCancelado()) {
             return back()->with('error', 'Este agendamento não pode ser cancelado.');
         }
@@ -304,6 +316,11 @@ class AgendamentoController extends Controller
             'cancelado_em'        => now(),
         ]);
 
+        // Notifica a outra parte: profissional notifica paciente, outros notificam o profissional
+        $ehProfissional = Auth::user()->nivelAcesso() === 3;
+        $outraParte = $ehProfissional ? $agendamento->paciente->user : $agendamento->profissional->user;
+        $outraParte?->notify(new \App\Notifications\AgendamentoCanceladoNotification($agendamento, Auth::user()));
+
         return redirect('/agendamentos')->with('success', 'Agendamento cancelado.');
     }
 
@@ -314,6 +331,9 @@ class AgendamentoController extends Controller
     public function realizar($id)
     {
         $agendamento = Agendamento::findOrFail($id);
+
+        // S-02: profissional só realiza os próprios agendamentos
+        $this->authorize('update', $agendamento);
 
         if (!$agendamento->isConfirmado()) {
             return back()->with('error', 'Apenas agendamentos confirmados podem ser realizados.');

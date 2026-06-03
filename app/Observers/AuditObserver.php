@@ -50,11 +50,13 @@ class AuditObserver
         );
     }
 
-    // Remove campos de timestamp e senha do log
+    // Remove credenciais, timestamps e dados sensíveis de saúde (LGPD Art. 46 / L-03)
     private function filtrar(array $data): array
     {
         return collect($data)->except([
             'password', 'remember_token', 'updated_at', 'deleted_at',
+            // Dados sensíveis de saúde — não devem ser duplicados em audit_logs
+            'queixa', 'anamnese', 'diagnostico', 'conduta',
         ])->toArray();
     }
 }

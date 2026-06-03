@@ -46,7 +46,7 @@ return [
     |
     */
 
-    'encrypt' => false,
+    'encrypt' => true, // v0.7.6 S-03: sessão criptografada (dados sensíveis de saúde)
 
     /*
     |--------------------------------------------------------------------------

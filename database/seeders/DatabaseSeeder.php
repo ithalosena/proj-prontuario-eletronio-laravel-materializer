@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             AtendimentosSeeder::class,       // ~100 atendimentos em cenários específicos
             ConsultasSeeder::class,          // ~120 consultas + exames + prescrições
             DisponibilidadesSeeder::class,   // horários padrão dos 8 profissionais (ST-09)
+            AgendamentosSeeder::class,       // ~120 agendamentos nos próximos 3 meses (v0.7.6)
         ]);
 
         $this->command->info('');

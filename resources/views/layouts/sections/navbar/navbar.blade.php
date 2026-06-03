@@ -69,11 +69,64 @@ $navbarDetached = ($navbarDetached ?? '');
 
       <ul class="navbar-nav flex-row align-items-center ms-auto">
 
-        {{-- Sino de notificações (badge funcional em Sprint v0.8.0) --}}
-        <li class="nav-item me-2">
-          <a href="#" class="nav-link btn btn-text-secondary rounded-pill btn-icon">
+        {{-- Sino de notificações com badge e dropdown (Sprint v0.8.5) --}}
+        <li class="nav-item me-2 dropdown">
+          <a href="/notificacoes"
+             class="nav-link btn btn-text-secondary rounded-pill btn-icon position-relative"
+             data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
             <i class="mdi mdi-bell-outline mdi-24px"></i>
+            @if($notificacoesCount > 0)
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style="font-size:0.65rem">
+                {{ $notificacoesCount > 99 ? '99+' : $notificacoesCount }}
+              </span>
+            @endif
           </a>
+          <div class="dropdown-menu dropdown-menu-end py-0" style="min-width:320px">
+            <div class="d-flex align-items-center px-3 py-2 border-bottom">
+              <span class="fw-semibold me-auto">Notificações</span>
+              @if($notificacoesCount > 0)
+                <form method="POST" action="/notificacoes/ler-todas" class="d-inline">
+                  @csrf @method('PATCH')
+                  <button type="submit" class="btn btn-sm btn-text-secondary p-0 small">Marcar todas como lidas</button>
+                </form>
+              @endif
+            </div>
+            <ul class="list-group list-group-flush" style="max-height:320px;overflow-y:auto">
+              @forelse($notificacoesRecentes as $n)
+                <li class="list-group-item list-group-item-action px-3 py-2">
+                  <div class="d-flex align-items-start gap-2">
+                    <a href="{{ $n->data['url'] ?? '#' }}"
+                       class="d-flex align-items-start gap-2 flex-grow-1 text-decoration-none text-body">
+                      <i class="mdi {{ $n->data['icone'] }} text-{{ $n->data['cor'] }} mt-1"></i>
+                      <div>
+                        <div class="fw-semibold small">{{ $n->data['titulo'] }}</div>
+                        <div class="text-muted small">{{ $n->data['mensagem'] }}</div>
+                        <div class="text-muted" style="font-size:0.7rem">{{ $n->created_at->diffForHumans() }}</div>
+                      </div>
+                    </a>
+                    <form method="POST" action="/notificacoes/{{ $n->id }}/ler" class="d-inline">
+                      @csrf @method('PATCH')
+                      <button type="submit" class="btn btn-sm btn-icon btn-text-secondary p-0" title="Marcar como lida">
+                        <i class="mdi mdi-check-circle-outline mdi-18px"></i>
+                      </button>
+                    </form>
+                  </div>
+                </li>
+              @empty
+                <li class="list-group-item text-center text-muted small py-3">Nenhuma notificação não lida.</li>
+              @endforelse
+            </ul>
+            <div class="border-top text-center py-2">
+              <button type="button"
+                      class="btn btn-sm btn-text-primary small border-0 bg-transparent"
+                      data-bs-toggle="offcanvas"
+                      data-bs-target="#offcanvas-notificacoes"
+                      aria-controls="offcanvas-notificacoes">
+                Ver todas
+              </button>
+            </div>
+          </div>
         </li>
 
         <!-- User -->
@@ -95,11 +148,17 @@ $navbarDetached = ($navbarDetached ?? '');
               <span class="fw-semibold lh-1 small">{{ Auth::user()->name }}</span>
               <span class="badge {{ $papelClass }} mt-1" style="font-size:0.65rem">{{ $papelLabel }}</span>
             </div>
-            {{-- Avatar com iniciais --}}
+            {{-- Avatar: foto se existir, senão iniciais --}}
             <div class="avatar avatar-online">
-              <span class="avatar-initial rounded-circle bg-label-primary">
-                {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
-              </span>
+              @if(Auth::user()->avatar && Storage::disk('public')->exists(Auth::user()->avatar))
+                <img src="{{ Storage::url(Auth::user()->avatar) }}"
+                     alt="{{ Auth::user()->name }}"
+                     class="rounded-circle" style="width:38px; height:38px; object-fit:cover;">
+              @else
+                <span class="avatar-initial rounded-circle bg-label-primary">
+                  {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
+                </span>
+              @endif
             </div>
             @endif
           </a>
@@ -109,11 +168,17 @@ $navbarDetached = ($navbarDetached ?? '');
                 <div class="d-flex">
                   <div class="flex-shrink-0 me-3">
                     <div class="avatar avatar-online">
-                      <span class="avatar-initial rounded-circle bg-label-primary">
-                        @if(Auth::check())
-                          {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
-                        @endif
-                      </span>
+                      @if(Auth::check() && Auth::user()->avatar && Storage::disk('public')->exists(Auth::user()->avatar))
+                        <img src="{{ Storage::url(Auth::user()->avatar) }}"
+                             alt="{{ Auth::user()->name }}"
+                             class="rounded-circle" style="width:38px; height:38px; object-fit:cover;">
+                      @else
+                        <span class="avatar-initial rounded-circle bg-label-primary">
+                          @if(Auth::check())
+                            {{ collect(explode(' ', Auth::user()->name))->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('') }}
+                          @endif
+                        </span>
+                      @endif
                     </div>
                   </div>
                   <div class="flex-grow-1">
@@ -125,10 +190,21 @@ $navbarDetached = ($navbarDetached ?? '');
             </li>
             <li><div class="dropdown-divider"></div></li>
             <li>
-              <a class="dropdown-item" href="/logout">
-                <i class='mdi mdi-logout me-2'></i>
-                <span class="align-middle">Sair</span>
+              <a class="dropdown-item" href="/perfil">
+                <i class="mdi mdi-account-cog-outline me-2"></i>
+                <span class="align-middle">Meu Perfil</span>
               </a>
+            </li>
+            <li><div class="dropdown-divider"></div></li>
+            <li>
+              {{-- S-04: logout via POST com CSRF para evitar CSRF logout attack --}}
+              <form method="POST" action="/logout" class="d-inline">
+                @csrf
+                <button type="submit" class="dropdown-item">
+                  <i class='mdi mdi-logout me-2'></i>
+                  <span class="align-middle">Sair</span>
+                </button>
+              </form>
             </li>
           </ul>
         </li>

@@ -38,7 +38,7 @@ $configData = Helper::appClasses();
   transition: background 0.3s;
 }
 .wizard-step-dot.active {
-  background: #666cff;
+  background: var(--bs-primary);
 }
 .wizard-step-dot.done {
   background: #72e128;
@@ -54,8 +54,8 @@ $configData = Helper::appClasses();
 }
 .card-opcao:hover,
 .card-opcao.selecionado {
-  border-color: #666cff;
-  background: rgba(102,108,255,.06);
+  border-color: var(--bs-primary);
+  background: rgba(61, 170, 74, .06);
 }
 .card-opcao.selecionado .check-icon {
   display: inline-block !important;
@@ -255,11 +255,11 @@ $configData = Helper::appClasses();
             <i class="mdi mdi-arrow-left me-1"></i>Voltar
           </button>
           <button type="button" class="btn btn-primary btn-wizard ms-auto" id="btn-avancar"
-                  onclick="wizardAvancar()">
+                  style="display:none" onclick="wizardAvancar()">
             Próximo<i class="mdi mdi-arrow-right ms-1"></i>
           </button>
           <button type="submit" class="btn btn-success btn-wizard ms-auto" id="btn-confirmar"
-                  style="display:none">
+                  style="display:none" disabled>
             <i class="mdi mdi-calendar-check me-1"></i>Confirmar Agendamento
           </button>
         </div>
@@ -311,15 +311,17 @@ function renderStep() {
   document.getElementById('wizard-label').textContent = 'Passo ' + s + ' de 4';
   document.getElementById('wizard-step-title').textContent = stepTitles[s - 1];
 
-  // Botões
-  document.getElementById('btn-voltar').style.display   = s > 1 ? '' : 'none';
-  document.getElementById('btn-avancar').style.display  = s < 4 ? '' : 'none';
-  document.getElementById('btn-confirmar').style.display = s === 4 ? '' : 'none';
+  // Botões — exclusão mútua: PRÓXIMO em 1–3, CONFIRMAR exclusivamente no 4
+  document.getElementById('btn-voltar').style.display    = s > 1     ? '' : 'none';
+  document.getElementById('btn-avancar').style.display   = s < 4     ? '' : 'none';
+  document.getElementById('btn-confirmar').style.display = s === 4   ? '' : 'none';
+  document.getElementById('btn-confirmar').disabled      = s !== 4;
 }
 
 // Avança para o próximo passo com validação básica
 function wizardAvancar() {
   var s = wizardState.step;
+  if (s >= 4) return;   // Bug A: impede avançar além do último passo
 
   if (s === 1 && !wizardState.tipo) {
     alert('Selecione o tipo de consulta.');
@@ -367,12 +369,27 @@ function selecionarTipo(nome, el) {
   filtrarProfissionais(nome);
 }
 
-// Filtra a lista de profissionais (passo 2) por especialidade/tipo (simples: mostra todos)
+// Filtra a lista de profissionais (passo 2) por especialidade compatível com o tipo selecionado.
+// Usa correspondência parcial de string (data-especialidade × tipo). Fallback: exibe todos
+// quando nenhum profissional bate — garante que o wizard nunca fique sem opção.
 function filtrarProfissionais(tipo) {
-  // Por enquanto mostra todos — ST-12 poderá filtrar por especialidade vinculada
-  document.querySelectorAll('#lista-profissionais .card-opcao').forEach(function (c) {
-    c.closest('[class*=col]').style.display = '';
+  var tipoNorm    = (tipo || '').toLowerCase().trim();
+  var cards       = document.querySelectorAll('#lista-profissionais .card-opcao');
+  var algumVisivel = false;
+
+  cards.forEach(function (card) {
+    var esp    = (card.getAttribute('data-especialidade') || '').toLowerCase().trim();
+    var exibir = !tipoNorm || esp.includes(tipoNorm) || tipoNorm.includes(esp);
+    card.closest('[class*=col]').style.display = exibir ? '' : 'none';
+    if (exibir) algumVisivel = true;
   });
+
+  // Fallback: se nenhum profissional tiver especialidade compatível, exibe todos
+  if (!algumVisivel) {
+    cards.forEach(function (card) {
+      card.closest('[class*=col]').style.display = '';
+    });
+  }
 }
 
 // Seleção de profissional
@@ -397,7 +414,7 @@ function carregarSlotsWizard() {
     return;
   }
 
-  horaSelect.innerHTML = '<option value="">Carregando...</option>';
+  horaSelect.innerHTML = '<option value="">Buscando horários disponíveis...</option>';
   horaSelect.disabled  = true;
   wizardState.hora     = '';
 
@@ -406,7 +423,7 @@ function carregarSlotsWizard() {
     .then(function (slots) {
       horaSelect.innerHTML = '';
       if (!slots.length) {
-        horaSelect.innerHTML = '<option value="">Sem horários disponíveis</option>';
+        horaSelect.innerHTML = '<option value="">Sem horários disponíveis nesta data</option>';
         return;
       }
       horaSelect.innerHTML = '<option value="">Selecione o horário</option>';
@@ -417,6 +434,10 @@ function carregarSlotsWizard() {
         horaSelect.appendChild(opt);
       });
       horaSelect.disabled = false;
+    })
+    .catch(function () {
+      horaSelect.innerHTML = '<option value="">Erro ao buscar horários. Tente novamente.</option>';
+      horaSelect.disabled  = false;
     });
 }
 
