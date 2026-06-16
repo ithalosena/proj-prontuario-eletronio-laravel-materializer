@@ -46,7 +46,10 @@ class ExameController extends Controller
      */
     public function create()
     {
-        $consultas  = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
+        // UX-P09 (v0.10.2): escopo — nível 3 vê só as próprias; nunca de atendimento fechado
+        $consultas  = Consulta::with('paciente', 'profissional')
+            ->anexaveisPor(Auth::user())
+            ->orderBy('data_hora', 'desc')->get();
         $consultaId = request()->query('consulta_id');
         return view('content.pages.cadastro-exame', compact('consultas', 'consultaId'));
     }
@@ -88,7 +91,10 @@ class ExameController extends Controller
 
         $this->authorize('update', $exame);
 
-        $consultas = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
+        // UX-P09 (v0.10.2): mesmo escopo do create
+        $consultas = Consulta::with('paciente', 'profissional')
+            ->anexaveisPor(Auth::user())
+            ->orderBy('data_hora', 'desc')->get();
         return view('content.pages.editar_exame', ['exame' => $exame, 'consultas' => $consultas]);
     }
 

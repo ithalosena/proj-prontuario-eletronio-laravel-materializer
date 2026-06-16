@@ -87,4 +87,24 @@ class Consulta extends Model
     {
         return $this->hasMany(Prescricao::class);
     }
+
+    // =========================================================
+    // Scopes de consulta
+    // =========================================================
+
+    /*
+     * UX-P09 (v0.10.2): consultas às quais o usuário PODE anexar exame/prescrição.
+     * - Nível 3 (profissional) vê apenas as próprias consultas (respeita a ConsultaPolicy::view).
+     * - Nunca consultas de atendimento FECHADO (princípio read-only do encerramento).
+     * - Consultas órfãs (sem atendimento) seguem visíveis — tratadas no débito DT-MOD-01.
+     */
+    public function scopeAnexaveisPor($query, User $user)
+    {
+        return $query
+            ->when(
+                $user->nivelAcesso() === 3 && $user->profissional,
+                fn($q) => $q->where('profissional_id', $user->profissional->id)
+            )
+            ->whereDoesntHave('atendimento', fn($q) => $q->where('status', 'fechado'));
+    }
 }

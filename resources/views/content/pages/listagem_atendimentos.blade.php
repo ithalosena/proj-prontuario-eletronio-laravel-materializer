@@ -23,17 +23,9 @@ $configData = Helper::appClasses();
   {{-- ================================================================ --}}
   {{-- HEADER DA PÁGINA                                                  --}}
   {{-- ================================================================ --}}
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-      <h4 class="mb-0">Listagem de Atendimentos</h4>
-      <p class="text-muted small mb-0 mt-1">Gerencie os atendimentos do sistema</p>
-    </div>
-    {{-- ANALISE-01 (v0.10.1): Admin (nivel 1) é somente leitura — coordenador (2) e profissional (3) criam --}}
-    @if(Auth::user()->nivelAcesso() >= 2 && Auth::user()->nivelAcesso() <= 3)
-    <a href="/cadastro-atendimento" class="btn btn-primary">
-      <i class="mdi mdi-plus-circle-outline me-1"></i>Novo Atendimento
-    </a>
-    @endif
+  <div class="mb-4">
+    <h4 class="mb-0">Listagem de Atendimentos</h4>
+    <p class="text-muted small mb-0 mt-1">Gerencie os atendimentos do sistema</p>
   </div>
 
   {{-- Flash messages --}}
@@ -53,16 +45,25 @@ $configData = Helper::appClasses();
   {{-- ================================================================ --}}
   {{-- MINI-INDICADORES                                                  --}}
   {{-- ================================================================ --}}
-  <div class="d-flex flex-wrap gap-2 mb-4">
-    <span class="badge bg-label-primary fs-6 px-3 py-2">
-      <i class="mdi mdi-folder-multiple-outline me-1"></i>
-      {{ $totalAtendimentos }} {{ $totalAtendimentos == 1 ? 'atendimento cadastrado' : 'atendimentos cadastrados' }}
-    </span>
-    @if(!is_null($abertosDoUsuario))
-    <span class="badge bg-label-success fs-6 px-3 py-2">
-      <i class="mdi mdi-folder-open-outline me-1"></i>
-      {{ $abertosDoUsuario }} {{ $abertosDoUsuario == 1 ? 'atendimento aberto' : 'atendimentos abertos' }} (seus)
-    </span>
+  {{-- UX-P03 (2.1): indicadores + ação primária na mesma linha (botão mais evidente, alinhado aos badges) --}}
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div class="d-flex flex-wrap gap-2">
+      <span class="badge bg-label-primary fs-6 px-3 py-2">
+        <i class="mdi mdi-folder-multiple-outline me-1"></i>
+        {{ $totalAtendimentos }} {{ $totalAtendimentos == 1 ? 'atendimento cadastrado' : 'atendimentos cadastrados' }}
+      </span>
+      @if(!is_null($abertosDoUsuario))
+      <span class="badge bg-label-success fs-6 px-3 py-2">
+        <i class="mdi mdi-folder-open-outline me-1"></i>
+        {{ $abertosDoUsuario }} {{ $abertosDoUsuario == 1 ? 'atendimento aberto' : 'atendimentos abertos' }} (seus)
+      </span>
+      @endif
+    </div>
+    {{-- ANALISE-01 (v0.10.1): Admin (nivel 1) é somente leitura — coordenador (2) e profissional (3) criam --}}
+    @if(Auth::user()->nivelAcesso() >= 2 && Auth::user()->nivelAcesso() <= 3)
+    <a href="/cadastro-atendimento" class="btn btn-primary">
+      <i class="mdi mdi-folder-plus-outline me-1"></i>Novo Atendimento
+    </a>
     @endif
   </div>
 
@@ -93,14 +94,8 @@ $configData = Helper::appClasses();
           </div>
           @endif
 
-          {{-- Filtro por status --}}
-          <div class="col-md-2">
-            <select name="status" class="form-select" onchange="document.getElementById('busca-form').submit()">
-              <option value="">Todos os status</option>
-              <option value="aberto"  {{ $filtroStatus === 'aberto'  ? 'selected' : '' }}>Aberto</option>
-              <option value="fechado" {{ $filtroStatus === 'fechado' ? 'selected' : '' }}>Fechado</option>
-            </select>
-          </div>
+          {{-- UX-P03 (2.4): status agora é filtrado por abas (abaixo); mantido como hidden p/ preservar ao buscar/trocar profissional --}}
+          <input type="hidden" name="status" value="{{ $filtroStatus }}">
 
           @if($busca || $filtroProfissional || $filtroStatus)
           <div class="col-md-auto">
@@ -111,6 +106,20 @@ $configData = Helper::appClasses();
           @endif
         </div>
       </form>
+
+      {{-- UX-P03 (2.4): filtro de status em abas — preserva busca/profissional pela query atual --}}
+      @php $baseStatusQuery = request()->except(['status', 'page']); @endphp
+      <ul class="nav nav-pills gap-1 mb-3">
+        @foreach(['' => 'Todos', 'aberto' => 'Abertos', 'fechado' => 'Fechados'] as $val => $lbl)
+          @php
+            $q = http_build_query(array_merge($baseStatusQuery, $val === '' ? [] : ['status' => $val]));
+            $href = '/atendimentos' . ($q ? '?' . $q : '');
+          @endphp
+          <li class="nav-item">
+            <a class="nav-link py-1 px-3 {{ (string)$filtroStatus === (string)$val ? 'active' : '' }}" href="{{ $href }}">{{ $lbl }}</a>
+          </li>
+        @endforeach
+      </ul>
 
       {{-- Contador de resultados --}}
       @if($atendimentos->total() > 0)
@@ -126,7 +135,6 @@ $configData = Helper::appClasses();
             <tr>
               <th>Paciente</th>
               <th>Profissional</th>
-              <th>Aberto por</th>
               <th>Status</th>
               <th>Data</th>
               <th class="text-end">Ações</th>
@@ -161,15 +169,6 @@ $configData = Helper::appClasses();
                 @endif
               </td>
 
-              {{-- Aberto por: só exibe quando diferente do próprio profissional --}}
-              <td>
-                @if($atendimento->criadoPor && $atendimento->criadoPor->id !== optional($atendimento->profissional)->user_id)
-                  <span class="text-muted small">{{ $atendimento->criadoPor->name }}</span>
-                @else
-                  <span class="text-muted small">—</span>
-                @endif
-              </td>
-
               {{-- Status --}}
               <td>
                 @if($atendimento->status === 'aberto')
@@ -185,41 +184,43 @@ $configData = Helper::appClasses();
                 <br><small class="text-muted">{{ $atendimento->created_at->format('H:i') }}</small>
               </td>
 
-              {{-- Ações: kebab --}}
+              {{-- UX-P03 (2.5): ação direta visível — "Continuar" nos abertos, "Ver" nos fechados; kebab só p/ secundárias --}}
               <td class="text-end">
-                <div class="dropdown">
-                  <button type="button"
-                          class="btn btn-sm btn-outline-secondary"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                          title="Mais ações">
-                    <i class="mdi mdi-dots-vertical"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <a class="dropdown-item" href="/atendimentos/{{ $atendimento->id }}">
-                        <i class="mdi mdi-eye-outline me-2"></i>Ver detalhes
-                      </a>
-                    </li>
-                    {{-- Encerrar: dono do atendimento (nivel 3) com status aberto --}}
-                    @if(Auth::user()->nivelAcesso() <= 3 && $atendimento->status === 'aberto'
-                        && optional(Auth::user()->profissional)->id == $atendimento->profissional_id)
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                      <button type="button" class="dropdown-item text-warning"
-                              data-bs-toggle="modal"
-                              data-bs-target="#fechar-{{ $atendimento->id }}">
-                        <i class="mdi mdi-folder-lock-outline me-2"></i>Encerrar atendimento
-                      </button>
-                    </li>
-                    @endif
-                  </ul>
+                <div class="d-inline-flex gap-1 justify-content-end">
+                  @if($atendimento->status === 'aberto')
+                    <a href="/atendimentos/{{ $atendimento->id }}" class="btn btn-sm btn-primary">
+                      <i class="mdi mdi-play-circle-outline me-1"></i>Continuar
+                    </a>
+                  @else
+                    <a href="/atendimentos/{{ $atendimento->id }}" class="btn btn-sm btn-outline-secondary">
+                      <i class="mdi mdi-eye-outline me-1"></i>Ver
+                    </a>
+                  @endif
+
+                  {{-- Kebab só quando há ação de encerrar (dono do atendimento, nivel ≤3, status aberto) --}}
+                  @if(Auth::user()->nivelAcesso() <= 3 && $atendimento->status === 'aberto'
+                      && optional(Auth::user()->profissional)->id == $atendimento->profissional_id)
+                  <div class="dropdown">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            data-bs-toggle="dropdown" aria-expanded="false" title="Mais ações">
+                      <i class="mdi mdi-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <button type="button" class="dropdown-item text-warning"
+                                data-bs-toggle="modal" data-bs-target="#fechar-{{ $atendimento->id }}">
+                          <i class="mdi mdi-folder-lock-outline me-2"></i>Encerrar atendimento
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                  @endif
                 </div>
               </td>
             </tr>
             @empty
             <tr>
-              <td colspan="6" class="text-center text-muted py-5">
+              <td colspan="5" class="text-center text-muted py-5">
                 <i class="mdi mdi-folder-search-outline mdi-48px d-block mb-2 opacity-25"></i>
                 @if($busca)
                   Nenhum atendimento encontrado para "<strong>{{ $busca }}</strong>".

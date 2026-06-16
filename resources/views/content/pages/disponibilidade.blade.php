@@ -242,6 +242,14 @@ $excIcons = [
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
   @endif
+  {{-- BUG-01 (v0.10.2): exibir erros de validação — antes a falha de gravação era silenciosa --}}
+  @if($errors->any())
+  <div class="alert alert-danger alert-dismissible mb-4" role="alert">
+    <i class="mdi mdi-alert-circle-outline me-1"></i>Não foi possível salvar. Verifique:
+    <ul class="mb-0 mt-1 ps-3">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  @endif
 
   {{-- ================================================================ --}}
   {{-- FORM PRINCIPAL                                                    --}}
@@ -250,12 +258,15 @@ $excIcons = [
     @csrf
 
     {{-- Inputs ocultos: horas padrão dos turnos (modificados pelo modal "Editar períodos") --}}
-    <input type="hidden" name="config[turno_manha_inicio]" id="f-manha-ini" value="{{ old('config.turno_manha_inicio', $config->turno_manha_inicio) }}">
-    <input type="hidden" name="config[turno_manha_fim]"   id="f-manha-fim" value="{{ old('config.turno_manha_fim',    $config->turno_manha_fim) }}">
-    <input type="hidden" name="config[turno_tarde_inicio]" id="f-tarde-ini" value="{{ old('config.turno_tarde_inicio', $config->turno_tarde_inicio) }}">
-    <input type="hidden" name="config[turno_tarde_fim]"   id="f-tarde-fim" value="{{ old('config.turno_tarde_fim',    $config->turno_tarde_fim) }}">
-    <input type="hidden" name="config[turno_noite_inicio]" id="f-noite-ini" value="{{ old('config.turno_noite_inicio', $config->turno_noite_inicio) }}">
-    <input type="hidden" name="config[turno_noite_fim]"   id="f-noite-fim" value="{{ old('config.turno_noite_fim',    $config->turno_noite_fim) }}">
+    {{-- BUG-01 (v0.10.2): os campos TIME do banco vêm como "08:00:00"; a validação exige H:i ("08:00").
+         Normalizamos para H:i (substr 0,5) — vale tanto para o valor do banco quanto para old() reenviado. --}}
+    @php $hhmm = fn($v) => $v ? substr($v, 0, 5) : ''; @endphp
+    <input type="hidden" name="config[turno_manha_inicio]" id="f-manha-ini" value="{{ $hhmm(old('config.turno_manha_inicio', $config->turno_manha_inicio)) }}">
+    <input type="hidden" name="config[turno_manha_fim]"   id="f-manha-fim" value="{{ $hhmm(old('config.turno_manha_fim',    $config->turno_manha_fim)) }}">
+    <input type="hidden" name="config[turno_tarde_inicio]" id="f-tarde-ini" value="{{ $hhmm(old('config.turno_tarde_inicio', $config->turno_tarde_inicio)) }}">
+    <input type="hidden" name="config[turno_tarde_fim]"   id="f-tarde-fim" value="{{ $hhmm(old('config.turno_tarde_fim',    $config->turno_tarde_fim)) }}">
+    <input type="hidden" name="config[turno_noite_inicio]" id="f-noite-ini" value="{{ $hhmm(old('config.turno_noite_inicio', $config->turno_noite_inicio)) }}">
+    <input type="hidden" name="config[turno_noite_fim]"   id="f-noite-fim" value="{{ $hhmm(old('config.turno_noite_fim',    $config->turno_noite_fim)) }}">
 
     {{-- Antecedências mantidas como hidden (não exibidas no protótipo atual) --}}
     <input type="hidden" name="config[antecedencia_minima_horas]" value="{{ old('config.antecedencia_minima_horas', $config->antecedencia_minima_horas) }}">

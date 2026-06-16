@@ -337,18 +337,12 @@ $iniciais = $atendimento
           </div>
         </div>
 
-        {{-- Botões de ação
-             intent=realize → cria consulta e vai para detalhes
-             intent=schedule → cria consulta e vai para agendamentos (módulo ST-09) --}}
+        {{-- Botões de ação — UX-P05 (B.4.8, v0.10.2): "Realizar Agora" virou "Salvar Consulta"
+             e o botão "Agendar para depois" (stub do ST-09) foi removido. Mantemos intent=realize. --}}
         <input type="hidden" name="intent" id="form-intent" value="realize">
         <div class="d-flex flex-wrap gap-2 mt-4 mb-2">
-          <button type="submit" class="btn btn-primary"
-            onclick="document.getElementById('form-intent').value='realize'">
-            <i class="mdi mdi-check-circle-outline me-1"></i>Realizar Agora
-          </button>
-          <button type="submit" class="btn btn-outline-primary"
-            onclick="document.getElementById('form-intent').value='schedule'">
-            <i class="mdi mdi-calendar-clock-outline me-1"></i>Agendar para depois
+          <button type="submit" class="btn btn-primary">
+            <i class="mdi mdi-check-circle-outline me-1"></i>Salvar Consulta
           </button>
           <a href="{{ $atendimento ? '/atendimentos/' . $atendimento->id : $voltarUrl }}"
             class="btn btn-outline-secondary ms-auto">Cancelar</a>

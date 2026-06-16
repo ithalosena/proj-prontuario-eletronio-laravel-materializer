@@ -46,7 +46,10 @@ class PrescricaoController extends Controller
      */
     public function create()
     {
-        $consultas  = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
+        // UX-P09 (v0.10.2): escopo — nível 3 vê só as próprias; nunca de atendimento fechado
+        $consultas  = Consulta::with('paciente', 'profissional')
+            ->anexaveisPor(Auth::user())
+            ->orderBy('data_hora', 'desc')->get();
         $consultaId = request()->query('consulta_id');
         return view('content.pages.cadastro-prescricao', compact('consultas', 'consultaId'));
     }
@@ -89,7 +92,10 @@ class PrescricaoController extends Controller
 
         $this->authorize('update', $prescricao);
 
-        $consultas = Consulta::with('paciente', 'profissional')->orderBy('data_hora', 'desc')->get();
+        // UX-P09 (v0.10.2): mesmo escopo do create
+        $consultas = Consulta::with('paciente', 'profissional')
+            ->anexaveisPor(Auth::user())
+            ->orderBy('data_hora', 'desc')->get();
         return view('content.pages.editar_prescricao', ['prescricao' => $prescricao, 'consultas' => $consultas]);
     }
 

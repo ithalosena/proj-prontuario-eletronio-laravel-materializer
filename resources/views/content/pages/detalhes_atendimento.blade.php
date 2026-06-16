@@ -110,8 +110,10 @@ $configData = Helper::appClasses();
             <small class="text-muted">{{ $atendimento->profissional->especialidade ?? '' }}</small>
           </div>
 
+          {{-- UX-P07 (v0.10.2): rótulo neutro "Registrado por" (não há fluxo de encaminhamento ainda;
+               quando ST-Encaminhamento existir, revisitar para "Aberto/Encaminhado por") --}}
           <div class="mb-3">
-            <p class="text-muted small mb-1">Aberto por</p>
+            <p class="text-muted small mb-1">Registrado por</p>
             <p class="fw-semibold mb-0">{{ $atendimento->criadoPor->name ?? '-' }}</p>
           </div>
 
@@ -144,8 +146,21 @@ $configData = Helper::appClasses();
           <div class="p-3 border-bottom">
             <div class="d-flex justify-content-between align-items-start gap-2">
               <div class="flex-grow-1">
-                <p class="mb-0 small fw-semibold">{{ $ant->created_at->format('d/m/Y') }}</p>
+                {{-- BUG-04 (v0.10.2): aberto → data de abertura (created_at); fechado → data de fechamento (fechado_em) --}}
+                @if($ant->isAberto())
+                  <p class="mb-0 small fw-semibold">Aberto em {{ $ant->created_at->format('d/m/Y') }}</p>
+                @else
+                  <p class="mb-0 small fw-semibold">Fechado em {{ ($ant->fechado_em ?? $ant->created_at)->format('d/m/Y') }}</p>
+                @endif
                 <p class="mb-0 small text-muted">{{ $ant->profissional->nome ?? '-' }}</p>
+                {{-- BUG-02 (v0.10.2): exibir o(s) tipo(s) das consultas do atendimento --}}
+                @if($ant->consultas->isNotEmpty())
+                <div class="mt-1 d-flex flex-wrap gap-1">
+                  @foreach($ant->consultas->pluck('tipo')->filter()->unique() as $tipoConsulta)
+                    <span class="badge bg-label-primary" style="font-size:.65rem">{{ $tipoConsulta }}</span>
+                  @endforeach
+                </div>
+                @endif
               </div>
               <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
                 <span class="badge rounded-pill bg-label-{{ $ant->isAberto() ? 'success' : 'secondary' }} small">
@@ -171,14 +186,9 @@ $configData = Helper::appClasses();
                 </div>
                 <div class="modal-body">
                   @forelse($ant->consultas as $c)
+                  {{-- UX-P06+P08 (v0.10.2): mesmo resumo padronizado do card de consultas --}}
                   <div class="border rounded p-3 mb-2">
-                    <p class="fw-semibold mb-1">
-                      {{ $c->data_hora->format('d/m/Y H:i') }}
-                      <span class="badge bg-label-primary ms-2">{{ $c->tipo }}</span>
-                    </p>
-                    @if($c->queixa)
-                    <p class="text-muted small mb-0">{{ Str::limit($c->queixa, 120) }}</p>
-                    @endif
+                    @include('content.pages.partials._consulta_resumo', ['consulta' => $c])
                   </div>
                   @empty
                   <p class="text-muted mb-0">Nenhuma consulta registrada neste atendimento.</p>
@@ -233,22 +243,9 @@ $configData = Helper::appClasses();
           @forelse($atendimento->consultas as $consulta)
           <div class="p-3 border-bottom">
             <div class="d-flex align-items-start justify-content-between">
-              <div>
-                {{-- Data/hora + tipo da consulta --}}
-                <p class="fw-semibold mb-1">
-                  {{ $consulta->data_hora->format('d/m/Y H:i') }}
-                  <span class="badge rounded-pill bg-label-primary ms-2">{{ $consulta->tipo }}</span>
-                </p>
-                {{-- Resumo da queixa: limitado a 100 caracteres para não quebrar o layout --}}
-                @if($consulta->queixa)
-                  <small class="text-muted d-block">{{ Str::limit($consulta->queixa, 100) }}</small>
-                @endif
-                {{-- Contadores de exames e prescrições (já carregados via eager loading) --}}
-                <small class="text-muted d-block mt-1">
-                  <i class="mdi mdi-test-tube-outline me-1"></i>{{ $consulta->exames->count() }} exame(s)
-                  <span class="mx-2">·</span>
-                  <i class="mdi mdi-pill me-1"></i>{{ $consulta->prescricoes->count() }} prescrição(ões)
-                </small>
+              {{-- UX-P06+P08 (v0.10.2): resumo padronizado (mesmo do modal de histórico) --}}
+              <div class="flex-grow-1">
+                @include('content.pages.partials._consulta_resumo', ['consulta' => $consulta])
               </div>
               <a href="/consultas/{{ $consulta->id }}" class="btn btn-sm btn-outline-secondary ms-3 flex-shrink-0">
                 <i class="mdi mdi-file-document-outline me-1"></i>Ver
@@ -302,6 +299,16 @@ $configData = Helper::appClasses();
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
       <div class="modal-body">
+        {{-- UX-P09 (v0.10.2): alerta de exame pendente — reforça a sugestão de retorno --}}
+        @if($examesPendentes > 0)
+        <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" role="alert">
+          <i class="mdi mdi-flask-empty-outline mt-1"></i>
+          <div>
+            Há <strong>{{ $examesPendentes }} exame(s) sem resultado</strong> neste atendimento.
+            Considere <strong>agendar um retorno</strong> para avaliar os resultados antes de encerrar.
+          </div>
+        </div>
+        @endif
         <p class="mb-1">
           Após encerrado, as consultas vinculadas não poderão ser editadas.
         </p>

@@ -146,8 +146,20 @@ class PacienteController extends Controller
             ->take(5)
             ->get();
 
+        // UX-P04 (v0.10.2): se o usuário logado é profissional e já tem um atendimento
+        // ABERTO com este paciente, o hero mostra "Continuar Atendimento" em vez de "Iniciar".
+        $atendimentoAbertoDoProfissional = null;
+        if (Auth::user()->profissional) {
+            $atendimentoAbertoDoProfissional = $paciente->atendimentos()
+                ->where('profissional_id', Auth::user()->profissional->id)
+                ->where('status', 'aberto')
+                ->latest()
+                ->first();
+        }
+
         return view('content.pages.detalhes_paciente', compact(
-            'paciente', 'totalConsultas', 'totalExames', 'totalPrescricoes', 'atendimentosRecentes'
+            'paciente', 'totalConsultas', 'totalExames', 'totalPrescricoes',
+            'atendimentosRecentes', 'atendimentoAbertoDoProfissional'
         ));
     }
 

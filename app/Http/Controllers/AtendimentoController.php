@@ -111,7 +111,11 @@ class AtendimentoController extends Controller
         // Quando a validação falha e o Laravel volta com old(), precisamos dos dados do
         // paciente previamente selecionado para repopular o campo de busca (UX-11b).
         // Buscamos apenas esse registro — não mais todos os pacientes (autocomplete via AJAX).
-        $pacienteAnterior = old('paciente_id') ? Paciente::find(old('paciente_id')) : null;
+        // UX-P04 (v0.10.2): aceita ?paciente_id= para pré-selecionar o paciente
+        // (vindo do hero do perfil do paciente e do banner do dashboard). old() tem prioridade na revalidação.
+        $pacienteAnterior = old('paciente_id')
+            ? Paciente::find(old('paciente_id'))
+            : (request('paciente_id') ? Paciente::find(request('paciente_id')) : null);
 
         return view('content.pages.cadastro_atendimento', compact('profissionais', 'profissionalLogado', 'pacienteAnterior'));
     }
@@ -166,7 +170,8 @@ class AtendimentoController extends Controller
         // UX-14: últimos 5 atendimentos do mesmo paciente para o mini-card de histórico.
         // Dados já em memória após esse eager load — o modal não faz queries extras.
         $ultimosAtendimentos = $atendimento->paciente_id
-            ? Atendimento::with('profissional', 'consultas')
+            // UX-P06+P08 (v0.10.2): carrega exames/prescrições das consultas p/ os badges do modal (sem N+1)
+            ? Atendimento::with('profissional', 'consultas.exames', 'consultas.prescricoes')
                 ->where('paciente_id', $atendimento->paciente_id)
                 ->where('id', '!=', $id)
                 ->orderBy('created_at', 'desc')
@@ -174,7 +179,14 @@ class AtendimentoController extends Controller
                 ->get()
             : collect();
 
-        return view('content.pages.detalhes_atendimento', compact('atendimento', 'ultimosAtendimentos'));
+        // UX-P09 (v0.10.2): conta exames sem resultado no atendimento — alimenta o alerta
+        // de "exame pendente" no modal de encerramento (reforça a sugestão de retorno).
+        $examesPendentes = $atendimento->consultas
+            ->flatMap(fn($c) => $c->exames)
+            ->filter(fn($e) => blank($e->resultado))
+            ->count();
+
+        return view('content.pages.detalhes_atendimento', compact('atendimento', 'ultimosAtendimentos', 'examesPendentes'));
     }
 
     /*

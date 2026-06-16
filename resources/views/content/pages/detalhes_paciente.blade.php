@@ -70,6 +70,20 @@ $idade      = $paciente->data_nascimento
 
         {{-- Botões de ação no hero --}}
         <div class="d-flex flex-column gap-2 ms-auto">
+          {{-- UX-P04 (v0.10.2): ação clínica contextual em destaque — "Continuar" se já há atendimento
+               aberto deste profissional com o paciente, senão "Iniciar". Só nível 2-3 (admin é leitura). --}}
+          @if(Auth::user()->nivelAcesso() >= 2 && Auth::user()->nivelAcesso() <= 3)
+            @if(!empty($atendimentoAbertoDoProfissional))
+            <a href="/atendimentos/{{ $atendimentoAbertoDoProfissional->id }}" class="btn btn-primary btn-sm">
+              <i class="mdi mdi-play-circle-outline me-1"></i>Continuar Atendimento
+              <span class="d-block fw-normal" style="font-size:.7rem;opacity:.85">aberto em {{ $atendimentoAbertoDoProfissional->created_at->format('d/m/Y \à\s H:i') }}</span>
+            </a>
+            @else
+            <a href="/cadastro-atendimento?paciente_id={{ $paciente->id }}" class="btn btn-primary btn-sm">
+              <i class="mdi mdi-folder-plus-outline me-1"></i>Iniciar Atendimento
+            </a>
+            @endif
+          @endif
           <a href="/pacientes/{{ $paciente->id }}/historico" class="btn btn-outline-primary btn-sm">
             <i class="mdi mdi-history me-1"></i>Ver Histórico Completo
           </a>

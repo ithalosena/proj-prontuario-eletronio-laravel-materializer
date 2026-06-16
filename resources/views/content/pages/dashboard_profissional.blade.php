@@ -31,8 +31,9 @@
         @endif
       </p>
     </div>
-    <a href="/atendimentos/criar" class="btn btn-primary">
-      <i class="mdi mdi-plus me-1"></i>Novo prontuário
+    {{-- UX-P02.1 (v0.10.2): botão do topo corrigido (era "Novo prontuário" → /atendimentos/criar inexistente) --}}
+    <a href="/cadastro-atendimento" class="btn btn-primary">
+      <i class="mdi mdi-folder-plus-outline me-1"></i>Novo Atendimento
     </a>
   </div>
 
@@ -70,8 +71,14 @@
           </p>
         </div>
 
-        {{-- CTA --}}
-        <a href="/atendimentos?paciente={{ $proximoAgendamento->paciente_id }}"
+        {{-- CTA — UX-P02.1 (v0.10.2): leva à própria consulta mostrada (registrar/realizar este
+             agendamento), não cria um atendimento novo em branco. Mesmo destino do AgendamentoController::realizar. --}}
+        <a href="/cadastro-consulta?{{ http_build_query([
+              'agendamento_id'  => $proximoAgendamento->id,
+              'paciente_id'     => $proximoAgendamento->paciente_id,
+              'profissional_id' => $proximoAgendamento->profissional_id,
+              'tipo'            => $proximoAgendamento->tipo,
+           ]) }}"
            class="btn btn-sm fw-semibold flex-shrink-0"
            style="background:#fff; color:#3DAA4A; border:none;">
           <i class="mdi mdi-play-circle-outline me-1"></i>Iniciar atendimento
@@ -269,8 +276,9 @@
           <h5 class="card-title mb-0">Ações rápidas</h5>
         </div>
         <div class="card-body d-flex flex-column gap-2">
-          <a href="/atendimentos/criar" class="btn btn-primary w-100 text-start">
-            <i class="mdi mdi-clipboard-edit-outline me-2"></i>Novo prontuário
+          {{-- UX-P02.1 (v0.10.2): rótulo e destino corrigidos (era "Novo prontuário" → /atendimentos/criar inexistente) --}}
+          <a href="/cadastro-atendimento" class="btn btn-primary w-100 text-start">
+            <i class="mdi mdi-folder-plus-outline me-2"></i>Novo Atendimento
           </a>
           <a href="/agendamentos" class="btn btn-outline-info w-100 text-start">
             <i class="mdi mdi-calendar-month-outline me-2"></i>Ver agenda completa

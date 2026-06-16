@@ -66,7 +66,14 @@
           <i class="mdi mdi-pencil-outline me-1"></i>Editar
         </a>
         @endif
-        <a href="{{ $atendimento ? '/atendimentos/' . $atendimento->id : '/consultas' }}" class="btn btn-default">
+        {{-- UX-P05 (B.4.6, v0.10.2): botão fixo para o atendimento, separado do "Voltar" --}}
+        @if($atendimento)
+        <a href="/atendimentos/{{ $atendimento->id }}" class="btn btn-outline-secondary">
+          <i class="mdi mdi-folder-open-outline me-1"></i>Ir para Atendimento
+        </a>
+        @endif
+        {{-- UX-P05 (B.6.4, v0.10.2): "Voltar" usa o histórico de navegação (fallback: /consultas) --}}
+        <a href="{{ url()->previous('/consultas') }}" class="btn btn-default">
           <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
         </a>
       </div>

@@ -88,6 +88,39 @@ class AtendimentoTest extends TestCase
         ])->assertForbidden();
     }
 
+    // UX-P04 (v0.10.2): sem atendimento aberto, o perfil do paciente mostra "Iniciar Atendimento"
+    public function test_perfil_paciente_mostra_iniciar_atendimento(): void
+    {
+        [$user]       = $this->criarProfissionalUser();
+        [, $paciente] = $this->criarPacienteUser();
+
+        $this->actingAs($user)
+            ->get("/pacientes/{$paciente->id}")
+            ->assertOk()
+            ->assertSee('Iniciar Atendimento')
+            ->assertDontSee('Continuar Atendimento');
+    }
+
+    // UX-P04 (v0.10.2): com atendimento aberto deste profissional, mostra "Continuar Atendimento" + link
+    public function test_perfil_paciente_mostra_continuar_atendimento(): void
+    {
+        [$user, $profissional] = $this->criarProfissionalUser();
+        [, $paciente]          = $this->criarPacienteUser();
+
+        $atendimento = Atendimento::factory()->create([
+            'paciente_id'     => $paciente->id,
+            'profissional_id' => $profissional->id,
+            'criado_por_id'   => $user->id,
+            'status'          => 'aberto',
+        ]);
+
+        $this->actingAs($user)
+            ->get("/pacientes/{$paciente->id}")
+            ->assertOk()
+            ->assertSee('Continuar Atendimento')
+            ->assertSee("/atendimentos/{$atendimento->id}");
+    }
+
     // Profissional só enxerga seus próprios atendimentos na listagem
     public function test_profissional_ve_apenas_seus_atendimentos(): void
     {
