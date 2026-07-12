@@ -37,8 +37,9 @@ $configData = Helper::appClasses();
   background: #e0e0e0;
   transition: background 0.3s;
 }
+/* DTi-05 (v0.10.3): ponto ativo em verde da marca (var(--bs-primary) resolvia p/ roxo do Materialize) */
 .wizard-step-dot.active {
-  background: var(--bs-primary);
+  background: #3DAA4A;
 }
 .wizard-step-dot.done {
   background: #72e128;
@@ -52,9 +53,10 @@ $configData = Helper::appClasses();
   min-height: 64px;
   border-radius: 0.5rem;
 }
+/* DTi-04 (v0.10.3): borda de seleção/hover em verde (era var(--bs-primary) roxo) */
 .card-opcao:hover,
 .card-opcao.selecionado {
-  border-color: var(--bs-primary);
+  border-color: #3DAA4A;
   background: rgba(61, 170, 74, .06);
 }
 .card-opcao.selecionado .check-icon {
@@ -76,22 +78,20 @@ $configData = Helper::appClasses();
   {{-- ================================================================ --}}
   {{-- CABEÇALHO                                                         --}}
   {{-- ================================================================ --}}
-  <div class="card mb-4">
-    <div class="card-body py-4">
-      <div class="d-flex flex-wrap align-items-center gap-4">
-        <div class="flex-shrink-0">
-          <span class="avatar-initial rounded-circle bg-label-primary d-flex align-items-center justify-content-center"
-                style="width:56px; height:56px; font-size:1.5rem;">
-            <i class="mdi mdi-calendar-plus"></i>
-          </span>
+  <div class="card mb-4 text-white border-0"
+       style="background: linear-gradient(105deg, #237030 0%, #3DAA4A 50%, #56cf66 100%);">
+    <div class="card-body py-4 px-4 position-relative overflow-hidden">
+      <div class="position-absolute rounded-circle"
+           style="right:-60px; top:-60px; width:200px; height:200px; border:40px solid rgba(255,255,255,0.07); pointer-events:none;"></div>
+      <div class="d-flex flex-wrap align-items-center gap-3 position-relative">
+        <div class="flex-shrink-0 rounded-3 d-flex align-items-center justify-content-center"
+             style="width:56px; height:56px; background:rgba(255,255,255,0.18);">
+          <i class="mdi mdi-calendar-plus mdi-36px"></i>
         </div>
-        <div class="flex-grow-1">
-          <h4 class="mb-0">Agendar Consulta</h4>
-          <p class="text-muted small mb-0">{{ $paciente->nome }}</p>
+        <div class="flex-grow-1 min-width-0">
+          <h4 class="mb-0 fw-bold text-white">Agendar Consulta</h4>
+          <p class="mb-0" style="font-size:13px; opacity:.92;">Escolha a especialidade, o profissional e o melhor horário para você.</p>
         </div>
-        <a href="/meus-agendamentos" class="btn btn-default btn-sm ms-auto">
-          <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
-        </a>
       </div>
     </div>
   </div>
@@ -117,7 +117,7 @@ $configData = Helper::appClasses();
       {{-- Indicador visual de passos --}}
       <div class="d-flex justify-content-between align-items-center mb-1">
         <small class="text-muted" id="wizard-label">Passo 1 de 4</small>
-        <small class="text-muted" id="wizard-step-title">Tipo de Consulta</small>
+        <small class="text-muted" id="wizard-step-title">Especialidade</small>
       </div>
       <div class="wizard-steps mb-4">
         <div class="wizard-step-dot active" id="dot-1"></div>
@@ -139,15 +139,16 @@ $configData = Helper::appClasses();
         {{-- PASSO 1: Tipo de consulta                                   --}}
         {{-- ---------------------------------------------------------- --}}
         <div id="step-1">
-          <h5 class="mb-3">Qual tipo de consulta você precisa?</h5>
+          <h5 class="mb-3">Qual especialidade você precisa?</h5>
+          <p class="text-muted small mb-3">O tipo da consulta (retorno, avaliação, etc.) é definido pelo profissional no atendimento.</p>
           <div class="row g-3">
-            @foreach($tipos as $tipo)
+            @foreach($especialidades as $esp)
             <div class="col-12 col-sm-6 col-md-4">
               <div class="card card-opcao p-3 d-flex flex-row align-items-center gap-3"
-                   onclick="selecionarTipo('{{ $tipo->nome }}', this)">
+                   onclick="selecionarTipo('{{ $esp->nome }}', this)">
                 <i class="mdi mdi-stethoscope mdi-24px text-primary"></i>
                 <div class="flex-grow-1">
-                  <p class="fw-semibold mb-0 small">{{ $tipo->nome }}</p>
+                  <p class="fw-semibold mb-0 small">{{ $esp->nome }}</p>
                 </div>
                 <i class="mdi mdi-check-circle text-primary check-icon" style="display:none"></i>
               </div>
@@ -218,49 +219,47 @@ $configData = Helper::appClasses();
         {{-- ---------------------------------------------------------- --}}
         <div id="step-4" style="display:none">
           <h5 class="mb-3">Confirme os dados do agendamento</h5>
-          <div class="card bg-label-primary rounded mb-4">
+          <div class="card bg-label-success rounded mb-4">
             <div class="card-body">
               <div class="row g-3">
                 <div class="col-12 col-sm-6">
-                  <p class="text-muted small mb-1">Tipo de Consulta</p>
-                  <p class="fw-semibold mb-0" id="resumo-tipo">—</p>
+                  <p class="text-muted small mb-1">Especialidade</p>
+                  <p class="fw-bold mb-0" id="resumo-tipo" style="color:#237030">—</p>
                 </div>
                 <div class="col-12 col-sm-6">
                   <p class="text-muted small mb-1">Profissional</p>
-                  <p class="fw-semibold mb-0" id="resumo-profissional">—</p>
+                  <p class="fw-bold mb-0" id="resumo-profissional" style="color:#237030">—</p>
                 </div>
                 <div class="col-12 col-sm-6">
                   <p class="text-muted small mb-1">Data e Hora</p>
-                  <p class="fw-semibold mb-0" id="resumo-data-hora">—</p>
+                  <p class="fw-bold mb-0" id="resumo-data-hora" style="color:#237030">—</p>
                 </div>
                 <div class="col-12" id="resumo-obs-row" style="display:none">
                   <p class="text-muted small mb-1">Observação</p>
-                  <p class="fw-semibold mb-0" id="resumo-obs">—</p>
+                  <p class="fw-bold mb-0" id="resumo-obs" style="color:#237030">—</p>
                 </div>
               </div>
             </div>
           </div>
           <p class="text-muted small mb-0">
             <i class="mdi mdi-information-outline me-1"></i>
-            Seu agendamento ficará como <strong>Pendente</strong> até ser confirmado pela equipe de saúde.
+            Seu agendamento ficará como <strong>Pendente</strong> até ser confirmado pela equipe de saúde ou pelo profissional responsável.
           </p>
         </div>
 
         {{-- ---------------------------------------------------------- --}}
         {{-- NAVEGAÇÃO DO WIZARD                                          --}}
         {{-- ---------------------------------------------------------- --}}
-        <div class="d-flex justify-content-between mt-4 gap-2">
-          <button type="button" class="btn btn-outline-secondary btn-wizard" id="btn-voltar"
-                  style="display:none" onclick="wizardVoltar()">
-            <i class="mdi mdi-arrow-left me-1"></i>Voltar
-          </button>
-          <button type="button" class="btn btn-primary btn-wizard ms-auto" id="btn-avancar"
-                  style="display:none" onclick="wizardAvancar()">
+        {{-- Um único botão principal (Próximo → Confirmar) + Voltar oculto no passo 1.
+             Mobile: empilha em coluna (d-grid), full-width; no ≥sm vira linha com Voltar à esquerda. --}}
+        <div class="d-grid d-sm-flex justify-content-sm-between gap-2 mt-4">
+          <button type="button" class="btn btn-primary btn-wizard order-sm-2" id="btn-principal"
+                  onclick="wizardPrincipal()">
             Próximo<i class="mdi mdi-arrow-right ms-1"></i>
           </button>
-          <button type="submit" class="btn btn-success btn-wizard ms-auto" id="btn-confirmar"
-                  style="display:none" disabled>
-            <i class="mdi mdi-calendar-check me-1"></i>Confirmar Agendamento
+          <button type="button" class="btn btn-outline-secondary btn-wizard order-sm-1" id="btn-voltar"
+                  style="display:none" onclick="wizardVoltar()">
+            <i class="mdi mdi-arrow-left me-1"></i>Voltar
           </button>
         </div>
 
@@ -288,7 +287,7 @@ var wizardState = {
   obs:             ''
 };
 
-var stepTitles = ['Tipo de Consulta', 'Profissional', 'Data e Horário', 'Confirmação'];
+var stepTitles = ['Especialidade', 'Profissional', 'Data e Horário', 'Confirmação'];
 
 // Exibe o passo correto e atualiza dots e botões
 function renderStep() {
@@ -311,11 +310,31 @@ function renderStep() {
   document.getElementById('wizard-label').textContent = 'Passo ' + s + ' de 4';
   document.getElementById('wizard-step-title').textContent = stepTitles[s - 1];
 
-  // Botões — exclusão mútua: PRÓXIMO em 1–3, CONFIRMAR exclusivamente no 4
-  document.getElementById('btn-voltar').style.display    = s > 1     ? '' : 'none';
-  document.getElementById('btn-avancar').style.display   = s < 4     ? '' : 'none';
-  document.getElementById('btn-confirmar').style.display = s === 4   ? '' : 'none';
-  document.getElementById('btn-confirmar').disabled      = s !== 4;
+  // Voltar: oculto no passo 1
+  document.getElementById('btn-voltar').style.display = s > 1 ? '' : 'none';
+
+  // Botão principal único: "Próximo" nos passos 1–3, "Confirmar Agendamento" no passo 4
+  var btn = document.getElementById('btn-principal');
+  if (s < 4) {
+    btn.className = 'btn btn-primary btn-wizard order-sm-2';
+    btn.style.background  = '';
+    btn.style.borderColor = '';
+    btn.innerHTML = 'Próximo<i class="mdi mdi-arrow-right ms-1"></i>';
+  } else {
+    btn.className = 'btn btn-wizard order-sm-2 text-white';
+    btn.style.background  = '#237030';
+    btn.style.borderColor = '#237030';
+    btn.innerHTML = '<i class="mdi mdi-calendar-check me-1"></i>Confirmar Agendamento';
+  }
+}
+
+// Ação do botão principal: avança nos passos 1–3, submete no passo 4
+function wizardPrincipal() {
+  if (wizardState.step < 4) {
+    wizardAvancar();
+  } else {
+    document.getElementById('wizardForm').submit();
+  }
 }
 
 // Avança para o próximo passo com validação básica
@@ -324,7 +343,7 @@ function wizardAvancar() {
   if (s >= 4) return;   // Bug A: impede avançar além do último passo
 
   if (s === 1 && !wizardState.tipo) {
-    alert('Selecione o tipo de consulta.');
+    alert('Selecione a especialidade.');
     return;
   }
   if (s === 2 && !wizardState.profissionalId) {

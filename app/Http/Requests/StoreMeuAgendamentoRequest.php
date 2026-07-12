@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\TipoConsulta;
+use App\Models\Especialidade;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -30,7 +30,9 @@ class StoreMeuAgendamentoRequest extends FormRequest
             'paciente_id'     => ['required', Rule::in([$pacienteId])],
             'profissional_id' => ['required', 'exists:profissionais,id'],
             'data_hora'       => ['required', 'date', 'after:now'],
-            'tipo'            => ['required', Rule::in(TipoConsulta::pluck('nome'))],
+            // v0.10.3+: o passo 1 do wizard agora é a ESPECIALIDADE; agendamento.tipo recebe a especialidade
+            // (o tipo de consulta — retorno/avaliação/etc. — é definido pelo profissional na consulta).
+            'tipo'            => ['required', Rule::in(Especialidade::ativo()->pluck('nome'))],
             'observacao'      => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -43,8 +45,8 @@ class StoreMeuAgendamentoRequest extends FormRequest
             'profissional_id.exists'   => 'Profissional inválido.',
             'data_hora.required'       => 'A data e hora são obrigatórias.',
             'data_hora.after'          => 'O agendamento deve ser para uma data futura.',
-            'tipo.required'            => 'O tipo de consulta é obrigatório.',
-            'tipo.in'                  => 'Tipo de consulta inválido.',
+            'tipo.required'            => 'Selecione a especialidade.',
+            'tipo.in'                  => 'Especialidade inválida.',
         ];
     }
 }

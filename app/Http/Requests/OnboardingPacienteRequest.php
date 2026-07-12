@@ -72,7 +72,7 @@ class OnboardingPacienteRequest extends FormRequest
 
             // Passo 4 — Responsável legal (obrigatório se menor de 18)
             'responsavel_nome'       => [$isMenor ? 'required' : 'nullable', 'string', 'max:255'],
-            'responsavel_cpf'        => [$isMenor ? 'required' : 'nullable', 'string', 'max:14'],
+            // responsavel_cpf removido do fluxo (v0.10.5) — coluna preservada, mas sem uso
             'responsavel_telefone'   => [$isMenor ? 'required' : 'nullable', 'string', 'max:20'],
             'responsavel_email'      => [$isMenor ? 'required' : 'nullable', 'email', 'max:255'],
             'responsavel_parentesco' => [$isMenor ? 'required' : 'nullable', 'string', 'max:50'],
@@ -98,7 +98,6 @@ class OnboardingPacienteRequest extends FormRequest
             'contato_emergencia_telefone.required'   => 'Informe o telefone do contato de emergência.',
             'contato_emergencia_parentesco.required' => 'Informe o parentesco do contato de emergência.',
             'responsavel_nome.required'       => 'Informe o nome do responsável legal.',
-            'responsavel_cpf.required'        => 'Informe o CPF do responsável legal.',
             'responsavel_telefone.required'   => 'Informe o telefone do responsável legal.',
             'responsavel_email.required'      => 'Informe o e-mail do responsável legal.',
             'responsavel_parentesco.required' => 'Informe o parentesco do responsável legal.',

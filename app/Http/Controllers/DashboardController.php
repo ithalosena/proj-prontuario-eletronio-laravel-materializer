@@ -262,12 +262,20 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Prescrições recentes — 5 mais recentes via hasManyThrough (JOIN consultas)
-        // Sem campo status no schema atual; exibe as mais recentes como "recentes"
+        // Atividade clínica recente (v0.10.3+): exames + prescrições das consultas do paciente.
+        // hasManyThrough faz JOIN com consultas → 'created_at' fica ambíguo; qualificamos a tabela
+        // de destino para evitar erro de coluna ambígua no MySQL.
         $prescricoesRecentes = $paciente->prescricoes()
             ->with('consulta.profissional')
-            ->latest()
-            ->take(5)
+            ->latest('prescricoes.created_at')
+            ->take(4)
+            ->get();
+
+        // Exames recentes com status real (resultado preenchido ou pendente)
+        $examesRecentes = $paciente->exames()
+            ->with('consulta.profissional')
+            ->latest('exames.created_at')
+            ->take(4)
             ->get();
 
         return view('content.pages.dashboard_paciente', compact(
@@ -275,6 +283,7 @@ class DashboardController extends Controller
             'proximaConsulta',
             'historicoConsultas',
             'prescricoesRecentes',
+            'examesRecentes',
         ));
     }
 }

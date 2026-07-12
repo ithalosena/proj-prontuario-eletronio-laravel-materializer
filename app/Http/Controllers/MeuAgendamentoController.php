@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMeuAgendamentoRequest;
 use App\Models\Agendamento;
+use App\Models\Especialidade;
 use App\Models\Profissional;
-use App\Models\TipoConsulta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,7 +26,7 @@ class MeuAgendamentoController extends Controller
     /*
      * Lista os agendamentos do paciente logado, do mais recente para o mais antigo.
      */
-    public function index()
+    public function index(Request $request)
     {
         $paciente = Auth::user()->paciente;
 
@@ -34,12 +34,21 @@ class MeuAgendamentoController extends Controller
             return redirect('/')->with('error', 'Perfil de paciente não encontrado.');
         }
 
-        $agendamentos = Agendamento::with('profissional')
-            ->where('paciente_id', $paciente->id)
-            ->orderBy('data_hora', 'desc')
-            ->paginate(15);
+        // C.6.3 (v0.10.3): filtro por status + ordenação por data (GET, preserváveis na URL)
+        $filtroStatus = $request->query('status');
+        $ordenar      = $request->query('ordenar') === 'data_asc' ? 'data_asc' : 'data_desc';
 
-        return view('content.pages.meus_agendamentos_paciente', compact('agendamentos', 'paciente'));
+        $query = Agendamento::with('profissional')->where('paciente_id', $paciente->id);
+
+        if (in_array($filtroStatus, ['pendente', 'confirmado', 'realizado', 'cancelado'], true)) {
+            $query->where('status', $filtroStatus);
+        }
+
+        $query->orderBy('data_hora', $ordenar === 'data_asc' ? 'asc' : 'desc');
+
+        $agendamentos = $query->paginate(15)->withQueryString();
+
+        return view('content.pages.meus_agendamentos_paciente', compact('agendamentos', 'paciente', 'filtroStatus', 'ordenar'));
     }
 
     /*
@@ -54,10 +63,11 @@ class MeuAgendamentoController extends Controller
             return redirect('/')->with('error', 'Perfil de paciente não encontrado.');
         }
 
-        $profissionais = Profissional::orderBy('especialidade')->orderBy('nome')->get();
-        $tipos         = TipoConsulta::where('ativo', true)->orderBy('ordem')->get();
+        $profissionais  = Profissional::orderBy('especialidade')->orderBy('nome')->get();
+        // v0.10.3+: passo 1 do wizard = especialidade (não mais tipo de consulta)
+        $especialidades = Especialidade::ativo()->ordenado()->get();
 
-        return view('content.pages.meu_agendamento', compact('paciente', 'profissionais', 'tipos'));
+        return view('content.pages.meu_agendamento', compact('paciente', 'profissionais', 'especialidades'));
     }
 
     /*
@@ -79,7 +89,7 @@ class MeuAgendamentoController extends Controller
         $agendamento->profissional->user?->notify(new \App\Notifications\NovoAgendamentoNotification($agendamento));
 
         return redirect('/meus-agendamentos')
-            ->with('success', 'Agendamento solicitado! Aguarde a confirmação do setor de saúde.');
+            ->with('success', 'Agendamento solicitado! Aguarde a confirmação do setor de saúde ou pelo profissional de saúde responsável.');
     }
 
     /*

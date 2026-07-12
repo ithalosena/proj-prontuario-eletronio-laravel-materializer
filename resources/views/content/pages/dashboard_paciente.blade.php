@@ -21,7 +21,7 @@
   {{-- ================================================================ --}}
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-      <h4 class="mb-0">Olá, {{ Auth::user()->name }}</h4>
+      <h4 class="mb-0">Olá, {{ $paciente->nome_exibicao ?? Auth::user()->name }}</h4>
       @if($proximaConsulta)
         <p class="text-muted small mb-0 mt-1">
           Sua próxima consulta está marcada para
@@ -31,21 +31,19 @@
         <p class="text-muted small mb-0 mt-1">Acompanhe seu histórico de consultas e prescrições.</p>
       @endif
     </div>
-    <a href="/agendar-consulta" class="btn btn-primary">
-      <i class="mdi mdi-calendar-plus me-1"></i>Agendar consulta
-    </a>
+    {{-- Agendar consulta vive no banner (card do topo), não no header --}}
   </div>
 
   {{-- ================================================================ --}}
   {{-- CARD: PRÓXIMA CONSULTA                                           --}}
   {{-- ================================================================ --}}
   @if($proximaConsulta)
-  <div class="card mb-4 overflow-hidden">
+  <div class="card mb-4 overflow-hidden border-0 shadow-sm">
     <div class="row g-0">
 
-      {{-- Bloco da data com cor primária (verde IFNMG) --}}
+      {{-- Bloco da data — degradê da marca (escuro→claro, v0.10.3) --}}
       <div class="col-md-4 d-flex flex-column justify-content-center align-items-center p-4 text-white"
-           style="background: linear-gradient(135deg, #3DAA4A 0%, #2e8a3a 100%); min-height: 160px;">
+           style="background: linear-gradient(160deg, #237030 0%, #3DAA4A 55%, #56cf66 100%); min-height: 170px;">
         <span class="text-uppercase fw-semibold small mb-2" style="letter-spacing:.07em; opacity:.85;">Próxima consulta</span>
         <div class="d-flex align-items-baseline gap-2 mb-1">
           <span class="display-4 fw-bold lh-1">{{ $proximaConsulta->data_hora->format('d') }}</span>
@@ -90,13 +88,13 @@
           </div>
         </div>
 
-        {{-- Ações --}}
-        <div class="d-flex gap-2 flex-wrap">
-          <a href="/meus-agendamentos" class="btn btn-sm btn-primary">
-            <i class="mdi mdi-calendar-check-outline me-1"></i>Ver meus agendamentos
+        {{-- Ações — grupo enxuto: CTA principal + secundário (full-width no mobile, natural no desktop) --}}
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+          <a href="/agendar-consulta" class="btn btn-sm btn-primary">
+            <i class="mdi mdi-calendar-plus me-1"></i>Agendar nova consulta
           </a>
-          <a href="/meu-prontuario" class="btn btn-sm btn-outline-secondary">
-            <i class="mdi mdi-folder-account-outline me-1"></i>Meu prontuário
+          <a href="/meus-agendamentos" class="btn btn-sm btn-outline-secondary">
+            <i class="mdi mdi-calendar-check-outline me-1"></i>Meus agendamentos
           </a>
         </div>
       </div>
@@ -104,21 +102,24 @@
     </div>
   </div>
   @else
-  {{-- Empty state — sem próxima consulta --}}
-  <div class="card mb-4">
-    <div class="card-body d-flex align-items-center gap-4 py-4">
-      <div class="avatar avatar-xl flex-shrink-0">
-        <span class="avatar-initial rounded-circle bg-label-warning" style="font-size:1.6rem;">
-          <i class="mdi mdi-calendar-blank-outline"></i>
-        </span>
+  {{-- Empty state — degradê âmbar em dois tons (espelha o verde da próxima consulta) --}}
+  <div class="card mb-4 border-0 shadow-sm text-white overflow-hidden"
+       style="background: linear-gradient(160deg, #b9760f 0%, #f0a020 55%, #ffce6b 100%);">
+    <div class="card-body d-flex flex-wrap align-items-center gap-3 py-4 position-relative">
+      <div class="position-absolute rounded-circle"
+           style="right:-50px; top:-50px; width:160px; height:160px; border:32px solid rgba(255,255,255,0.10); pointer-events:none;"></div>
+      <div class="flex-shrink-0 rounded-3 d-flex align-items-center justify-content-center position-relative"
+           style="width:56px; height:56px; background:rgba(255,255,255,0.22); font-size:1.7rem;">
+        <i class="mdi mdi-calendar-blank-outline"></i>
       </div>
-      <div>
-        <h5 class="mb-1">Nenhuma consulta agendada</h5>
-        <p class="text-muted mb-2">Você não possui consultas confirmadas no momento.</p>
-        <a href="/agendar-consulta" class="btn btn-sm btn-primary">
-          <i class="mdi mdi-calendar-plus me-1"></i>Agendar agora
-        </a>
+      <div class="flex-grow-1 min-width-0 position-relative">
+        <h5 class="mb-1 fw-bold text-white">Nenhuma consulta agendada</h5>
+        <p class="mb-0" style="opacity:.92; font-size:13px;">Você não possui consultas confirmadas no momento.</p>
       </div>
+      <a href="/agendar-consulta" class="btn btn-sm fw-semibold flex-shrink-0 position-relative"
+         style="background:#fff; color:#a86a0c; border:none;">
+        <i class="mdi mdi-calendar-plus me-1"></i>Agendar agora
+      </a>
     </div>
   </div>
   @endif
@@ -130,7 +131,7 @@
 
     {{-- Consultas recentes --}}
     <div class="col-md-7">
-      <div class="card h-100">
+      <div class="card h-100 border-0 shadow-sm">
         <div class="card-header d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center gap-2">
             <i class="mdi mdi-history text-primary"></i>
@@ -157,7 +158,9 @@
               <p class="mb-0 fw-medium small">{{ $consulta->tipo ?? 'Consulta' }}</p>
               <p class="mb-0 text-muted" style="font-size:11px;">{{ $consulta->profissional->nome ?? '—' }}</p>
             </div>
-            <a href="/consultas/{{ $consulta->id }}" class="text-primary" title="Ver consulta">
+            {{-- Paciente não tem acesso a /consultas/{id} (rota nivel:3 → 403).
+                 O detalhe clínico do paciente vive no /meu-prontuario. --}}
+            <a href="/meu-prontuario" class="text-primary" title="Ver no meu prontuário">
               <i class="mdi mdi-file-document-outline fs-5"></i>
             </a>
           </div>
@@ -171,92 +174,59 @@
       </div>
     </div>
 
-    {{-- Prescrições recentes --}}
+    {{-- Atividade clínica recente (exames + prescrições) --}}
     <div class="col-md-5">
-      <div class="card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center gap-2">
-            <i class="mdi mdi-pill text-warning"></i>
-            <h5 class="card-title mb-0">Prescrições recentes</h5>
-          </div>
-          @if($prescricoesRecentes->isNotEmpty())
-            <span class="badge bg-label-success">{{ $prescricoesRecentes->count() }}</span>
-          @endif
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="mdi mdi-heart-pulse text-primary"></i>
+          <h5 class="card-title mb-0">Atividade clínica recente</h5>
         </div>
         <div class="card-body">
-          @forelse($prescricoesRecentes as $prescricao)
-          <div class="p-3 rounded mb-3 border border-start border-3"
-               style="border-left-color: #3DAA4A !important;">
-            <div class="d-flex justify-content-between align-items-start mb-1">
-              <p class="mb-0 fw-semibold small">{{ $prescricao->nome_medicamento }}</p>
-              <span class="badge bg-label-success" style="font-size:10px;">ATIVA</span>
+          @if($examesRecentes->isEmpty() && $prescricoesRecentes->isEmpty())
+            <div class="d-flex flex-column align-items-center py-4 text-muted">
+              <i class="mdi mdi-clipboard-text-off-outline fs-1 mb-2"></i>
+              <p class="mb-0">Nenhum exame ou prescrição registrado.</p>
             </div>
-            <p class="text-muted mb-1" style="font-size:12px;">{{ $prescricao->dosagem }}</p>
-            @if($prescricao->duracao)
-              <p class="text-muted mb-1" style="font-size:11px;">Duração: {{ $prescricao->duracao }}</p>
-            @endif
-            <p class="text-muted mb-0" style="font-size:11px;">
-              <i class="mdi mdi-account-outline me-1"></i>{{ $prescricao->consulta->profissional->nome ?? '—' }}
+          @else
+            {{-- Exames com status real --}}
+            @if($examesRecentes->isNotEmpty())
+            <p class="fw-semibold small text-uppercase text-muted mb-2" style="letter-spacing:.04em">
+              <i class="mdi mdi-test-tube-outline me-1"></i>Exames
             </p>
-          </div>
-          @empty
-          <div class="d-flex flex-column align-items-center py-4 text-muted">
-            <i class="mdi mdi-pill-off-outline fs-1 mb-2"></i>
-            <p class="mb-0">Nenhuma prescrição registrada.</p>
-          </div>
-          @endforelse
+            @foreach($examesRecentes as $exame)
+            <div class="d-flex align-items-center justify-content-between mb-2 gap-2">
+              <div class="min-width-0">
+                <p class="mb-0 small fw-medium text-truncate">{{ $exame->tipo ?? 'Exame' }}</p>
+                <p class="mb-0 text-muted" style="font-size:11px;">{{ optional(optional($exame->consulta)->data_hora)->format('d/m/Y') }}</p>
+              </div>
+              @if($exame->resultado)
+                <span class="badge bg-label-success flex-shrink-0">Com resultado</span>
+              @else
+                <span class="badge bg-label-warning flex-shrink-0">Pendente</span>
+              @endif
+            </div>
+            @endforeach
+            @endif
+
+            {{-- Prescrições (sem badge "ATIVA" — não há status no schema) --}}
+            @if($prescricoesRecentes->isNotEmpty())
+            <p class="fw-semibold small text-uppercase text-muted mb-2 {{ $examesRecentes->isNotEmpty() ? 'mt-3 pt-2 border-top' : '' }}" style="letter-spacing:.04em">
+              <i class="mdi mdi-pill me-1"></i>Prescrições
+            </p>
+            @foreach($prescricoesRecentes as $prescricao)
+            <div class="mb-2">
+              <p class="mb-0 small fw-semibold">{{ $prescricao->nome_medicamento }}</p>
+              <p class="mb-0 text-muted" style="font-size:11px;">
+                {{ $prescricao->dosagem }} · {{ optional(optional($prescricao->consulta)->profissional)->nome ?? '—' }}
+              </p>
+            </div>
+            @endforeach
+            @endif
+          @endif
         </div>
       </div>
     </div>
 
-  </div>
-
-  {{-- ================================================================ --}}
-  {{-- AÇÕES RÁPIDAS                                                     --}}
-  {{-- ================================================================ --}}
-  <div class="row g-3">
-    <div class="col-sm-6 col-md-4">
-      <a href="/agendar-consulta" class="card text-decoration-none h-100">
-        <div class="card-body d-flex align-items-center gap-3">
-          <div class="avatar flex-shrink-0">
-            <span class="avatar-initial rounded bg-label-primary"><i class="mdi mdi-calendar-plus mdi-24px"></i></span>
-          </div>
-          <div>
-            <p class="mb-0 fw-semibold small">Agendar consulta</p>
-            <p class="mb-0 text-muted" style="font-size:11px;">Solicitar novo agendamento</p>
-          </div>
-          <i class="mdi mdi-chevron-right ms-auto text-muted"></i>
-        </div>
-      </a>
-    </div>
-    <div class="col-sm-6 col-md-4">
-      <a href="/meu-prontuario" class="card text-decoration-none h-100">
-        <div class="card-body d-flex align-items-center gap-3">
-          <div class="avatar flex-shrink-0">
-            <span class="avatar-initial rounded bg-label-info"><i class="mdi mdi-folder-account-outline mdi-24px"></i></span>
-          </div>
-          <div>
-            <p class="mb-0 fw-semibold small">Meu prontuário</p>
-            <p class="mb-0 text-muted" style="font-size:11px;">Ver histórico completo</p>
-          </div>
-          <i class="mdi mdi-chevron-right ms-auto text-muted"></i>
-        </div>
-      </a>
-    </div>
-    <div class="col-sm-6 col-md-4">
-      <a href="/meus-agendamentos" class="card text-decoration-none h-100">
-        <div class="card-body d-flex align-items-center gap-3">
-          <div class="avatar flex-shrink-0">
-            <span class="avatar-initial rounded bg-label-success"><i class="mdi mdi-calendar-check-outline mdi-24px"></i></span>
-          </div>
-          <div>
-            <p class="mb-0 fw-semibold small">Meus agendamentos</p>
-            <p class="mb-0 text-muted" style="font-size:11px;">Ver e gerenciar consultas</p>
-          </div>
-          <i class="mdi mdi-chevron-right ms-auto text-muted"></i>
-        </div>
-      </a>
-    </div>
   </div>
 
 </div>

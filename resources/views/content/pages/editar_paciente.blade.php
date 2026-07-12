@@ -350,10 +350,6 @@
             <label class="form-label" for="responsavel_nome">Nome completo</label>
             <input value="{{ old('responsavel_nome', $paciente->responsavel_nome) }}" name="responsavel_nome" id="responsavel_nome" type="text" class="form-control" maxlength="255">
           </div>
-          <div class="col-md-3">
-            <label class="form-label" for="responsavel_cpf">CPF</label>
-            <input value="{{ old('responsavel_cpf', $paciente->responsavel_cpf) }}" name="responsavel_cpf" id="responsavel_cpf" type="text" class="form-control" maxlength="14">
-          </div>
           <div class="col-md-4">
             <label class="form-label" for="responsavel_parentesco">Parentesco</label>
             <select name="responsavel_parentesco" id="responsavel_parentesco" class="form-select">

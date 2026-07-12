@@ -95,6 +95,10 @@ Route::middleware(['auth', 'consentimento', 'onboarding'])->group(function () {
     Route::post  ('/perfil/avatar',   [ProfileController::class, 'uploadAvatar']);
     Route::delete('/perfil/avatar/remover', [ProfileController::class, 'deleteAvatar']);
 
+    // MEUS DADOS (C.5, v0.10.3) — dados complementares editáveis (paciente/profissional)
+    Route::get('/meus-dados', [\App\Http\Controllers\MeusDadosController::class, 'edit'])->name('meus-dados');
+    Route::put('/meus-dados', [\App\Http\Controllers\MeusDadosController::class, 'update']);
+
     // ------------------------------------------------------------------
     // CONSENTIMENTO LGPD
     // Rotas isentas do CheckConsentimento (declaradas no próprio middleware)
@@ -118,7 +122,7 @@ Route::middleware(['auth', 'consentimento', 'onboarding'])->group(function () {
     // IMPORTANTE: /exportar antes de possíveis rotas com {id}
     // ------------------------------------------------------------------
     Route::middleware('cache.headers:private;no_store')->group(function () {
-        Route::get('/meu-prontuario',          [PacienteController::class, 'meuProntuario']);
+        Route::get('/meu-prontuario',          [PacienteController::class, 'meuProntuario'])->name('meu-prontuario');
         Route::get('/meu-prontuario/exportar', [PacienteController::class, 'exportarDados']);
     });
 
@@ -197,8 +201,9 @@ Route::middleware(['auth', 'consentimento', 'onboarding'])->group(function () {
     // AGENDAMENTOS — paciente (nivel 5)
     // ------------------------------------------------------------------
     Route::middleware('nivel:5')->group(function () {
-        Route::get('/meus-agendamentos',               [MeuAgendamentoController::class, 'index']);
-        Route::get('/agendar-consulta',                [MeuAgendamentoController::class, 'create']);
+        // Rotas nomeadas para o highlight do menu vertical (slug === currentRouteName)
+        Route::get('/meus-agendamentos',               [MeuAgendamentoController::class, 'index'])->name('meus-agendamentos');
+        Route::get('/agendar-consulta',                [MeuAgendamentoController::class, 'create'])->name('agendar-consulta');
         Route::post('/agendar-consulta',               [MeuAgendamentoController::class, 'store']);
         Route::patch('/meus-agendamentos/{id}/cancelar',[MeuAgendamentoController::class, 'cancelar']);
     });

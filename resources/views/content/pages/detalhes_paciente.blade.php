@@ -45,7 +45,8 @@ $idade      = $paciente->data_nascimento
 
         {{-- Dados de identificação --}}
         <div class="flex-grow-1">
-          <h4 class="mb-1">{{ $paciente->nome }}</h4>
+          {{-- v0.10.3+: "Nome social (Nome de registro)" quando há nome social --}}
+          <h4 class="mb-1">{{ $paciente->nome_profissional }}</h4>
           <div class="d-flex flex-wrap gap-3 text-muted small mb-2">
             @if($paciente->matricula)
               <span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $paciente->matricula }}</span>

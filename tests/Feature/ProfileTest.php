@@ -33,38 +33,46 @@ class ProfileTest extends TestCase
     }
 
     // =========================================================
-    // PUT /perfil — atualizar nome e e-mail
+    // PUT /perfil — atualizar nome; e-mail é IMUTÁVEL (C.5.3 v0.10.3)
     // =========================================================
 
-    public function test_atualizar_nome_e_email(): void
+    public function test_nome_e_email_sao_imutaveis_no_perfil(): void
     {
+        // v0.10.3+: nome e e-mail são institucionais — o perfil só altera a senha.
         $user = $this->criarAdmin();
+        $nomeOriginal  = $user->name;
+        $emailOriginal = $user->email;
 
         $this->actingAs($user)
              ->put('/perfil', [
-                 'name'  => 'Novo Nome',
-                 'email' => 'novo@email.com',
+                 'name'  => 'Novo Nome',            // ignorado
+                 'email' => 'tentativa@email.com',  // ignorado
              ])
-             ->assertRedirect();
+             ->assertRedirect()
+             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('users', [
             'id'    => $user->id,
-            'name'  => 'Novo Nome',
-            'email' => 'novo@email.com',
+            'name'  => $nomeOriginal,   // inalterado
+            'email' => $emailOriginal,  // inalterado
         ]);
     }
 
-    public function test_email_duplicado_e_rejeitado(): void
+    public function test_email_nao_muda_mesmo_com_input_de_outro_usuario(): void
     {
         $user1 = $this->criarAdmin();
         [$user2] = $this->criarProfissionalUser();
+        $emailOriginal = $user1->email;
 
         $this->actingAs($user1)
              ->put('/perfil', [
                  'name'  => $user1->name,
-                 'email' => $user2->email, // e-mail de outro usuário
+                 'email' => $user2->email, // tentativa de usar e-mail de outro — ignorado
              ])
-             ->assertSessionHasErrors('email');
+             ->assertRedirect()
+             ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('users', ['id' => $user1->id, 'email' => $emailOriginal]);
     }
 
     // =========================================================

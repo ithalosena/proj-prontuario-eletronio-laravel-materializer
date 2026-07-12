@@ -23,8 +23,12 @@ class ProfileController extends Controller
 
     public function edit(): View
     {
+        // C.5 (v0.10.3+): perfil unificado — traz também os dados complementares (paciente/profissional)
+        $user = Auth::user();
         return view('content.pages.perfil', [
-            'user' => Auth::user(),
+            'user'         => $user,
+            'paciente'     => $user->paciente,
+            'profissional' => $user->profissional,
         ]);
     }
 
@@ -35,21 +39,20 @@ class ProfileController extends Controller
     public function update(UpdateProfileRequest $request): RedirectResponse
     {
         $user = Auth::user();
-        $dados = ['name' => $request->name, 'email' => $request->email];
 
-        // Atualiza senha apenas se new_password foi enviado
+        // v0.10.3+: nome e e-mail são institucionais (imutáveis no perfil). Só a senha muda aqui.
+        // O nome de exibição do paciente é o "nome social", editado em Meus Dados.
         if ($request->filled('new_password')) {
             if (!Hash::check($request->current_password, $user->password)) {
                 return back()
                     ->withErrors(['current_password' => 'Senha atual incorreta.'])
                     ->withInput();
             }
-            $dados['password'] = Hash::make($request->new_password);
+            $user->update(['password' => Hash::make($request->new_password)]);
+            return back()->with('success', 'Senha atualizada com sucesso.');
         }
 
-        $user->update($dados);
-
-        return back()->with('success', 'Perfil atualizado com sucesso.');
+        return back()->with('success', 'Perfil atualizado.');
     }
 
     // =========================================================

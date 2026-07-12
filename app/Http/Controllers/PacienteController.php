@@ -98,7 +98,7 @@ class PacienteController extends Controller
             'nome_social', 'naturalidade_cidade', 'naturalidade_uf', 'raca_cor', 'estado_civil', 'nome_mae',
             'contato_emergencia_nome', 'contato_emergencia_telefone', 'contato_emergencia_parentesco',
             'contato_emergencia2_nome', 'contato_emergencia2_telefone', 'contato_emergencia2_parentesco',
-            'responsavel_nome', 'responsavel_cpf', 'responsavel_telefone', 'responsavel_email', 'responsavel_parentesco',
+            'responsavel_nome', 'responsavel_telefone', 'responsavel_email', 'responsavel_parentesco',
         ]));
 
         // Campos sensíveis — somente admin/gerente (nivel <= 2)
@@ -187,7 +187,19 @@ class PacienteController extends Controller
             ->orderBy('data_hora', 'desc')
             ->get();
 
-        return view('content.pages.meu_prontuario', compact('paciente', 'consultas'));
+        // v0.10.5: abas separadas de Exames e Prescrições no Meu Prontuário.
+        // hasManyThrough faz JOIN com consultas → qualificamos created_at (coluna ambígua no MySQL).
+        $exames = $paciente->exames()
+            ->with('consulta.profissional')
+            ->orderByDesc('exames.created_at')
+            ->get();
+
+        $prescricoes = $paciente->prescricoes()
+            ->with('consulta.profissional')
+            ->orderByDesc('prescricoes.created_at')
+            ->get();
+
+        return view('content.pages.meu_prontuario', compact('paciente', 'consultas', 'exames', 'prescricoes'));
     }
 
     /*
@@ -216,17 +228,72 @@ class PacienteController extends Controller
             'exportado_em'  => now()->toIso8601String(),
             'sistema'       => 'Prontu IF — IFNMG',
             'versao_lgpd'   => 'Lei nº 13.709/2018, Art. 18, V',
+            // Art. 18, V — portabilidade exige TODOS os dados do titular. Inclui os campos
+            // estruturados do ST-15 (identidade, endereço, complementares, contatos, emergência,
+            // responsável) além dos autorrelatados de saúde (bloco 'dados_de_saude' abaixo).
             'titular'       => [
+                // Identidade
                 'nome'            => $paciente->nome,
+                'nome_social'     => $paciente->nome_social,
                 'email'           => $paciente->user->email,
+                'email_alternativo' => $paciente->email_alternativo,
                 'documento'       => $paciente->documento,
                 'data_nascimento' => $paciente->data_nascimento,
                 'sexo'            => $paciente->sexo,
                 'matricula'       => $paciente->matricula,
                 'curso'           => $paciente->curso,
-                'contato'         => $paciente->contato,
-                'endereco'        => $paciente->endereco,
                 'cadastrado_em'   => $paciente->created_at,
+                // Complementares
+                'naturalidade_cidade' => $paciente->naturalidade_cidade,
+                'naturalidade_uf'     => $paciente->naturalidade_uf,
+                'raca_cor'            => $paciente->raca_cor,
+                'estado_civil'        => $paciente->estado_civil,
+                'nome_mae'            => $paciente->nome_mae,
+                // Contatos
+                'contato'              => $paciente->contato,
+                'telefone_alternativo' => $paciente->telefone_alternativo,
+                // Endereço estruturado (ST-15) + campo legado
+                'endereco' => [
+                    'cep'              => $paciente->cep,
+                    'logradouro'       => $paciente->logradouro,
+                    'numero'           => $paciente->numero,
+                    'complemento'      => $paciente->complemento,
+                    'bairro'           => $paciente->bairro,
+                    'cidade'           => $paciente->cidade,
+                    'uf'               => $paciente->uf,
+                    'ponto_referencia' => $paciente->ponto_referencia,
+                    'endereco_legado'  => $paciente->endereco,
+                ],
+                // Contatos de emergência
+                'contato_emergencia' => [
+                    'nome'       => $paciente->contato_emergencia_nome,
+                    'telefone'   => $paciente->contato_emergencia_telefone,
+                    'parentesco' => $paciente->contato_emergencia_parentesco,
+                ],
+                'contato_emergencia_secundario' => [
+                    'nome'       => $paciente->contato_emergencia2_nome,
+                    'telefone'   => $paciente->contato_emergencia2_telefone,
+                    'parentesco' => $paciente->contato_emergencia2_parentesco,
+                ],
+                'responsavel_legal' => [
+                    'nome'       => $paciente->responsavel_nome,
+                    'telefone'   => $paciente->responsavel_telefone,
+                    'email'      => $paciente->responsavel_email,
+                    'parentesco' => $paciente->responsavel_parentesco,
+                ],
+            ],
+            // Dados de saúde autorrelatados (ST-15) — parte dos dados pessoais do titular
+            'dados_de_saude' => [
+                'tipo_sanguineo'            => $paciente->tipo_sanguineo,
+                'peso_kg'                   => $paciente->peso_kg,
+                'altura_cm'                 => $paciente->altura_cm,
+                'alergias'                  => $paciente->alergias,
+                'medicamentos_uso_continuo' => $paciente->medicamentos_uso_continuo,
+                'condicoes_cronicas'        => $paciente->condicoes_cronicas,
+                'cirurgias_previas'         => $paciente->cirurgias_previas,
+                'tabagismo'                 => $paciente->tabagismo,
+                'etilismo'                  => $paciente->etilismo,
+                'atividade_fisica'          => $paciente->atividade_fisica,
             ],
             'consentimentos' => $paciente->consentimentos->map(fn($c) => [
                 'versao_termo' => $c->versao_termo,

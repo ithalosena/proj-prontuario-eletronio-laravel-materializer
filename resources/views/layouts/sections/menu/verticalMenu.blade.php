@@ -69,6 +69,20 @@ $configData = Helper::appClasses();
         && (!isset($menu->requer_paciente) || Auth::user()->paciente !== null)
         && (!isset($menu->requer_profissional) || Auth::user()->profissional !== null)
     )
+    @if(isset($menu->url) && $menu->url === '/logout')
+    {{-- C.2.1 (v0.10.3): /logout é POST-only (S-04). Renderizar como link que submete um form POST
+         evita o erro 405 (GET não suportado). Form próprio + CSRF, autocontido no item. --}}
+    <li class="menu-item">
+      <a href="javascript:void(0);" class="menu-link"
+         onclick="event.preventDefault(); document.getElementById('menu-logout-form').submit();">
+        @isset($menu->icon)
+        <i class="{{ $menu->icon }}"></i>
+        @endisset
+        <div>{{ isset($menu->name) ? __($menu->name) : '' }}</div>
+      </a>
+      <form id="menu-logout-form" method="POST" action="{{ url('/logout') }}" class="d-none">@csrf</form>
+    </li>
+    @else
     <li class="menu-item {{$activeClass}}">
       <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
         @isset($menu->icon)
@@ -86,6 +100,7 @@ $configData = Helper::appClasses();
       @include('layouts.sections.menu.submenu',['menu' => $menu->submenu])
       @endisset
     </li>
+    @endif
     @endif {{-- nivel_minimo --}}
     @endif
     @endforeach

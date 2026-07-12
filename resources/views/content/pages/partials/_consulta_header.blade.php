@@ -27,10 +27,11 @@
         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
           {{-- UX-14: link aponta para /pacientes/{id} (perfil), não mais para /historico --}}
           @if(Auth::user()->nivelAcesso() <= 4)
+            {{-- v0.10.3+: profissional vê "Nome social (Nome de registro)" quando há nome social --}}
             <a href="/pacientes/{{ $paciente->id }}"
-               class="text-body fw-bold text-decoration-none" style="font-size:1.5rem;">{{ $paciente->nome ?? '-' }}</a>
+               class="text-body fw-bold text-decoration-none" style="font-size:1.5rem;">{{ $paciente->nome_profissional ?? '-' }}</a>
           @else
-            <h4 class="mb-0">{{ $paciente->nome ?? '-' }}</h4>
+            <h4 class="mb-0">{{ $paciente->nome_profissional ?? '-' }}</h4>
           @endif
           <span class="badge rounded-pill bg-label-primary">{{ $consulta->tipo }}</span>
           @if($atendAberto)

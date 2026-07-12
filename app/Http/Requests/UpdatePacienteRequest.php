@@ -59,7 +59,6 @@ class UpdatePacienteRequest extends FormRequest
 
             // Responsável legal (menores)
             'responsavel_nome'       => 'nullable|string|max:255',
-            'responsavel_cpf'        => 'nullable|string|max:14',
             'responsavel_telefone'   => 'nullable|string|max:20',
             'responsavel_email'      => 'nullable|email|max:255',
             'responsavel_parentesco' => 'nullable|string|max:50',

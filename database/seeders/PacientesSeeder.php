@@ -260,7 +260,6 @@ class PacientesSeeder extends Seeder
         $p2 = 3000 + ($idx * 61) % 7000;
         return [
             'responsavel_nome'       => $nomes[$idx % count($nomes)],
-            'responsavel_cpf'        => $this->cpfValido($idx + 200),
             'responsavel_telefone'   => "(33) {$p1}-{$p2}",
             'responsavel_email'      => 'responsavel.' . $idx . '@email.com',
             'responsavel_parentesco' => $idx % 2 === 0 ? 'mae' : 'pai',

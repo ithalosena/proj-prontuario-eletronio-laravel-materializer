@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends FormRequest
 {
@@ -16,10 +15,8 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'             => ['required', 'string', 'max:255'],
-            // Unique excluindo o próprio usuário para não conflitar com e-mail atual
-            'email'            => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user()->id)],
-            // Senha: todos os campos opcionais — só valida se new_password for enviado
+            // v0.10.3+: nome e e-mail são institucionais (imutáveis no perfil) — não validados aqui.
+            // O perfil só altera a senha; o nome de exibição do paciente é o "nome social" (Meus Dados).
             'current_password' => ['required_with:new_password', 'nullable', 'string'],
             'new_password'     => ['nullable', 'string', 'confirmed', Password::min(8)],
         ];
@@ -28,9 +25,6 @@ class UpdateProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required'             => 'O nome é obrigatório.',
-            'email.required'            => 'O e-mail é obrigatório.',
-            'email.unique'              => 'Este e-mail já está em uso.',
             'current_password.required_with' => 'Informe a senha atual para definir uma nova senha.',
             'new_password.confirmed'    => 'A confirmação da nova senha não confere.',
             'new_password.min'          => 'A nova senha deve ter no mínimo 8 caracteres.',

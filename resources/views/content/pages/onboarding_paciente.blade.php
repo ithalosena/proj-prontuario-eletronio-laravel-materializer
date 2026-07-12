@@ -61,6 +61,45 @@
 
         /* Campo leitura apenas */
         .field-readonly { background: var(--bs-secondary-bg, #f5f5f5) !important; cursor: default; }
+
+        /* C.0 (v0.10.3): balão de ajuda "?" por clique (touch-friendly, sem depender do Bootstrap JS) */
+        .onb-help {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 16px; height: 16px; margin-left: .35rem; border-radius: 50%;
+            background: #3DAA4A; color: #fff; font-size: 11px; font-weight: 700;
+            cursor: pointer; user-select: none; line-height: 1;
+        }
+        .onb-help-pop {
+            position: absolute; z-index: 2000; max-width: 260px;
+            background: #212121; color: #fff; padding: .5rem .7rem; border-radius: 6px;
+            font-size: 12px; line-height: 1.4; box-shadow: 0 6px 20px rgba(0,0,0,.3);
+        }
+
+        /* ============================================================ */
+        /* Mobile-first do wizard (foco paciente) — telas ≤ 576px       */
+        /* ============================================================ */
+        @media (max-width: 576px) {
+            /* Sem fundo escuro/blur ocupando espaço; wizard usa a tela inteira */
+            body { padding: 0; background: #fff; align-items: stretch; }
+            .onb-card { border-radius: 0; box-shadow: none; min-height: 100vh; }
+
+            /* Paddings enxutos para não estourar a largura */
+            .onb-header { padding: 1.25rem 1rem 1rem; }
+            .onb-body   { padding: 1.25rem 1rem; }
+            .onb-footer { padding: 1rem; }
+
+            /* Header: título e badge empilham em vez de disputar a linha */
+            .onb-header > .d-flex { flex-wrap: wrap; gap: .5rem; }
+            #lbl-step { align-self: flex-start; }
+
+            /* Seções: menos recuo lateral */
+            .onb-section { padding-left: .75rem; }
+
+            /* Footer: botões full-width e empilhados (ação principal no topo) */
+            .onb-footer { flex-direction: column-reverse; gap: .5rem; }
+            .onb-footer > .ms-auto { margin-left: 0 !important; width: 100%; }
+            .onb-footer .btn { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -106,29 +145,41 @@
         @csrf
 
     {{-- ================================================================ --}}
-    {{-- PASSO 0 — Dados básicos do cadastro                              --}}
+    {{-- PASSO 1 (step-0) — Identidade                                    --}}
     {{-- ================================================================ --}}
     <div id="step-0" class="onb-body">
-        <h6 class="fw-semibold mb-3">Seus dados cadastrais</h6>
+        <h6 class="fw-semibold mb-3">Sua identidade</h6>
         <p class="text-muted small mb-4">
-            Revise os dados abaixo. Nome, documento, data de nascimento e sexo são editáveis.
-            <strong>E-mail, matrícula e curso</strong> são definidos pelo administrador e não podem ser alterados aqui.
+            Confira seus dados. O <strong>nome</strong>, o <strong>e-mail</strong>, a <strong>matrícula</strong> e o <strong>curso</strong>
+            são definidos pela instituição e não podem ser alterados aqui.
         </p>
 
         <div class="onb-section">
             <p class="onb-section-title">Identidade</p>
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Nome completo <span class="text-danger">*</span></label>
-                    <input type="text" name="nome" class="form-control" required
+                    {{-- Nome é imutável (definido pela instituição) — read-only, mas ainda é enviado no POST --}}
+                    <label class="form-label">Nome completo</label>
+                    <input type="text" name="nome" class="form-control field-readonly" readonly
                            value="{{ old('nome', $paciente->nome ?? '') }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nome social</label>
+                    <input type="text" name="nome_social" class="form-control" maxlength="255"
+                           value="{{ old('nome_social', $paciente->nome_social ?? '') }}">
+                    <div class="form-text">Nome pelo qual você prefere ser chamado(a) — é o que aparece pra você no sistema.</div>
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">CPF / Documento <span class="text-danger">*</span></label>
                     <input type="text" name="documento" class="form-control" required
                            value="{{ old('documento', $paciente->documento ?? '') }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
+                    <label class="form-label">Data de nascimento <span class="text-danger">*</span></label>
+                    <input type="date" name="data_nascimento" id="input-data-nasc" class="form-control" required
+                           value="{{ old('data_nascimento', $dataNascStr) }}">
+                </div>
+                <div class="col-md-4">
                     <label class="form-label">Sexo <span class="text-danger">*</span></label>
                     <select name="sexo" class="form-select" required>
                         <option value="">Selecione</option>
@@ -139,16 +190,12 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Data de nascimento <span class="text-danger">*</span></label>
-                    <input type="date" name="data_nascimento" id="input-data-nasc" class="form-control" required
-                           value="{{ old('data_nascimento', $dataNascStr) }}">
-                </div>
             </div>
         </div>
 
         <div class="onb-section">
-            <p class="onb-section-title">Dados institucionais (somente leitura)</p>
+            <p class="onb-section-title">Dados institucionais</p>
+            <p class="text-muted small mb-3"><i class="mdi mdi-information-outline me-1"></i>Se algum destes dados estiver errado, procure a secretaria.</p>
             <div class="row g-3">
                 <div class="col-md-5">
                     <label class="form-label">E-mail institucional</label>
@@ -167,9 +214,9 @@
     </div>
 
     {{-- ================================================================ --}}
-    {{-- PASSO 1 — Endereço                                               --}}
+    {{-- PASSO 3 (step-2) — Endereço                                      --}}
     {{-- ================================================================ --}}
-    <div id="step-1" class="onb-body" style="display:none;">
+    <div id="step-2" class="onb-body" style="display:none;">
         <h6 class="fw-semibold mb-1">Endereço</h6>
         <p class="text-muted small mb-4">Digite o CEP para preenchimento automático, ou preencha os campos manualmente.</p>
 
@@ -224,9 +271,9 @@
     </div>
 
     {{-- ================================================================ --}}
-    {{-- PASSO 2 — Contatos pessoais                                       --}}
+    {{-- PASSO 4 (step-3) — Contatos pessoais                             --}}
     {{-- ================================================================ --}}
-    <div id="step-2" class="onb-body" style="display:none;">
+    <div id="step-3" class="onb-body" style="display:none;">
         <h6 class="fw-semibold mb-1">Contatos pessoais</h6>
         <p class="text-muted small mb-4">Telefone principal é obrigatório para que a equipe de saúde possa entrar em contato.</p>
 
@@ -256,20 +303,14 @@
     </div>
 
     {{-- ================================================================ --}}
-    {{-- PASSO 3 — Dados complementares                                    --}}
+    {{-- PASSO 2 (step-1) — Dados complementares                          --}}
     {{-- ================================================================ --}}
-    <div id="step-3" class="onb-body" style="display:none;">
+    <div id="step-1" class="onb-body" style="display:none;">
         <h6 class="fw-semibold mb-1">Dados complementares</h6>
         <p class="text-muted small mb-4">Todos os campos são opcionais. Ajudam na identificação e no atendimento.</p>
 
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">Nome social</label>
-                <input type="text" name="nome_social" class="form-control" maxlength="255"
-                       value="{{ old('nome_social', $paciente->nome_social ?? '') }}">
-                <div class="form-text">Nome pelo qual prefere ser chamado(a).</div>
-            </div>
-            <div class="col-md-4">
                 <label class="form-label">Naturalidade — Cidade</label>
                 <input type="text" name="naturalidade_cidade" class="form-control" maxlength="100"
                        value="{{ old('naturalidade_cidade', $paciente->naturalidade_cidade ?? '') }}">
@@ -376,16 +417,18 @@
         <div id="bloco-responsavel" class="onb-section {{ $isMenorServidor ? '' : 'd-none' }}">
             <p class="onb-section-title"><i class="mdi mdi-account-child me-1"></i>Responsável legal <span class="text-danger">*</span></p>
             <p class="text-muted small mb-3">Obrigatório para pacientes menores de 18 anos.</p>
-            <div class="row g-3">
+            {{-- Alinhado ao /perfil: "mesmo do contato de emergência principal" copia nome/telefone/parentesco
+                 e mantém CPF + e-mail editáveis (campos legais próprios do responsável). --}}
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="resp-mesmo" onchange="toggleRespMesmo(this.checked)">
+              <label class="form-check-label small" for="resp-mesmo">O responsável é a mesma pessoa do contato de emergência principal (copiamos nome, telefone e parentesco — você só completa o e-mail abaixo).</label>
+            </div>
+            {{-- Contato do responsável — some quando o checkbox está marcado (= contato principal) --}}
+            <div class="row g-3" id="resp-contato">
                 <div class="col-md-5">
                     <label class="form-label">Nome completo <span class="text-danger">*</span></label>
                     <input type="text" name="responsavel_nome" class="form-control" maxlength="255"
                            value="{{ old('responsavel_nome', $paciente->responsavel_nome ?? '') }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">CPF <span class="text-danger">*</span></label>
-                    <input type="text" name="responsavel_cpf" class="form-control" maxlength="14"
-                           value="{{ old('responsavel_cpf', $paciente->responsavel_cpf ?? '') }}">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Parentesco <span class="text-danger">*</span></label>
@@ -396,15 +439,17 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Telefone <span class="text-danger">*</span></label>
                     <input type="text" name="responsavel_telefone" class="form-control" maxlength="20"
                            placeholder="(33) 99999-9999"
                            value="{{ old('responsavel_telefone', $paciente->responsavel_telefone ?? '') }}"
                            oninput="mascararTelefone(this)">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">E-mail <span class="text-danger">*</span></label>
+            </div>
+            <div class="row g-3 mt-0">
+                <div class="col-md-6">
+                    <label class="form-label">E-mail do responsável <span class="text-danger">*</span></label>
                     <input type="email" name="responsavel_email" class="form-control" maxlength="255"
                            value="{{ old('responsavel_email', $paciente->responsavel_email ?? '') }}">
                 </div>
@@ -529,19 +574,20 @@
         </div>
     </div>
 
-    {{-- Footer com botões de navegação --}}
-    <div class="onb-footer d-flex justify-content-between">
+    {{-- C.0.4/C.0.5 (v0.10.3): mensagem de erro por passo (além da borda vermelha) --}}
+    <div id="wizard-erro" class="alert alert-danger mx-4 mb-0 py-2 d-none" role="alert">
+        <i class="mdi mdi-alert-circle-outline me-1"></i>Preencha os campos obrigatórios destacados para continuar.
+    </div>
+
+    {{-- Footer — 2 botões (padrão do wizard de agendar): Anterior + principal (Próximo → Salvar).
+         Anterior oculto no passo 1; no último passo o principal vira "Salvar e acessar o sistema". --}}
+    <div class="onb-footer d-flex justify-content-between gap-2">
         <button type="button" id="btn-voltar" class="btn btn-outline-secondary" style="display:none;" onclick="wizardVoltar()">
             <i class="mdi mdi-arrow-left me-1"></i>Anterior
         </button>
-        <div class="ms-auto d-flex gap-2">
-            <button type="button" id="btn-avancar" class="btn btn-primary" onclick="wizardAvancar()">
-                Próximo <i class="mdi mdi-arrow-right ms-1"></i>
-            </button>
-            <button type="submit" id="btn-confirmar" class="btn btn-success" style="display:none;" disabled>
-                <i class="mdi mdi-check me-1"></i>Salvar e acessar o sistema
-            </button>
-        </div>
+        <button type="button" id="btn-principal" class="btn btn-primary ms-auto" onclick="wizardPrincipal()">
+            Próximo <i class="mdi mdi-arrow-right ms-1"></i>
+        </button>
     </div>
 
     </form>
@@ -557,8 +603,8 @@ let currentStep = 0;
 
 // Títulos por passo para o label no header
 const STEP_TITLES = [
-    'Dados cadastrais', 'Endereço', 'Contatos pessoais',
-    'Dados complementares', 'Emergência', 'Dados de saúde', 'Confirmação'
+    'Identidade', 'Dados complementares', 'Endereço', 'Contatos pessoais',
+    'Emergência', 'Dados de saúde', 'Confirmação'
 ];
 
 // Menoridade calculada inicialmente pelo servidor, atualizada pelo JS se o usuário editar data_nascimento
@@ -594,19 +640,29 @@ function renderStep(step) {
     // Atualiza label de passo
     document.getElementById('lbl-step').textContent = 'Passo ' + (step + 1) + ' de ' + TOTAL_STEPS;
 
-    // Botão voltar: oculto no passo 0
+    // Botão Anterior: oculto no passo 0
     document.getElementById('btn-voltar').style.display = step > 0 ? '' : 'none';
-    // Botão avançar: oculto no passo final
-    document.getElementById('btn-avancar').style.display = step < TOTAL_STEPS - 1 ? '' : 'none';
-    // Botão confirmar: visível apenas no passo final
-    const btnConf = document.getElementById('btn-confirmar');
-    btnConf.style.display = step === TOTAL_STEPS - 1 ? '' : 'none';
+    // Botão principal único: "Próximo" nos passos 1..n-1, "Salvar e acessar o sistema" no último
+    const btnP = document.getElementById('btn-principal');
+    if (step < TOTAL_STEPS - 1) {
+        btnP.className = 'btn btn-primary ms-auto';
+        btnP.innerHTML = 'Próximo <i class="mdi mdi-arrow-right ms-1"></i>';
+    } else {
+        btnP.className = 'btn btn-success ms-auto';
+        btnP.innerHTML = '<i class="mdi mdi-check me-1"></i>Salvar e acessar o sistema';
+    }
 
     // Ao entrar no passo 4: recalcula menoridade e exibe/oculta blocos condicionais
     if (step === 4) {
         atualizarMenoridade();
         const blocoResp = document.getElementById('bloco-responsavel');
         if (blocoResp) blocoResp.classList.toggle('d-none', !isMenor);
+        // C.0.4 (v0.10.3): quando menor, os campos do responsável passam a ser obrigatórios
+        // (assim validarPasso os cobre); quando maior, remove o required para não travar.
+        document.querySelectorAll('#bloco-responsavel [name^="responsavel_"]').forEach(el => {
+            if (isMenor) el.setAttribute('required', 'required');
+            else el.removeAttribute('required');
+        });
     }
     // Ao entrar no passo 5: exibe/oculta bloco de hábitos
     if (step === 5) {
@@ -614,27 +670,44 @@ function renderStep(step) {
         const blocoHab = document.getElementById('bloco-habitos');
         if (blocoHab) blocoHab.classList.toggle('d-none', isMenor);
     }
-    // Ao entrar no passo 6: gera resumo e ativa botão de confirmar
+    // Ao entrar no último passo: gera o resumo da confirmação
     if (step === TOTAL_STEPS - 1) {
         atualizarResumo();
-        document.getElementById('btn-confirmar').disabled = false;
+    }
+}
+
+// Ação do botão principal: avança nos passos intermediários, submete no último
+function wizardPrincipal() {
+    if (currentStep < TOTAL_STEPS - 1) {
+        wizardAvancar();
+    } else {
+        if (!validarPasso(currentStep)) return;
+        document.getElementById('form-onboarding').submit();
     }
 }
 
 function validarPasso(step) {
     const divStep = document.getElementById('step-' + step);
+    const erro = document.getElementById('wizard-erro');
     if (!divStep) return true;
-    const obrigatorios = divStep.querySelectorAll('[required]');
+    // Considera apenas os campos required VISÍVEIS (ex.: responsável só quando o bloco aparece)
+    const obrigatorios = Array.from(divStep.querySelectorAll('[required]'))
+        .filter(el => el.offsetParent !== null);
     let valido = true;
+    let primeiroInvalido = null;
     obrigatorios.forEach(el => {
         el.classList.remove('is-invalid');
         if (!el.value.trim()) {
             el.classList.add('is-invalid');
+            if (!primeiroInvalido) primeiroInvalido = el;
             valido = false;
         }
     });
-    if (!valido) {
-        obrigatorios[0]?.focus();
+    // C.0.4/C.0.5 (v0.10.3): mostra/oculta a mensagem de erro do passo
+    if (erro) erro.classList.toggle('d-none', valido);
+    if (!valido && primeiroInvalido) {
+        primeiroInvalido.focus();
+        primeiroInvalido.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     return valido;
 }
@@ -656,24 +729,58 @@ function wizardVoltar() {
     }
 }
 
-// Resumo do passo 6
+// Resumo da confirmação — TODOS os dados informados
 function atualizarResumo() {
     const get = name => {
         const el = document.querySelector('[name="' + name + '"]');
         if (!el) return '—';
         if (el.tagName === 'SELECT') return el.options[el.selectedIndex]?.text || '—';
-        return el.value || '—';
+        return el.value.trim() || '—';
     };
+    const linha = (rot, val) => `<li class="list-group-item py-1">${rot}: <strong>${val}</strong></li>`;
+
+    // Bloco secundário de emergência só aparece se algo foi preenchido
+    const temSec = (document.querySelector('[name="contato_emergencia2_nome"]')?.value || '').trim() !== '';
+    const secundario = temSec
+        ? linha('2º contato', `${get('contato_emergencia2_nome')} (${get('contato_emergencia2_parentesco')}) — ${get('contato_emergencia2_telefone')}`)
+        : '';
+
+    // Bloco do responsável só aparece para menores
+    const responsavel = isMenor ? `
+      <div class="col-md-6">
+        <div class="card border">
+          <div class="card-header py-2 fw-semibold small">Responsável legal</div>
+          <ul class="list-group list-group-flush small">
+            ${linha('Nome', get('responsavel_nome'))}
+            ${linha('Parentesco', get('responsavel_parentesco'))}
+            ${linha('Telefone', get('responsavel_telefone'))}
+            ${linha('E-mail', get('responsavel_email'))}
+          </ul>
+        </div>
+      </div>` : '';
 
     document.getElementById('resumo-dados').innerHTML = `
     <div class="row g-3">
       <div class="col-md-6">
         <div class="card border">
-          <div class="card-header py-2 fw-semibold small">Dados básicos</div>
+          <div class="card-header py-2 fw-semibold small">Identidade</div>
           <ul class="list-group list-group-flush small">
-            <li class="list-group-item py-1">Nome: <strong>${get('nome')}</strong></li>
-            <li class="list-group-item py-1">Data nasc.: <strong>${get('data_nascimento')}</strong></li>
-            <li class="list-group-item py-1">Sexo: <strong>${get('sexo')}</strong></li>
+            ${linha('Nome', get('nome'))}
+            ${linha('Nome social', get('nome_social'))}
+            ${linha('Documento', get('documento'))}
+            ${linha('Data nasc.', get('data_nascimento'))}
+            ${linha('Sexo', get('sexo'))}
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border">
+          <div class="card-header py-2 fw-semibold small">Dados complementares</div>
+          <ul class="list-group list-group-flush small">
+            ${linha('Naturalidade', `${get('naturalidade_cidade')}/${get('naturalidade_uf')}`)}
+            ${linha('Raça/Cor', get('raca_cor'))}
+            ${linha('Estado civil', get('estado_civil'))}
+            ${linha('Nome da mãe', get('nome_mae'))}
           </ul>
         </div>
       </div>
@@ -681,27 +788,40 @@ function atualizarResumo() {
         <div class="card border">
           <div class="card-header py-2 fw-semibold small">Endereço</div>
           <ul class="list-group list-group-flush small">
-            <li class="list-group-item py-1">${get('logradouro')}, ${get('numero')}</li>
+            <li class="list-group-item py-1">${get('logradouro')}, ${get('numero')} ${get('complemento') !== '—' ? '— ' + get('complemento') : ''}</li>
             <li class="list-group-item py-1">${get('bairro')} — ${get('cidade')}/${get('uf')}</li>
-            <li class="list-group-item py-1">CEP: <strong>${get('cep')}</strong></li>
+            ${linha('CEP', get('cep'))}
           </ul>
         </div>
       </div>
       <div class="col-md-6">
         <div class="card border">
-          <div class="card-header py-2 fw-semibold small">Contato de emergência</div>
+          <div class="card-header py-2 fw-semibold small">Contatos pessoais</div>
           <ul class="list-group list-group-flush small">
-            <li class="list-group-item py-1">${get('contato_emergencia_nome')} (${get('contato_emergencia_parentesco')})</li>
-            <li class="list-group-item py-1">Tel: <strong>${get('contato_emergencia_telefone')}</strong></li>
+            ${linha('Telefone', get('contato'))}
+            ${linha('Telefone alt.', get('telefone_alternativo'))}
+            ${linha('E-mail alt.', get('email_alternativo'))}
           </ul>
         </div>
       </div>
+      <div class="col-md-6">
+        <div class="card border">
+          <div class="card-header py-2 fw-semibold small">Contatos de emergência</div>
+          <ul class="list-group list-group-flush small">
+            ${linha('Principal', `${get('contato_emergencia_nome')} (${get('contato_emergencia_parentesco')}) — ${get('contato_emergencia_telefone')}`)}
+            ${secundario}
+          </ul>
+        </div>
+      </div>
+      ${responsavel}
       <div class="col-md-6">
         <div class="card border">
           <div class="card-header py-2 fw-semibold small">Dados de saúde</div>
           <ul class="list-group list-group-flush small">
-            <li class="list-group-item py-1">Tipo sanguíneo: <strong>${get('tipo_sanguineo')}</strong></li>
+            ${linha('Tipo sanguíneo', get('tipo_sanguineo'))}
             <li class="list-group-item py-1">Peso: <strong>${get('peso_kg')} kg</strong> · Altura: <strong>${get('altura_cm')} cm</strong></li>
+            ${linha('Alergias', get('alergias'))}
+            ${linha('Medicamentos', get('medicamentos_uso_continuo'))}
           </ul>
         </div>
       </div>
@@ -754,9 +874,102 @@ function buscarCep() {
         });
 }
 
+// ============================================================
+// C.0 (v0.10.3): balões de ajuda "?" por clique (touch-friendly)
+// ============================================================
+const HELP = {
+    'documento': 'Informe seu CPF (apenas números). Usado para identificação única no prontuário.',
+    'data_nascimento': 'Define se você é menor de 18 anos — nesse caso, será pedido um responsável legal.',
+    'cep': 'Digite o CEP para preencher o endereço automaticamente. Se não encontrar, preencha à mão.',
+    'contato': 'Telefone principal — é por ele que a equipe de saúde entra em contato. Obrigatório.',
+    'email_alternativo': 'Um e-mail pessoal, diferente do institucional, para contato alternativo.',
+    'nome_social': 'Nome pelo qual você prefere ser chamado(a), se diferente do nome de registro.',
+    'contato_emergencia_nome': 'Pessoa a ser acionada pelo setor de saúde em caso de emergência.',
+    'responsavel_nome': 'Obrigatório para pacientes menores de 18 anos.',
+    'tipo_sanguineo': 'Ajuda em emergências e eventuais transfusões. Se não souber, escolha "Não sei".',
+    'alergias': 'Liste alergias a medicamentos, alimentos ou outros — e a reação, se souber.',
+    'medicamentos_uso_continuo': 'Remédios que você toma regularmente (nome, dose e frequência).',
+    'condicoes_cronicas': 'Doenças de longa duração: diabetes, asma, hipertensão, epilepsia, etc.',
+};
+
+function initHelp() {
+    Object.keys(HELP).forEach(name => {
+        const input = document.querySelector('[name="' + name + '"]');
+        if (!input) return;
+        const group = input.closest('[class*="col-"]') || input.parentElement;
+        const label = group ? group.querySelector('label.form-label') : null;
+        if (!label || label.querySelector('.onb-help')) return;
+        const btn = document.createElement('span');
+        btn.className = 'onb-help';
+        btn.textContent = '?';
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('aria-label', 'Ajuda');
+        btn.dataset.help = HELP[name];
+        label.appendChild(btn);
+    });
+}
+
+// Popover: abre ao clicar no "?", fecha ao clicar fora
+let helpPopAberto = null;
+document.addEventListener('click', e => {
+    if (helpPopAberto) { helpPopAberto.remove(); helpPopAberto = null; }
+    const help = e.target.closest('.onb-help');
+    if (!help) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const pop = document.createElement('div');
+    pop.className = 'onb-help-pop';
+    pop.textContent = help.dataset.help;
+    document.body.appendChild(pop);
+    const r = help.getBoundingClientRect();
+    // Mantém dentro da largura da viewport
+    const left = Math.min(window.scrollX + r.left - 4, window.scrollX + window.innerWidth - 280);
+    pop.style.top  = (window.scrollY + r.bottom + 6) + 'px';
+    pop.style.left = Math.max(8, left) + 'px';
+    helpPopAberto = pop;
+});
+
+// ============================================================
+// Responsável = mesmo do contato de emergência principal (menores)
+// MESMA UX do /perfil: marcado esconde o contato do responsável (copiado do principal
+// nos bastidores); só o e-mail continua visível. Desmarcado mostra os campos.
+// ============================================================
+function copiaResp() {
+    var g = function (n) { return document.querySelector('[name="' + n + '"]'); };
+    if (g('responsavel_nome'))     g('responsavel_nome').value     = (g('contato_emergencia_nome')     || {}).value || '';
+    if (g('responsavel_telefone')) g('responsavel_telefone').value = (g('contato_emergencia_telefone') || {}).value || '';
+    var rp = g('responsavel_parentesco');
+    var pv = (g('contato_emergencia_parentesco') || {}).value || '';
+    if (rp && Array.prototype.some.call(rp.options, function (o) { return o.value === pv; })) rp.value = pv;
+}
+function toggleRespMesmo(checked) {
+    var cont = document.getElementById('resp-contato');
+    if (cont) { cont.style.display = checked ? 'none' : ''; }
+    if (checked) { copiaResp(); }
+}
+// Mantém o responsável sincronizado enquanto o checkbox estiver marcado
+['contato_emergencia_nome', 'contato_emergencia_telefone', 'contato_emergencia_parentesco'].forEach(function (n) {
+    var el = document.querySelector('[name="' + n + '"]'); if (!el) return;
+    var sync = function () { var cb = document.getElementById('resp-mesmo'); if (cb && cb.checked) { copiaResp(); } };
+    el.addEventListener('input', sync); el.addEventListener('change', sync);
+});
+// Inferência: se o responsável já é igual ao contato principal, marca o checkbox e esconde os campos
+function inferirRespMesmo() {
+    var cb = document.getElementById('resp-mesmo'); if (!cb) return;
+    var g = function (n) { var e = document.querySelector('[name="' + n + '"]'); return e ? (e.value || '').trim() : ''; };
+    var same = g('responsavel_nome') !== '' &&
+               g('responsavel_nome') === g('contato_emergencia_nome') &&
+               g('responsavel_telefone') === g('contato_emergencia_telefone') &&
+               g('responsavel_parentesco') === g('contato_emergencia_parentesco');
+    cb.checked = same;
+    toggleRespMesmo(same);
+}
+
 // Inicializa
 document.addEventListener('DOMContentLoaded', () => {
     renderStep(0);
+    initHelp();
+    inferirRespMesmo(); // marca o checkbox se responsável já == contato principal (ex.: old() após erro)
     // Se validação server-side falhou (old()), volta ao passo 0 com campos preenchidos
 });
 </script>

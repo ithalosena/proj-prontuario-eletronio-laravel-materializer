@@ -23,8 +23,10 @@ class Paciente extends Model
         // Contatos de emergência
         'contato_emergencia_nome', 'contato_emergencia_telefone', 'contato_emergencia_parentesco',
         'contato_emergencia2_nome', 'contato_emergencia2_telefone', 'contato_emergencia2_parentesco',
-        // Responsável legal (obrigatório para menores de 18)
-        'responsavel_nome', 'responsavel_cpf', 'responsavel_telefone', 'responsavel_email', 'responsavel_parentesco',
+        // Responsável legal (obrigatório para menores de 18).
+        // responsavel_cpf: coluna preservada no banco porém SEM USO desde v0.10.5 — removida do fillable
+        // para não ser mais mass-assignável (nenhum formulário/fluxo envia esse campo).
+        'responsavel_nome', 'responsavel_telefone', 'responsavel_email', 'responsavel_parentesco',
         // Dados clínicos autorreferidos
         'tipo_sanguineo', 'peso_kg', 'altura_cm',
         'alergias', 'medicamentos_uso_continuo', 'condicoes_cronicas', 'cirurgias_previas',
@@ -39,6 +41,25 @@ class Paciente extends Model
     public function getIdadeAttribute(): int
     {
         return $this->data_nascimento->age;
+    }
+
+    /*
+     * v0.10.3+: Nome de EXIBIÇÃO preferido do paciente — nome social se houver, senão o de registro.
+     * Usado nas telas do próprio paciente (perfil, dashboard).
+     */
+    public function getNomeExibicaoAttribute(): string
+    {
+        return trim($this->nome_social ?? '') ?: $this->nome;
+    }
+
+    /*
+     * v0.10.3+: Nome para o PROFISSIONAL — formato "Social (Registro)" quando há nome social,
+     * ex.: "Maria (Maria Fernanda Costa)". Sem nome social, só o de registro.
+     */
+    public function getNomeProfissionalAttribute(): string
+    {
+        $social = trim($this->nome_social ?? '');
+        return $social !== '' ? "{$social} ({$this->nome})" : $this->nome;
     }
 
     public function user()

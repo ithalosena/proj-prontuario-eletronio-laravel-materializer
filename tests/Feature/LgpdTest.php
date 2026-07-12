@@ -280,6 +280,9 @@ class LgpdTest extends TestCase
         $this->assertArrayHasKey('agendamentos',  $dados);
         $this->assertArrayHasKey('consentimentos', $dados);
         $this->assertArrayHasKey('exportado_em',  $dados);
+        // Portabilidade completa (ST-15): dados de saúde autorrelatados + endereço estruturado
+        $this->assertArrayHasKey('dados_de_saude', $dados);
+        $this->assertIsArray($dados['titular']['endereco']);
 
         $this->assertEquals($paciente->nome, $dados['titular']['nome']);
     }

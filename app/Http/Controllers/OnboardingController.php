@@ -90,7 +90,6 @@ class OnboardingController extends Controller
             'contato_emergencia2_telefone'   => $request->contato_emergencia2_telefone,
             'contato_emergencia2_parentesco' => $request->contato_emergencia2_parentesco,
             'responsavel_nome'       => $request->responsavel_nome,
-            'responsavel_cpf'        => $request->responsavel_cpf,
             'responsavel_telefone'   => $request->responsavel_telefone,
             'responsavel_email'      => $request->responsavel_email,
             'responsavel_parentesco' => $request->responsavel_parentesco,
