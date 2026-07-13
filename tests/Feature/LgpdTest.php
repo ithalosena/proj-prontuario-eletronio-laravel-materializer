@@ -92,6 +92,38 @@ class LgpdTest extends TestCase
         $this->assertArrayNotHasKey('queixa', $log->old_values ?? []);
     }
 
+    // SF-01 (v0.10.6): dados clínicos autorreferidos do PACIENTE (ST-15) não vão para audit_logs
+    public function test_audit_observer_nao_loga_campos_clinicos_do_paciente(): void
+    {
+        [$userProf]   = $this->criarProfissionalUser();
+        [, $paciente] = $this->criarPacienteUser();
+
+        $this->actingAs($userProf);
+        $paciente->update([
+            'alergias'                  => 'Dipirona',
+            'medicamentos_uso_continuo' => 'Losartana 50mg',
+            'condicoes_cronicas'        => 'Hipertensão',
+            'tipo_sanguineo'            => 'O+',
+            'contato'                   => '(38) 90000-0000', // campo NÃO clínico → deve continuar auditado
+        ]);
+
+        $log = AuditLog::where('action', 'updated')
+            ->where('model_type', 'Paciente')
+            ->where('model_id', $paciente->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($log, 'AuditLog de update do Paciente deve existir.');
+
+        foreach (['alergias', 'medicamentos_uso_continuo', 'condicoes_cronicas', 'tipo_sanguineo'] as $campo) {
+            $this->assertArrayNotHasKey($campo, $log->new_values ?? [], "$campo não deve estar no audit_log");
+            $this->assertArrayNotHasKey($campo, $log->old_values ?? [], "$campo não deve estar no audit_log");
+        }
+
+        // Campo não sensível permanece auditado (o log continua útil)
+        $this->assertArrayHasKey('contato', $log->new_values ?? []);
+    }
+
     // ------------------------------------------------------------------ L-04
 
     // L-04a: /privacidade é acessível sem autenticação

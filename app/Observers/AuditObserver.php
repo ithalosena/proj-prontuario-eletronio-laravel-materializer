@@ -55,8 +55,13 @@ class AuditObserver
     {
         return collect($data)->except([
             'password', 'remember_token', 'updated_at', 'deleted_at',
-            // Dados sensíveis de saúde — não devem ser duplicados em audit_logs
+            // Dados sensíveis de saúde da CONSULTA — não devem ser duplicados em audit_logs
             'queixa', 'anamnese', 'diagnostico', 'conduta',
+            // SF-01 (v0.10.6): dados clínicos autorreferidos do PACIENTE (ST-15) — LGPD Art. 11 + 46.
+            // Sem isso, cada onboarding/edição gravava esses campos em texto claro no audit_logs.
+            'tipo_sanguineo', 'peso_kg', 'altura_cm',
+            'alergias', 'medicamentos_uso_continuo', 'condicoes_cronicas', 'cirurgias_previas',
+            'tabagismo', 'etilismo', 'atividade_fisica',
         ])->toArray();
     }
 }
