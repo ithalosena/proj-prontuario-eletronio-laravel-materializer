@@ -97,6 +97,11 @@
           "url": "/configuracoes/tipos-consulta",
           "name": "Tipos de Consulta",
           "slug": "configuracoes-tipos-consulta"
+        },
+        {
+          "url": "/pacientes/importar",
+          "name": "Importar Pacientes",
+          "slug": "pacientes-importar"
         }
       ]
     },

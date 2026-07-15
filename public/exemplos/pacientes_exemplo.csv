@@ -1,0 +1,4 @@
+nome,matricula,curso,email,data_nascimento,sexo,documento
+Maria Exemplo Silva,2024100,Análise e Desenvolvimento de Sistemas,maria.exemplo@ifnmg.edu.br,2001-03-15,F,11111111111
+João Exemplo Souza,2024101,Engenharia Civil,joao.exemplo@ifnmg.edu.br,2000-07-22,M,22222222222
+Ana Exemplo Costa,2024102,Administração,ana.exemplo@ifnmg.edu.br,2002-11-05,outro,33333333333

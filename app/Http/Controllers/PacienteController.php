@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ImportarPacientesRequest;
 use App\Http\Requests\StorePacienteRequest;
 use App\Http\Requests\UpdatePacienteRequest;
 use App\Models\Atendimento;
 use App\Models\Paciente;
 use App\Models\User;
+use App\Services\PacienteImportService;
 use App\Services\SearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -373,5 +375,29 @@ class PacienteController extends Controller
                 ['id', 'nome', 'matricula']
             )
         );
+    }
+
+    /*
+     * ST-14: formulário de importação de pacientes via CSV (nivel <= 2, ver routes/web.php).
+     */
+    public function importar()
+    {
+        return view('content.pages.importar_pacientes');
+    }
+
+    /*
+     * ST-14: processa o CSV enviado via PacienteImportService e exibe o relatório
+     * (criados/ignorados/erros) na mesma tela. Falhas estruturais do arquivo (cabeçalho
+     * ausente, role não configurada) viram flash de erro em vez de 500.
+     */
+    public function importarStore(ImportarPacientesRequest $request, PacienteImportService $service)
+    {
+        try {
+            $resultado = $service->importar($request->file('arquivo'));
+        } catch (\InvalidArgumentException|\RuntimeException $e) {
+            return redirect('/pacientes/importar')->with('error', $e->getMessage());
+        }
+
+        return view('content.pages.importar_pacientes', compact('resultado'));
     }
 }

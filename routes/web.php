@@ -154,6 +154,10 @@ Route::middleware(['auth', 'consentimento', 'onboarding'])->group(function () {
         Route::post('/configuracoes/tipos-consulta',                        [TipoConsultaController::class, 'store']);
         Route::put('/configuracoes/tipos-consulta/{tipoConsulta}',          [TipoConsultaController::class, 'update']);
         Route::patch('/configuracoes/tipos-consulta/{tipoConsulta}/toggle', [TipoConsultaController::class, 'toggleAtivo']);
+
+        // ST-14: importação de pacientes via CSV (admin/coordenador)
+        Route::get('/pacientes/importar',  [PacienteController::class, 'importar'])->name('pacientes-importar');
+        Route::post('/pacientes/importar', [PacienteController::class, 'importarStore']);
     });
 
     // ------------------------------------------------------------------
