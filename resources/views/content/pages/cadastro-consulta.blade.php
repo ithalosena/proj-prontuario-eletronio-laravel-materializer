@@ -3,9 +3,11 @@ $configData = Helper::appClasses();
 // $voltarUrl é usado apenas no modo livre (sem atendimento)
 $voltarUrl  = url()->previous('/consultas');
 
-// Hero contextual: iniciais do paciente para o avatar
-$iniciais = $atendimento
-    ? collect(explode(' ', $atendimento->paciente->nome ?? 'P'))
+// Hero contextual: iniciais do paciente para o avatar (atendimento aberto OU
+// agendamento sendo realizado — DT-MOD-01)
+$pacienteContexto = $atendimento->paciente ?? $agendamentoOrigem->paciente ?? null;
+$iniciais = $pacienteContexto
+    ? collect(explode(' ', $pacienteContexto->nome ?? 'P'))
         ->filter()->map(fn($p) => strtoupper($p[0]))->take(2)->implode('')
     : null;
 @endphp
@@ -97,6 +99,67 @@ $iniciais = $atendimento
     </div>
   </div>
 
+  @elseif($agendamentoOrigem)
+
+  {{-- ================================================================ --}}
+  {{-- Hero contextual do AGENDAMENTO (DT-MOD-01): realizar agendamento  --}}
+  {{-- Paciente/profissional travados; o atendimento SÓ é criado quando  --}}
+  {{-- a consulta for salva — abandonar esta tela não cria nada.         --}}
+  {{-- ================================================================ --}}
+  @php
+    $nomeProfissionalAg = $profissionalLogado->nome ?? $agendamentoOrigem->profissional->nome ?? '-';
+    $especialidadeAg    = $profissionalLogado->especialidade
+        ?? ($agendamentoOrigem->profissional->especialidade ?? null);
+  @endphp
+  <div class="card mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+
+        {{-- Avatar com iniciais do paciente --}}
+        <div class="flex-shrink-0">
+          <div class="avatar avatar-xl">
+            <span class="avatar-initial rounded-circle bg-label-success"
+              style="font-size:1.4rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
+              {{ $iniciais }}
+            </span>
+          </div>
+        </div>
+
+        {{-- Dados do paciente e contexto do agendamento --}}
+        <div class="flex-grow-1">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h4 class="mb-0">{{ $agendamentoOrigem->paciente->nome ?? '-' }}</h4>
+            <span class="badge rounded-pill bg-label-success">
+              <i class="mdi mdi-calendar-check-outline me-1"></i>Agendado
+            </span>
+            <span class="badge rounded-pill bg-label-info">Nova Consulta</span>
+          </div>
+          <div class="d-flex flex-wrap gap-3 text-muted small">
+            @if($agendamentoOrigem->paciente->matricula ?? null)
+              <span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $agendamentoOrigem->paciente->matricula }}</span>
+            @endif
+            <span>
+              <i class="mdi mdi-calendar-clock me-1"></i>
+              Agendado para {{ $agendamentoOrigem->data_hora->format('d/m/Y \à\s H:i') }}
+            </span>
+            <span>
+              <i class="mdi mdi-doctor me-1"></i>{{ $nomeProfissionalAg }}
+              @if($especialidadeAg) · {{ $especialidadeAg }} @endif
+            </span>
+          </div>
+        </div>
+
+        {{-- Botão Voltar: nada foi criado ainda — sair daqui não deixa rastro --}}
+        <div class="flex-shrink-0">
+          <a href="/agendamentos" class="btn btn-default">
+            <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   @else
 
   {{-- Hero modo livre: exibe dados do profissional responsável --}}
@@ -169,16 +232,24 @@ $iniciais = $atendimento
       <input type="hidden" name="atendimento_id"  value="{{ $atendimento->id }}">
       <input type="hidden" name="paciente_id"     value="{{ $atendimento->paciente_id }}">
       <input type="hidden" name="profissional_id" value="{{ $profissionalLogado->id ?? $atendimento->profissional_id }}">
+    @elseif($agendamentoOrigem)
+      {{-- DT-MOD-01: o agendamento_id no POST dispara a criação atômica do
+           atendimento no store(); paciente/profissional vêm do agendamento --}}
+      <input type="hidden" name="agendamento_id"  value="{{ $agendamentoOrigem->id }}">
+      <input type="hidden" name="paciente_id"     value="{{ $agendamentoOrigem->paciente_id }}">
+      <input type="hidden" name="profissional_id" value="{{ $agendamentoOrigem->profissional_id }}">
     @endif
 
     @php
-      // Pré-seleciona tipo pela especialidade do profissional (se disponível)
+      // Pré-seleciona tipo pela especialidade do profissional (se disponível).
+      // DT-MOD-01: nunca usar agendamento.tipo aqui — é a especialidade (v0.10.4).
       $especialidade = $especialidade ?? $profissionalLogado->especialidade
-          ?? ($atendimento->profissional->especialidade ?? null);
+          ?? ($atendimento->profissional->especialidade ?? null)
+          ?? ($agendamentoOrigem->profissional->especialidade ?? null);
 
-      // Modo contextual: data começa com o momento atual
+      // Modo contextual (atendimento ou agendamento): data começa com o momento atual
       // Modo livre: usa old() em caso de resubmissão com erro de validação
-      $dataDefault = $atendimento
+      $dataDefault = ($atendimento || $agendamentoOrigem)
           ? now()->format('Y-m-d\TH:i')
           : old('data_hora');
     @endphp
@@ -198,7 +269,7 @@ $iniciais = $atendimento
           <div class="card-body">
 
             {{-- Modo livre: selects completos de paciente e profissional --}}
-            @if(!$atendimento)
+            @if(!$atendimento && !$agendamentoOrigem)
 
               {{-- Select de paciente: pré-selecionado quando vem de ?paciente_id=X --}}
               <div class="form-floating form-floating-outline mb-4">
@@ -344,7 +415,8 @@ $iniciais = $atendimento
           <button type="submit" class="btn btn-primary">
             <i class="mdi mdi-check-circle-outline me-1"></i>Salvar Consulta
           </button>
-          <a href="{{ $atendimento ? '/atendimentos/' . $atendimento->id : $voltarUrl }}"
+          {{-- Cancelar: no fluxo agendado volta para a agenda (nada foi criado) --}}
+          <a href="{{ $atendimento ? '/atendimentos/' . $atendimento->id : ($agendamentoOrigem ? '/agendamentos' : $voltarUrl) }}"
             class="btn btn-outline-secondary ms-auto">Cancelar</a>
         </div>
 
@@ -449,15 +521,10 @@ $iniciais = $atendimento
           ' class="form-control form-control-sm"' +
           ' placeholder="Tipo de exame (ex: Hemograma, RX Tórax)">' +
       '</div>' +
-      '<div class="row g-2">' +
-        '<div class="col-6">' +
-          '<input type="date" name="exames[' + idx + '][data_solicitacao]"' +
-            ' class="form-control form-control-sm" title="Data de solicitação">' +
-        '</div>' +
-        '<div class="col-6">' +
-          '<input type="text" name="exames[' + idx + '][observacao]"' +
-            ' class="form-control form-control-sm" placeholder="Observação">' +
-        '</div>' +
+      // BUG-A01 (v0.11.1): sem campo de data — o exame inline herda a data da consulta
+      '<div class="mb-0">' +
+        '<input type="text" name="exames[' + idx + '][observacao]"' +
+          ' class="form-control form-control-sm" placeholder="Observação">' +
       '</div>';
     container.appendChild(row);
     toggleEmpty('exames-container', 'exames-empty');

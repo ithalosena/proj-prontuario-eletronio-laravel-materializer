@@ -234,7 +234,8 @@ $idade      = $paciente->data_nascimento
                   · {{ $atendimento->created_at->format('d/m/Y H:i') }}
                 </p>
               </div>
-              {{-- Status --}}
+              {{-- Status + origem (DT-MOD-01: Agendado × Espontâneo) --}}
+              @include('content.pages.partials._badge_origem', ['atendimento' => $atendimento])
               <span class="badge bg-label-{{ $abertoBadge[0] }}">{{ $abertoBadge[1] }}</span>
               <i class="mdi mdi-chevron-right text-muted"></i>
             </a>

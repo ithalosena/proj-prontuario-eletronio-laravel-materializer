@@ -20,10 +20,18 @@ class Etapa2ProfissionalTest extends TestCase
     // O formulário de consulta mostra "Salvar Consulta" e não mostra mais "Agendar para depois"
     public function test_ux_p05_form_consulta_renomeia_botao_e_remove_agendar(): void
     {
-        [$user] = $this->criarProfissionalUser();
+        // E1 (v0.11.1): o formulário de consulta exige contexto de atendimento
+        [$user, $profissional] = $this->criarProfissionalUser();
+        [, $paciente]          = $this->criarPacienteUser();
+        $atendimento = Atendimento::factory()->create([
+            'profissional_id' => $profissional->id,
+            'paciente_id'     => $paciente->id,
+            'criado_por_id'   => $user->id,
+            'status'          => 'aberto',
+        ]);
 
         $this->actingAs($user)
-            ->get('/cadastro-consulta')
+            ->get("/cadastro-consulta?atendimento_id={$atendimento->id}")
             ->assertOk()
             ->assertSee('Salvar Consulta')
             ->assertDontSee('Agendar para depois');

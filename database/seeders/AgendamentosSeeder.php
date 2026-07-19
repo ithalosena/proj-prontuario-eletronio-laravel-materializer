@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Agendamento;
+use App\Models\Atendimento;
+use App\Models\Consulta;
 use App\Models\Paciente;
 use App\Models\Profissional;
 use App\Models\User;
@@ -211,6 +213,59 @@ class AgendamentosSeeder extends Seeder
                 }
             }
         }
+
+        // =====================================================================
+        // DT-MOD-01 (v0.11.0): fecha o ciclo do Modelo A para parte dos
+        // agendamentos 'realizado' — cada um ganha o seu atendimento AGENDADO
+        // (com agendamento_id) contendo 1 consulta, e recebe consulta_id.
+        // Os ~100 atendimentos do AtendimentosSeeder ficam sem agendamento_id
+        // (= Espontâneos), então a demo exibe os dois badges (M8.1).
+        // =====================================================================
+        $realizados = Agendamento::where('status', 'realizado')
+            ->whereNull('consulta_id')
+            ->orderBy('data_hora')
+            ->take(15)
+            ->get();
+
+        foreach ($realizados as $i => $ag) {
+            $prof = Profissional::find($ag->profissional_id);
+
+            // Os 2 primeiros ficam abertos (badge Agendado + Aberto); o resto fechado
+            $fechado = $i >= 2;
+
+            $atendimento = Atendimento::create([
+                'paciente_id'     => $ag->paciente_id,
+                'profissional_id' => $ag->profissional_id,
+                'agendamento_id'  => $ag->id,
+                'criado_por_id'   => $prof->user_id,
+                'fechado_por_id'  => $fechado ? $prof->user_id : null,
+                'status'          => $fechado ? 'fechado' : 'aberto',
+                'fechado_em'      => $fechado ? $ag->data_hora->copy()->addHour() : null,
+            ]);
+
+            // Alinha a cronologia do atendimento à do agendamento (só estética de demo)
+            $atendimento->created_at = $ag->data_hora;
+            $atendimento->updated_at = $fechado ? $ag->data_hora->copy()->addHour() : $ag->data_hora;
+            $atendimento->save();
+
+            // Modelo A: atendimento nunca fica vazio — nasce com a 1ª consulta
+            $consulta = Consulta::create([
+                'atendimento_id'  => $atendimento->id,
+                'criado_por_id'   => $prof->user_id,
+                'profissional_id' => $ag->profissional_id,
+                'paciente_id'     => $ag->paciente_id,
+                'data_hora'       => $ag->data_hora,
+                'tipo'            => $ag->tipo,
+                'queixa'          => 'Consulta de demanda agendada (seed DT-MOD-01).',
+                'anamnese'        => null,
+                'diagnostico'     => null,
+                'conduta'         => 'Orientações gerais registradas.',
+            ]);
+
+            $ag->update(['consulta_id' => $consulta->id]);
+        }
+
+        $this->command->info("✓ DT-MOD-01: {$realizados->count()} agendamentos realizados vinculados a atendimentos Agendados.");
 
         // Resumo por status para facilitar validação
         $porStatus = Agendamento::selectRaw('status, count(*) as total')

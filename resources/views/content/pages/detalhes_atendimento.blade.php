@@ -82,14 +82,17 @@ $configData = Helper::appClasses();
         </div>
         <div class="card-body">
 
-          {{-- Badge de status: verde = aberto, cinza = fechado --}}
+          {{-- Badge de status: verde = aberto, cinza = fechado + origem (DT-MOD-01) --}}
           <div class="mb-3">
             <p class="text-muted small mb-1">Status</p>
-            @if($atendimento->isAberto())
-              <span class="badge rounded-pill bg-label-success fs-6">Aberto</span>
-            @else
-              <span class="badge rounded-pill bg-label-secondary fs-6">Fechado</span>
-            @endif
+            <div class="d-flex flex-wrap align-items-center gap-1">
+              @if($atendimento->isAberto())
+                <span class="badge rounded-pill bg-label-success fs-6">Aberto</span>
+              @else
+                <span class="badge rounded-pill bg-label-secondary fs-6">Fechado</span>
+              @endif
+              @include('content.pages.partials._badge_origem', ['atendimento' => $atendimento])
+            </div>
           </div>
 
           <div class="mb-3">
@@ -116,6 +119,16 @@ $configData = Helper::appClasses();
             <p class="text-muted small mb-1">Registrado por</p>
             <p class="fw-semibold mb-0">{{ $atendimento->criadoPor->name ?? '-' }}</p>
           </div>
+
+          {{-- DT-MOD-01: elo com a agenda — só quando o atendimento nasceu de um agendamento --}}
+          @if($atendimento->isAgendado())
+          <div class="mb-3">
+            <p class="text-muted small mb-1">Origem</p>
+            <a href="/agendamentos/{{ $atendimento->agendamento_id }}" class="fw-semibold text-primary text-decoration-none">
+              <i class="mdi mdi-calendar-check-outline me-1"></i>Agendamento #{{ $atendimento->agendamento_id }}
+            </a>
+          </div>
+          @endif
 
           {{-- Dados de encerramento: visível apenas quando o atendimento está fechado --}}
           @if(!$atendimento->isAberto())

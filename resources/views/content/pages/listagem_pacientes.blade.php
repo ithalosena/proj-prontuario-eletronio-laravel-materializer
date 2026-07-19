@@ -136,11 +136,12 @@ $configData = Helper::appClasses();
               <td class="text-end">
                 <div class="d-flex align-items-center justify-content-end gap-2">
 
-                  {{-- "Iniciar Consulta" apenas para profissional de saúde com perfil vinculado --}}
+                  {{-- E1 (v0.11.1): "Iniciar Atendimento" (abre o atendimento antes da consulta —
+                       fim da consulta órfã). Só profissional de saúde com perfil vinculado. --}}
                   @if(Auth::user()->nivelAcesso() <= 3 && Auth::user()->profissional)
-                  <a href="/cadastro-consulta?paciente_id={{ $paciente->id }}"
+                  <a href="/cadastro-atendimento?paciente_id={{ $paciente->id }}"
                      class="btn btn-sm btn-primary">
-                    <i class="mdi mdi-stethoscope me-1"></i>Iniciar Consulta
+                    <i class="mdi mdi-folder-plus-outline me-1"></i>Iniciar Atendimento
                   </a>
                   @endif
 

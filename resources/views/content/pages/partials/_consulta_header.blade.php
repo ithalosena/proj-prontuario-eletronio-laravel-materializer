@@ -39,6 +39,10 @@
           @else
             <span class="badge rounded-pill bg-label-secondary">Atendimento encerrado</span>
           @endif
+          {{-- DT-MOD-01: origem do atendimento (Agendado × Espontâneo) --}}
+          @if($atendimento)
+            @include('content.pages.partials._badge_origem', ['atendimento' => $atendimento])
+          @endif
         </div>
         <div class="d-flex flex-wrap gap-3 text-muted small">
           @if($paciente->matricula)

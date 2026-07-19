@@ -12,23 +12,39 @@ class ConsultaTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Formulário de nova consulta retorna 200
+    // Formulário de nova consulta retorna 200 (E1: exige contexto de atendimento)
     public function test_formulario_de_nova_consulta(): void
     {
-        [$user] = $this->criarProfissionalUser();
+        [$user, $profissional] = $this->criarProfissionalUser();
+        [, $paciente]          = $this->criarPacienteUser();
+
+        $atendimento = Atendimento::factory()->create([
+            'profissional_id' => $profissional->id,
+            'paciente_id'     => $paciente->id,
+            'criado_por_id'   => $user->id,
+            'status'          => 'aberto',
+        ]);
 
         $this->actingAs($user)
-            ->get('/cadastro-consulta')
+            ->get("/cadastro-consulta?atendimento_id={$atendimento->id}")
             ->assertOk();
     }
 
-    // Criar consulta redireciona para os detalhes da consulta criada
+    // Criar consulta (dentro de um atendimento) redireciona para os detalhes da consulta
     public function test_criar_consulta(): void
     {
         [$user, $profissional] = $this->criarProfissionalUser();
         [, $paciente]          = $this->criarPacienteUser();
 
+        $atendimento = Atendimento::factory()->create([
+            'profissional_id' => $profissional->id,
+            'paciente_id'     => $paciente->id,
+            'criado_por_id'   => $user->id,
+            'status'          => 'aberto',
+        ]);
+
         $response = $this->actingAs($user)->post('/cadastrar-consulta', [
+            'atendimento_id'  => $atendimento->id,
             'profissional_id' => $profissional->id,
             'paciente_id'     => $paciente->id,
             'data_hora'       => now()->format('Y-m-d H:i:s'),
@@ -38,7 +54,34 @@ class ConsultaTest extends TestCase
 
         $consulta = Consulta::first();
         $response->assertRedirect("/consultas/{$consulta->id}");
-        $this->assertDatabaseHas('consultas', ['paciente_id' => $paciente->id, 'tipo' => 'Clínico Geral']);
+        $this->assertDatabaseHas('consultas', [
+            'paciente_id'    => $paciente->id,
+            'tipo'           => 'Clínico Geral',
+            'atendimento_id' => $atendimento->id,
+        ]);
+    }
+
+    // E1 (v0.11.1): consulta sem atendimento nem agendamento é bloqueada (fim da consulta órfã)
+    public function test_consulta_sem_atendimento_e_bloqueada(): void
+    {
+        [$user, $profissional] = $this->criarProfissionalUser();
+        [, $paciente]          = $this->criarPacienteUser();
+
+        // GET do formulário sem contexto → redireciona para a listagem de pacientes
+        $this->actingAs($user)
+            ->get('/cadastro-consulta')
+            ->assertRedirect('/pacientes');
+
+        // POST sem contexto → bloqueado, nada é criado
+        $this->actingAs($user)->post('/cadastrar-consulta', [
+            'profissional_id' => $profissional->id,
+            'paciente_id'     => $paciente->id,
+            'data_hora'       => now()->format('Y-m-d H:i:s'),
+            'tipo'            => 'Clínico Geral',
+            'queixa'          => 'Consulta órfã bloqueada.',
+        ])->assertRedirect('/pacientes');
+
+        $this->assertSame(0, Consulta::count());
     }
 
     // ANALISE-01 (v0.10.1): Admin é somente leitura — não registra consultas (403)

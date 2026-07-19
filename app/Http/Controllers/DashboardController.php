@@ -174,8 +174,9 @@ class DashboardController extends Controller
             ->get();
 
         // Últimas 5 consultas registradas pelo profissional — eager load paciente
+        // + atendimento (DT-MOD-01: badge de origem Agendado × Espontâneo)
         $ultimasConsultas = Consulta::where('profissional_id', $profissional->id)
-            ->with('paciente')
+            ->with('paciente', 'atendimento')
             ->latest('data_hora')
             ->take(5)
             ->get();

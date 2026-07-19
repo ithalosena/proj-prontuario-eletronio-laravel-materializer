@@ -57,8 +57,9 @@ $iniciais   = collect(explode(' ', $paciente->nome ?? 'P'))
 
         <div class="d-flex flex-column gap-2 ms-auto">
           @if(Auth::user()->nivelAcesso() <= 3)
-          <a href="/cadastro-consulta?paciente_id={{ $paciente->id }}" class="btn btn-primary btn-sm">
-            <i class="mdi mdi-plus me-1"></i>Nova Consulta
+          {{-- E1 (v0.11.1): abre atendimento antes da consulta (sem consulta órfã) --}}
+          <a href="/cadastro-atendimento?paciente_id={{ $paciente->id }}" class="btn btn-primary btn-sm">
+            <i class="mdi mdi-folder-plus-outline me-1"></i>Iniciar Atendimento
           </a>
           @endif
           <a href="/pacientes/{{ $paciente->id }}" class="btn btn-outline-secondary btn-sm">
@@ -187,8 +188,9 @@ $iniciais   = collect(explode(' ', $paciente->nome ?? 'P'))
         <i class="mdi mdi-calendar-remove-outline d-block mb-2" style="font-size:2.5rem;"></i>
         <p class="mb-3">Nenhuma consulta registrada para este paciente.</p>
         @if(Auth::user()->nivelAcesso() <= 3)
-        <a href="/cadastro-consulta?paciente_id={{ $paciente->id }}" class="btn btn-primary">
-          <i class="mdi mdi-plus me-1"></i>Registrar Primeira Consulta
+        {{-- E1 (v0.11.1): abre atendimento antes da consulta (sem consulta órfã) --}}
+        <a href="/cadastro-atendimento?paciente_id={{ $paciente->id }}" class="btn btn-primary">
+          <i class="mdi mdi-folder-plus-outline me-1"></i>Iniciar Atendimento
         </a>
         @endif
       </div>

@@ -67,6 +67,16 @@ class Agendamento extends Model
         return $this->belongsTo(Consulta::class);
     }
 
+    /*
+     * Atendimento gerado ao realizar este agendamento (DT-MOD-01, Modelo A).
+     * hasOne de propósito: 1 agendamento = 1 atendimento — o guard no
+     * ConsultaController::store() usa esta relação para impedir um segundo.
+     */
+    public function atendimento()
+    {
+        return $this->hasOne(Atendimento::class);
+    }
+
     // =========================================================
     // Helpers de estado
     // =========================================================

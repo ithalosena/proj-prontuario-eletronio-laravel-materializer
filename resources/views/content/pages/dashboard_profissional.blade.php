@@ -72,12 +72,10 @@
         </div>
 
         {{-- CTA — UX-P02.1 (v0.10.2): leva à própria consulta mostrada (registrar/realizar este
-             agendamento), não cria um atendimento novo em branco. Mesmo destino do AgendamentoController::realizar. --}}
+             agendamento). DT-MOD-01: só o agendamento_id — o create() deriva paciente/profissional;
+             o atendimento só nasce ao salvar a consulta. Mesmo destino do AgendamentoController::realizar. --}}
         <a href="/cadastro-consulta?{{ http_build_query([
-              'agendamento_id'  => $proximoAgendamento->id,
-              'paciente_id'     => $proximoAgendamento->paciente_id,
-              'profissional_id' => $proximoAgendamento->profissional_id,
-              'tipo'            => $proximoAgendamento->tipo,
+              'agendamento_id' => $proximoAgendamento->id,
            ]) }}"
            class="btn btn-sm fw-semibold flex-shrink-0"
            style="background:#fff; color:#3DAA4A; border:none;">
@@ -256,6 +254,10 @@
                 {{ $consulta->tipo ?? 'Consulta' }} · {{ $consulta->data_hora->format('d/m/Y') }}
               </p>
             </div>
+            {{-- DT-MOD-01: origem do atendimento da consulta (Agendado × Espontâneo) --}}
+            @if($consulta->atendimento)
+              @include('content.pages.partials._badge_origem', ['atendimento' => $consulta->atendimento])
+            @endif
             <a href="/consultas/{{ $consulta->id }}" class="text-muted">
               <i class="mdi mdi-chevron-right fs-5"></i>
             </a>

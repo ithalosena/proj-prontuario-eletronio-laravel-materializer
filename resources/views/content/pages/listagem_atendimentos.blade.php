@@ -169,13 +169,16 @@ $configData = Helper::appClasses();
                 @endif
               </td>
 
-              {{-- Status --}}
+              {{-- Status + origem (DT-MOD-01: Agendado × Espontâneo) --}}
               <td>
-                @if($atendimento->status === 'aberto')
-                  <span class="badge rounded-pill bg-label-success">Aberto</span>
-                @else
-                  <span class="badge rounded-pill bg-label-secondary">Fechado</span>
-                @endif
+                <div class="d-flex flex-column align-items-start gap-1">
+                  @if($atendimento->status === 'aberto')
+                    <span class="badge rounded-pill bg-label-success">Aberto</span>
+                  @else
+                    <span class="badge rounded-pill bg-label-secondary">Fechado</span>
+                  @endif
+                  @include('content.pages.partials._badge_origem', ['atendimento' => $atendimento])
+                </div>
               </td>
 
               {{-- Data de abertura --}}

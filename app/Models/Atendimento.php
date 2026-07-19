@@ -30,6 +30,7 @@ class Atendimento extends Model
     protected $fillable = [
         'paciente_id',
         'profissional_id',
+        'agendamento_id',  // agendamento de origem (null = demanda espontânea) — DT-MOD-01
         'criado_por_id',   // quem abriu o atendimento (pode ser recepcionista ou o próprio profissional)
         'fechado_por_id',  // quem encerrou o atendimento
         'status',          // 'aberto' ou 'fechado'
@@ -87,6 +88,16 @@ class Atendimento extends Model
         return $this->hasMany(Consulta::class);
     }
 
+    /*
+     * Agendamento que originou este atendimento (DT-MOD-01, Modelo A).
+     * Nullable: atendimento sem agendamento é demanda espontânea
+     * (encaixe/emergência), aberto direto pelo /cadastro-atendimento.
+     */
+    public function agendamento()
+    {
+        return $this->belongsTo(Agendamento::class);
+    }
+
     // =========================================================
     // Métodos auxiliares
     // =========================================================
@@ -100,5 +111,22 @@ class Atendimento extends Model
     public function isAberto(): bool
     {
         return $this->status === 'aberto';
+    }
+
+    /*
+     * Origem do atendimento (DT-MOD-01): veio da agenda ou foi espontâneo?
+     * A distinção é feita só pela presença da FK — não há coluna de status extra.
+     * Usado pelas views para exibir o badge "Agendado" / "Espontâneo" (padrão SUS:
+     * demanda agendada × demanda espontânea).
+     */
+    public function isAgendado(): bool
+    {
+        return $this->agendamento_id !== null;
+    }
+
+    // Accessor: $atendimento->origem → 'agendado' | 'espontaneo'
+    public function getOrigemAttribute(): string
+    {
+        return $this->isAgendado() ? 'agendado' : 'espontaneo';
     }
 }

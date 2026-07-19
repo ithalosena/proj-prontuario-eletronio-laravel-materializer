@@ -113,6 +113,14 @@ class ConsultaController extends Controller
             abort(403);
         }
 
+        // E1 (v0.11.1): a consulta nasce sempre dentro de um atendimento. Sem contexto
+        // (atendimento aberto ou agendamento a realizar) não há como registrar consulta
+        // solta — o "modo livre" foi removido para evitar consultas órfãs (bug-02).
+        if (!request('atendimento_id') && !request('agendamento_id')) {
+            return redirect('/pacientes')
+                ->with('error', 'Para registrar uma consulta, abra um atendimento pelo perfil do paciente.');
+        }
+
         $pacientes          = Paciente::orderBy('nome')->get();
         $profissionais      = Profissional::orderBy('nome')->get();
         $tiposConsulta      = TipoConsulta::ativo()->ordenado()->get();
@@ -120,11 +128,25 @@ class ConsultaController extends Controller
         $pacientePreSelecionado = null;
         $profissionalLogado = Auth::user()->profissional;
 
-        // Origem via agendamento realizado (ST-09): pré-preenche paciente, profissional e tipo
+        // Origem via agendamento realizado (DT-MOD-01, Modelo A): modo contextual —
+        // paciente/profissional travados pelo agendamento. NADA é criado aqui:
+        // o atendimento só nasce quando a consulta for salva (store atômico).
+        // O tipo NÃO é pré-preenchido pelo agendamento (agendamento.tipo é a
+        // especialidade desde a v0.10.4 — o profissional escolhe o tipo).
         $agendamentoOrigem = null;
         if (request('agendamento_id')) {
             $agendamentoOrigem = Agendamento::with('paciente', 'profissional')
                 ->find(request('agendamento_id'));
+
+            if ($agendamentoOrigem) {
+                // Mesmos guards do realizar(): S-02 (só o dono) + apenas confirmados
+                $this->authorize('update', $agendamentoOrigem);
+
+                if (!$agendamentoOrigem->isConfirmado()) {
+                    return redirect('/agendamentos')
+                        ->with('error', 'Apenas agendamentos confirmados podem ser realizados.');
+                }
+            }
         }
 
         if (request('atendimento_id')) {
@@ -161,14 +183,58 @@ class ConsultaController extends Controller
             abort(403);
         }
 
-        $consulta = DB::transaction(function () use ($request) {
+        // E1 (v0.11.1): guard server-side — bloqueia consulta órfã (sem atendimento nem
+        // agendamento de origem). Toda consulta pertence a um atendimento.
+        if (!$request->atendimento_id && !$request->agendamento_id) {
+            return redirect('/pacientes')
+                ->with('error', 'Para registrar uma consulta, abra um atendimento pelo perfil do paciente.');
+        }
+
+        /*
+         * DT-MOD-01 (Modelo A): consulta vinda de um agendamento (sem atendimento
+         * aberto) — os guards rodam ANTES da transação: S-02 (só o dono do
+         * agendamento), apenas confirmados, e nunca um 2º atendimento para o
+         * mesmo agendamento (1 agendamento = 1 atendimento).
+         */
+        $agendamento = null;
+        if ($request->agendamento_id && !$request->atendimento_id) {
+            $agendamento = Agendamento::findOrFail($request->agendamento_id);
+
+            $this->authorize('update', $agendamento);
+
+            if (!$agendamento->isConfirmado() || $agendamento->atendimento()->exists()) {
+                return redirect('/agendamentos')
+                    ->with('error', 'Apenas agendamentos confirmados podem ser realizados.');
+            }
+        }
+
+        $consulta = DB::transaction(function () use ($request, $agendamento) {
+
+            $atendimentoId = $request->atendimento_id;
+
+            /*
+             * DT-MOD-01: o atendimento nasce AQUI, junto da 1ª consulta — nunca
+             * antes. Se o profissional abandonar o formulário, nada é criado e o
+             * agendamento segue 'confirmado' (nunca sobra atendimento vazio, por
+             * isso o status nasce direto como 'aberto', sem estado 'agendado').
+             * Paciente e profissional são herdados do agendamento (fonte da verdade).
+             */
+            if ($agendamento) {
+                $atendimentoId = Atendimento::create([
+                    'paciente_id'     => $agendamento->paciente_id,
+                    'profissional_id' => $agendamento->profissional_id,
+                    'agendamento_id'  => $agendamento->id,
+                    'criado_por_id'   => Auth::id(),
+                    'status'          => 'aberto',
+                ])->id;
+            }
 
             // Cria a consulta principal — registra quem criou (ST-08)
             $consulta = Consulta::create([
-                'atendimento_id'  => $request->atendimento_id,
+                'atendimento_id'  => $atendimentoId,
                 'criado_por_id'   => Auth::id(),
-                'profissional_id' => $request->profissional_id,
-                'paciente_id'     => $request->paciente_id,
+                'profissional_id' => $agendamento->profissional_id ?? $request->profissional_id,
+                'paciente_id'     => $agendamento->paciente_id ?? $request->paciente_id,
                 'data_hora'       => $request->data_hora,
                 'tipo'            => $request->tipo,
                 'queixa'          => $request->queixa,
@@ -184,7 +250,9 @@ class ConsultaController extends Controller
                         'consulta_id'      => $consulta->id,
                         'criado_por_id'    => Auth::id(), // ST-08: autoria do exame inline
                         'tipo'             => $e['tipo'],
-                        'data_solicitacao' => $e['data_solicitacao'] ?? null,
+                        // BUG-A01 (v0.11.1): exame inline herda a data da consulta — a coluna
+                        // data_solicitacao é NOT NULL; antes gravava NULL e derrubava a request.
+                        'data_solicitacao' => $consulta->data_hora,
                         'observacao'       => $e['observacao'] ?? null,
                     ]);
                 }
@@ -205,16 +273,17 @@ class ConsultaController extends Controller
                 }
             }
 
+            // ST-09: marca o agendamento como realizado DENTRO da transação —
+            // ou grava tudo (atendimento + consulta + agenda) ou nada (rollback)
+            if ($agendamento) {
+                $agendamento->update([
+                    'consulta_id' => $consulta->id,
+                    'status'      => 'realizado',
+                ]);
+            }
+
             return $consulta;
         });
-
-        // ST-09: se a consulta veio de um agendamento, marca-o como realizado
-        if ($request->agendamento_id) {
-            Agendamento::where('id', $request->agendamento_id)->update([
-                'consulta_id' => $consulta->id,
-                'status'      => 'realizado',
-            ]);
-        }
 
         // UX-07 fix (ST-09): intent=schedule agora redireciona para criar novo agendamento
         if ($request->input('intent') === 'schedule') {
@@ -222,6 +291,12 @@ class ConsultaController extends Controller
                 'paciente_id' => $consulta->paciente_id,
                 'tipo'        => $consulta->tipo,
             ]))->with('success', 'Consulta registrada! Agende o retorno abaixo.');
+        }
+
+        // DT-MOD-01: fluxo agendado aterrissa nos detalhes do atendimento recém-criado
+        if ($agendamento) {
+            return redirect('/atendimentos/' . $consulta->atendimento_id)
+                ->with('success', 'Consulta registrada e atendimento aberto!');
         }
 
         return redirect('/consultas/' . $consulta->id)->with('success', 'Consulta registrada com sucesso!');

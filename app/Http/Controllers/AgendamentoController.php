@@ -339,11 +339,12 @@ class AgendamentoController extends Controller
             return back()->with('error', 'Apenas agendamentos confirmados podem ser realizados.');
         }
 
+        // DT-MOD-01: só o id do agendamento — o create() da consulta deriva
+        // paciente/profissional dele. NADA é criado neste passo: o atendimento
+        // nasce ao salvar a consulta (store atômico). O tipo não vai na URL
+        // (agendamento.tipo é a especialidade desde a v0.10.4 — decisão §8).
         return redirect('/cadastro-consulta?' . http_build_query([
-            'agendamento_id'  => $agendamento->id,
-            'paciente_id'     => $agendamento->paciente_id,
-            'profissional_id' => $agendamento->profissional_id,
-            'tipo'            => $agendamento->tipo,
+            'agendamento_id' => $agendamento->id,
         ]));
     }
 }
