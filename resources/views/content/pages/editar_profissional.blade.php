@@ -18,21 +18,46 @@ $configData = Helper::appClasses();
 @endpush
 
 @section('content')
+@php
+  // Iniciais do profissional para o avatar do hero (mesmo padrão de editar_paciente.blade.php)
+  $iniciaisProf = collect(explode(' ', $prof->nome))->filter()->map(fn($p) => mb_substr($p, 0, 1))->take(2)->implode('');
+  $iniciaisProf = mb_strtoupper($iniciaisProf ?: 'P');
+@endphp
 
 <div class="container-xxl flex-grow-1 container-p-y">
-  <div class="row">
-    <div class="col-md-8">
-      <div class="card mb-3">
-        <div class="card-header header-elements">
-          <h3 class="align-text-bottom-2">Editar Profissional</h3>
-          <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
-            <a href="{{ url()->previous('/profissionais') }}" class="btn btn-default"><i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar</a>
+
+  {{-- ================================================================ --}}
+  {{-- HERO — avatar + identificação (padrão de editar_paciente.blade.php) --}}
+  {{-- ================================================================ --}}
+  <div class="card mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+        <div class="flex-shrink-0">
+          <div class="avatar avatar-xl">
+            <span class="avatar-initial rounded-circle bg-label-primary"
+                  style="font-size:1.4rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
+              {{ $iniciaisProf }}
+            </span>
           </div>
+        </div>
+        <div class="flex-grow-1">
+          <h4 class="mb-1">Editar — {{ $prof->nome }}</h4>
+          <div class="d-flex flex-wrap gap-3 text-muted small">
+            @if($prof->especialidade)<span><i class="mdi mdi-stethoscope me-1"></i>{{ $prof->especialidade }}</span>@endif
+            @if($prof->registro_profissional)<span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $prof->registro_profissional }}</span>@endif
+          </div>
+        </div>
+        <div class="d-flex flex-column gap-2 ms-auto">
+          <a href="{{ url()->previous('/profissionais') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
+          </a>
         </div>
       </div>
     </div>
   </div>
-  <div class="col-md-8 card mt-1">
+
+  <div class="row">
+    <div class="col-md-8 card mt-1">
     <div class="card-body">
 
       @if(session('success'))
@@ -81,6 +106,7 @@ $configData = Helper::appClasses();
           <a href="{{ url()->previous('/profissionais') }}" class="btn btn-outline-secondary ms-2">Cancelar</a>
         </div>
       </form>
+    </div>
     </div>
   </div>
 </div>

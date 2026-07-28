@@ -19,20 +19,20 @@ $configData = Helper::appClasses();
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-  <div class="row">
-    <div class="col-md-8">
-      <div class="card mb-3">
-        <div class="card-header header-elements">
-          <h3 class="align-text-bottom-2">Cadastro de Paciente</h3>
-          <div class="card-header-elements ms-auto mt-3 mb-1 me-2">
-            <a href="/pacientes" class="btn btn-default"><i class="mdi mdi-arrow-u-left-bottom mdi-24px me-2"></i>Voltar</a>
-          </div>
-        </div>
-      </div>
+
+  {{-- Header padronizado (padrão do especialidades.blade.php / importar_pacientes.blade.php) --}}
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+      <h4 class="mb-0">Cadastrar Paciente</h4>
+      <p class="text-muted small mb-0 mt-1">Preencha os dados para criar um novo paciente no sistema.</p>
     </div>
+    <a href="/pacientes" class="btn btn-outline-secondary btn-sm">
+      <i class="mdi mdi-arrow-left me-1"></i>Voltar
+    </a>
   </div>
 
-  <div class="col-md-8 card mt-1">
+  <div class="row">
+    <div class="col-md-8 card mt-1">
     <div class="card-body">
 
       @if(session('success'))
@@ -138,6 +138,7 @@ $configData = Helper::appClasses();
 
       </form>
     </div>
+  </div>
   </div>
 </div>
 @endsection

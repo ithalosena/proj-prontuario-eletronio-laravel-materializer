@@ -139,6 +139,9 @@ Route::middleware(['auth', 'consentimento', 'onboarding'])->group(function () {
     // ------------------------------------------------------------------
     Route::get('/audit-logs', [AuditLogController::class, 'index'])
         ->middleware(['nivel:1', 'cache.headers:private;no_store']);
+    // ST-19: exportação CSV respeitando os filtros aplicados na tela
+    Route::get('/audit-logs/exportar', [AuditLogController::class, 'exportar'])
+        ->middleware(['nivel:1', 'cache.headers:private;no_store']);
 
     // ------------------------------------------------------------------
     // CONFIGURAÇÕES — Especialidades e Tipos de Consulta (coordenador e acima: nivel <= 2)

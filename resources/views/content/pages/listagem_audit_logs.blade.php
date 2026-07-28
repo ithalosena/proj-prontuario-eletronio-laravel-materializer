@@ -28,6 +28,11 @@ $configData = Helper::appClasses();
       <h4 class="mb-0">Registro de Auditoria</h4>
       <p class="text-muted small mb-0 mt-1">Histórico de ações realizadas no sistema</p>
     </div>
+    {{-- ST-19: exporta respeitando os MESMOS filtros aplicados na tela --}}
+    <a href="{{ url('/audit-logs/exportar') . '?' . http_build_query(request()->query()) }}"
+       class="btn btn-outline-primary btn-sm">
+      <i class="mdi mdi-download-outline me-1"></i> Exportar CSV
+    </a>
   </div>
 
   {{-- Mini-indicador: total de registros --}}

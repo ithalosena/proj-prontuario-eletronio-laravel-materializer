@@ -21,7 +21,10 @@ $menuCollapsed = ($configData['menuCollapsed'] === 'layout-menu-collapsed') ? js
     defaultStyle: "{{$configData['styleOpt']}}",
     defaultShowDropdownOnHover: "{{$configData['showDropdownOnHover']}}", // true/false (for horizontal layout only)
     displayCustomizer: "{{$configData['displayCustomizer']}}",
-    lang: '{{ app()->getLocale() }}',
+    // BUG-pt_BR: 'lang' é o idioma INTERNO do painel do customizer (rótulos "Skins"/"Style"/etc),
+    // não o idioma do app — o vendor (PixInvent) não empacota pt_BR, só en/fr/de/ar. Usar
+    // app()->getLocale() aqui (pt_BR) causava "Language pt_BR not found!" no console.
+    lang: 'en',
     pathResolver: function(path) {
       var resolvedPaths = {
         // Core stylesheets
