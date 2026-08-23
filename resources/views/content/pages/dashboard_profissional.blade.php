@@ -71,16 +71,15 @@
           </p>
         </div>
 
-        {{-- CTA — UX-P02.1 (v0.10.2): leva à própria consulta mostrada (registrar/realizar este
-             agendamento). DT-MOD-01: só o agendamento_id — o create() deriva paciente/profissional;
-             o atendimento só nasce ao salvar a consulta. Mesmo destino do AgendamentoController::realizar. --}}
-        <a href="/cadastro-consulta?{{ http_build_query([
-              'agendamento_id' => $proximoAgendamento->id,
-           ]) }}"
-           class="btn btn-sm fw-semibold flex-shrink-0"
-           style="background:#fff; color:#3DAA4A; border:none;">
-          <i class="mdi mdi-play-circle-outline me-1"></i>Iniciar atendimento
-        </a>
+        {{-- CTA — E3b (v0.11.1, container): realizar abre (ou reusa) o atendimento do
+             agendamento e aterrissa na tela dele, com o form de consulta já aberto. --}}
+        <form action="/agendamentos/{{ $proximoAgendamento->id }}/realizar" method="POST" class="flex-shrink-0">
+          @csrf @method('PATCH')
+          <button type="submit" class="btn btn-sm fw-semibold"
+                  style="background:#fff; color:#3DAA4A; border:none;">
+            <i class="mdi mdi-play-circle-outline me-1"></i>Iniciar atendimento
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -179,6 +178,7 @@
               'pendente'   => 'warning',
               'realizado'  => 'secondary',
               'cancelado'  => 'danger',
+              'nao_compareceu' => 'secondary',
               default      => 'primary',
             };
             $statusLabel = match($item->status) {
@@ -186,6 +186,7 @@
               'pendente'   => 'Pendente',
               'realizado'  => 'Realizado',
               'cancelado'  => 'Cancelado',
+              'nao_compareceu' => 'Não compareceu',
               default      => $item->status,
             };
           @endphp

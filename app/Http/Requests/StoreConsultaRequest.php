@@ -48,6 +48,7 @@ class StoreConsultaRequest extends FormRequest
             'anamnese'                         => 'nullable|string',
             'diagnostico'                      => 'nullable|string',
             'conduta'                          => 'nullable|string',
+            'anotacoes'                        => 'nullable|string', // E3d: registro livre (outros perfis)
 
             // Exames: o array inteiro é opcional, mas cada item tem seus próprios campos
             'exames'                           => 'nullable|array',

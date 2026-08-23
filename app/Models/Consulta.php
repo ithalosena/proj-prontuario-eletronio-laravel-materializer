@@ -37,6 +37,7 @@ class Consulta extends Model
         'anamnese',
         'diagnostico',
         'conduta',
+        'anotacoes', // E3d: registro livre/complementar (psicólogo e outros perfis)
     ];
 
     /*

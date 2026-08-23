@@ -102,6 +102,18 @@ $atendAberto = $atendimento?->isAberto() ?? true;
             @endif
           </div>
 
+          {{-- E3d: Anotações livres (psicologia e outros perfis) — só aparece quando preenchida --}}
+          @if($consulta->anotacoes)
+          <hr class="my-0">
+          <div class="p-4 border-start border-4 border-secondary">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="mdi mdi-note-text-outline text-secondary"></i>
+              <span class="fw-semibold text-uppercase small text-muted">Anotações</span>
+            </div>
+            <p class="mb-0 lh-lg">{{ $consulta->anotacoes }}</p>
+          </div>
+          @endif
+
         </div>
       </div>
     </div>

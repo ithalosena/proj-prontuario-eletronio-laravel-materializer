@@ -109,6 +109,7 @@
               'confirmado' => ['label' => 'Confirmados', 'color' => 'primary'],
               'pendente'   => ['label' => 'Pendentes',   'color' => 'warning'],
               'cancelado'  => ['label' => 'Cancelados',  'color' => 'danger'],
+              'nao_compareceu' => ['label' => 'Faltas',   'color' => 'secondary'],
             ];
             $total = $statusCounts->sum();
           @endphp

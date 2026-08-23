@@ -14,7 +14,12 @@
 
 | Versão | Data | Tema | Testes |
 |---|---|---|---|
-| **v0.10.x** | 31/05/2026 | Linha de **correções e melhorias** com base em testes manuais (em andamento) | 80 |
+| **v0.11.x** | jul/2026 | Refino do fluxo agendamento↔atendimento (em andamento) + import CSV (ST-14) + export auditoria (ST-19) | 136 |
+| v0.11.0 | 14/07/2026 | **DT-MOD-01** — Modelo A: elo estrutural agendamento↔atendimento↔consulta | 111 |
+| v0.10.6 | 12/07/2026 | Dados clínicos sensíveis fora do log de auditoria (LGPD) | 98 |
+| v0.10.3–v0.10.5 | jun–jul/2026 | Linha completa do Paciente: perfil, onboarding reordenado, Meu Prontuário, export LGPD | 96→97 |
+| v0.10.2 | 06/06/2026 | Correções e UX do perfil Profissional | 93 |
+| v0.10.1 | 31/05/2026 | Correções e UX do perfil Admin | 80 |
 | v0.10.0 | 29/05/2026 | **ST-10** — Perfil do usuário (avatar, dados, senha) | 70 |
 | v0.9.4 | 30/05/2026 | **ST-15** — Onboarding de primeiro acesso (wizard 7 passos) | 78 |
 | v0.9.1a/b | 29/05/2026 | **ST-16** — Dashboard por papel (5 perfis) + widget de conformidade LGPD | 61 |
@@ -37,8 +42,14 @@
 
 ## Detalhamento por versão
 
-### v0.10.x — Correções e UX (linha em andamento)
-Primeira linha focada em **polir o que já existe** com base em testes manuais por perfil. A **v0.10.1** nasceu do teste do Admin e entregou: correção do erro 419 (CSRF), legibilidade da paginação, logo em rotas profundas, paleta verde consistente (hover/menu) com cache-busting de CSS; página 404 personalizada, item "Configurações" no menu, tela de edição de paciente reestruturada com os campos de onboarding, mini-card de atendimentos recentes, filtros nas listagens de atendimentos e consultas, e replanejamento da tela de auditoria. Mais três análises de RBAC/dados (Admin somente leitura, tipos de consulta genéricos, padronização de links).
+### v0.11.x — Fluxo agendamento↔atendimento + itens complementares
+Depois de fechar o Modelo A (v0.11.0), a linha v0.11.x segue com o **refino do fluxo** entre agendamento, atendimento e consulta (em andamento). Em paralelo, chegaram dois itens antes represados no backlog: a **importação de pacientes via CSV** (ST-14 — upload, validação linha a linha sem abortar no erro, duplicata por matrícula/documento/e-mail ignorada) e a **exportação dos registros de auditoria em CSV** (ST-19 — respeita os mesmos filtros da listagem, streaming em lote para não estourar memória). Também foi corrigido um erro de console (idioma do painel de customização do template, sem relação com o idioma do sistema) e revisada uma dívida técnica de migrations (confirmada como já correta, sem ação necessária).
+
+### v0.11.0 — DT-MOD-01: Modelo A
+O agendamento e o atendimento sempre existiram como tabelas separadas, mas o elo entre eles nunca tinha sido de fato costurado na aplicação — nenhuma tela levava a informação de um para o outro. O Modelo A resolve isso: o atendimento nasce automaticamente ao confirmar o primeiro registro (consulta) de um agendamento, numa única transação, ou existe avulso (paciente chegou sem agendamento prévio — atendimento espontâneo). As telas de atendimento passaram a exibir a origem ("Agendado" ou "Espontâneo") com um badge.
+
+### v0.10.1–v0.10.6 — Correções e UX por perfil
+Uma linha inteira dedicada a **polir o que já existe**, com uma sprint por perfil, cada uma nascida de uma rodada de teste manual. A **v0.10.1** (Admin) corrigiu o erro 419 (CSRF), a legibilidade da paginação, a paleta verde consistente (hover/menu) com cache-busting de CSS, trouxe página 404 personalizada, item "Configurações" no menu, e reestruturou a edição de paciente com os campos de onboarding. A **v0.10.2** (Profissional) ajustou o controle de autoria em exame/prescrição e documentou duas limitações da fonte de ícones do template. As **v0.10.3–v0.10.5** (Paciente, três rodadas de teste) entregaram o perfil como central da conta, o onboarding reordenado e mobile-first, a aba "Meu Prontuário" com resumo de saúde, e a exportação LGPD completa. A **v0.10.6** fechou o achado de segurança mais urgente da auditoria: dados clínicos sensíveis deixaram de ser gravados no log de auditoria (LGPD, Art. 11).
 
 ### v0.10.0 — Perfil do Usuário (ST-10)
 Qualquer usuário passa a editar os próprios dados: nome, e-mail, senha (com verificação da senha atual) e foto de avatar (upload/remoção). A navbar exibe a foto quando existe, com fallback para as iniciais.

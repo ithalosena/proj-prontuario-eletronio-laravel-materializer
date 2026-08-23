@@ -154,6 +154,7 @@
               'confirmado' => ['color' => 'primary',   'label' => 'Confirmado'],
               'pendente'   => ['color' => 'warning',   'label' => 'Aguardando'],
               'cancelado'  => ['color' => 'danger',    'label' => 'Cancelado'],
+              'nao_compareceu' => ['color' => 'secondary', 'label' => 'Não compareceu'],
               default      => ['color' => 'secondary', 'label' => $ag->status],
             };
           @endphp

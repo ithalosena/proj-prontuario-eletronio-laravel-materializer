@@ -29,18 +29,16 @@
       "nivel_minimo": 3
     },
     {
-      "url": "/consultas",
-      "name": "Consultas",
-      "icon": "menu-icon tf-icons mdi mdi-calendar-check-outline",
-      "slug": "consultas",
-      "nivel_minimo": 3
-    },
-    {
       "icon": "menu-icon tf-icons mdi mdi-clipboard-pulse-outline",
       "name": "Prontuario",
       "slug": "prontuarios",
       "nivel_minimo": 3,
       "submenu": [
+        {
+          "url": "/consultas",
+          "name": "Consultas",
+          "slug": "consultas"
+        },
         {
           "url": "/exames",
           "name": "Exames",

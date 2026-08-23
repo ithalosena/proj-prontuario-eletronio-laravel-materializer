@@ -19,11 +19,11 @@
 | ST-16 | Dashboard por papel (5 perfis) + widget de conformidade LGPD | ✅ | v0.9.1a/b |
 | ST-15 | Onboarding de primeiro acesso (wizard 7 passos + operador) | ✅ | v0.9.4 |
 | ST-07 | Governança — inativação lógica de pacientes/profissionais | 📌 | — |
-| ST-14 | Importação de pacientes via CSV | 📌 | — |
+| ST-14 | Importação de pacientes via CSV | ✅ | v0.11.x |
 | ST-13 | Login via Google (somente domínio `@ifnmg.edu.br`) | 📌 | pós-TCC |
 | ST-17 | Complemento do cadastro clínico pelo profissional na consulta | 📌 | pós-TCC (dep. v0.9.4) |
 | ST-18 | Curso como cadastro gerenciável (hoje texto livre) | 📌 | sprint de Configurações |
-| ST-19 | Exportação dos registros de auditoria (CSV/PDF) | 📌 | backlog |
+| ST-19 | Exportação dos registros de auditoria (CSV) | ✅ | v0.11.x |
 
 ---
 
@@ -108,13 +108,13 @@
 | DT-10 | Menu lateral sem link para `/configuracoes/` | ✅ | v0.10.1 (UX-02) |
 | DT-02 | `Route::resource()` (URLs legadas) | 📌 | pendente |
 | DT-06 | `CheckNivel` não respeita `expectsJson()` | 📌 | pendente |
-| DT-07 | Migrations sem `down()` | 📌 | pendente |
-| DT-08 | `package.json`: script `build` recursivo | 📌 | pendente |
+| DT-07 | Migrations sem `down()` | ✅ | auditado — único `down()` vazio é intencional (LGPD) |
+| DT-08 | `package.json`: script `build` recursivo | ✅ | v0.11.x |
 | DTi-01 | CSS/JS inline nos Blades → assets compilados | 📌 | pendente |
 | DTi-02 | Paleta definitiva via SCSS (todos os componentes) | 📌 | reforçada em v0.10.1 |
-| DTi-03 | Wizard: botão PRÓXIMO visível no passo final | 📌 | pendente |
-| DTi-04 | Wizard: hover/active do botão volta ao roxo | 🔨 | parcial em v0.10.1 |
-| DTi-05 | Wizard: ponto ativo (dot) roxo | 📌 | pendente |
+| DTi-03 | Wizard: botão PRÓXIMO visível no passo final | ✅ | resolvido em v0.10.3/v0.10.4 |
+| DTi-04 | Wizard: hover/active do botão volta ao roxo | ✅ | resolvido em v0.10.3/v0.10.4 |
+| DTi-05 | Wizard: ponto ativo (dot) roxo | ✅ | resolvido em v0.10.3/v0.10.4 |
 
 ---
 

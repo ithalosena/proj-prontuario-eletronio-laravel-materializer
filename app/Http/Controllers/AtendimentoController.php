@@ -6,6 +6,7 @@ use App\Http\Requests\StoreAtendimentoRequest;
 use App\Models\Atendimento;
 use App\Models\Paciente;
 use App\Models\Profissional;
+use App\Models\TipoConsulta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -159,7 +160,7 @@ class AtendimentoController extends Controller
     public function show($id)
     {
         $atendimento = Atendimento::with(
-            'paciente',
+            'paciente.user',         // E3d: user do paciente traz o avatar pro hero
             'profissional',
             'criadoPor',
             'fechadoPor',
@@ -186,7 +187,14 @@ class AtendimentoController extends Controller
             ->filter(fn($e) => blank($e->resultado))
             ->count();
 
-        return view('content.pages.detalhes_atendimento', compact('atendimento', 'ultimosAtendimentos', 'examesPendentes'));
+        // E3b (v0.11.1, união): o form de consulta agora vive DENTRO desta tela.
+        // Tipos de consulta + perfil do profissional logado alimentam o partial _form_consulta.
+        $tiposConsulta      = TipoConsulta::ativo()->ordenado()->get();
+        $profissionalLogado = Auth::user()->profissional;
+
+        return view('content.pages.detalhes_atendimento', compact(
+            'atendimento', 'ultimosAtendimentos', 'examesPendentes', 'tiposConsulta', 'profissionalLogado'
+        ));
     }
 
     /*

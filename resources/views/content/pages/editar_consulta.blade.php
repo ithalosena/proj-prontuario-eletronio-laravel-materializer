@@ -221,6 +221,22 @@ $iniciais    = collect(explode(' ', $consulta->paciente->nome ?? 'P'))
               </div>
             </div>
 
+            <hr class="my-0">
+
+            {{-- E3d: Anotações — registro livre (psicologia e outros perfis) — borda cinza (secondary) --}}
+            <div class="p-4 border-start border-4 border-secondary">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="mdi mdi-note-text-outline text-secondary"></i>
+                <span class="fw-semibold text-uppercase small text-muted">Anotações <span class="text-muted fw-normal">(opcional — registro livre, ex.: psicologia)</span></span>
+              </div>
+              <div class="form-floating form-floating-outline">
+                <textarea name="anotacoes" id="anotacoes" style="height:100px"
+                  class="form-control @error('anotacoes') is-invalid @enderror">{{ old('anotacoes', $consulta->anotacoes) }}</textarea>
+                <label for="anotacoes">Evolução, observações e anotações complementares</label>
+                @error('anotacoes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+              </div>
+            </div>
+
           </div>
 
           {{-- Botões de ação no rodapé do card SOAP --}}

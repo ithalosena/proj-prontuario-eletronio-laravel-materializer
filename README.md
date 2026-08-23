@@ -7,8 +7,8 @@
   <br/>
   Laravel 10 · PHP 8.2 · MySQL 8.0 · Materialize (PixInvent)
   <br/><br/>
-  <img src="https://img.shields.io/badge/versão-v0.9.4-3DAA4A" alt="versão"/>
-  <img src="https://img.shields.io/badge/testes-78%20passando-3DAA4A" alt="testes"/>
+  <img src="https://img.shields.io/badge/versão-v0.11.0-3DAA4A" alt="versão"/>
+  <img src="https://img.shields.io/badge/testes-136%20passando-3DAA4A" alt="testes"/>
   <img src="https://img.shields.io/badge/PHP-8.2-777BB4" alt="PHP"/>
   <img src="https://img.shields.io/badge/Laravel-10-FF2D20" alt="Laravel"/>
   <img src="https://img.shields.io/badge/MySQL-8.0-4479A1" alt="MySQL"/>
@@ -52,7 +52,9 @@ O Prontu IF não foi construído de uma vez — ele **cresceu em camadas**, e ca
 
 7. **A inteligência (v0.9).** Cada perfil ganhou um **dashboard contextual**, com destaque para o **widget de conformidade LGPD** — métricas agregadas que demonstram prestação de contas sem expor nenhum dado pessoal. E um **onboarding de primeiro acesso** que completa o cadastro do paciente em um wizard guiado.
 
-8. **A personalização (v0.10).** O usuário passou a gerenciar o próprio perfil (avatar, dados, senha), e uma linha de correções/melhorias com base em testes manuais começou a polir cada detalhe.
+8. **A personalização (v0.10).** O usuário passou a gerenciar o próprio perfil (avatar, dados, senha), e uma linha de correções/melhorias com base em testes manuais começou a polir cada detalhe, perfil por perfil (Admin, Profissional, Paciente).
+
+9. **A dívida estrutural (v0.11).** O elo entre agendamento, atendimento e consulta — que já existia no banco mas nunca foi realmente costurado na aplicação — ganhou um modelo único e coerente (Modelo A: o atendimento nasce da confirmação do agendamento, ou existe avulso). Junto, chegaram a importação de pacientes em massa via CSV e a exportação dos registros de auditoria.
 
 📖 **Histórico completo, versão por versão:** [`docs/HISTORICO_VERSOES.md`](docs/HISTORICO_VERSOES.md)
 🗂️ **Catálogo rastreável de itens (STs, UXs, segurança, LGPD, dívidas técnicas):** [`docs/CATALOGO_ST_UX.md`](docs/CATALOGO_ST_UX.md)
@@ -104,7 +106,7 @@ O Prontu IF não foi construído de uma vez — ele **cresceu em camadas**, e ca
 |---|---|---|
 | Autenticação + RBAC (5 níveis) | ✅ | Bcrypt, sessão criptografada, middleware por nível |
 | Controle de autoria | ✅ | Profissional só edita o que criou (Policies) |
-| Auditoria de ações | ✅ | Log filtrado (sem dados sensíveis), com filtros e exportação planejada |
+| Auditoria de ações | ✅ | Log filtrado (sem dados sensíveis), com filtros e exportação em CSV |
 | **Consentimento LGPD bloqueante** | ✅ | Termos distintos por perfil, recusa e revogação |
 | **Portabilidade de dados** | ✅ | Exportação do próprio prontuário em JSON (Art. 18, V) |
 | Rate limiting | ✅ | Proteção contra abuso em rotas AJAX e de login |
@@ -219,7 +221,7 @@ php artisan serve   # http://localhost:8000
 ### Rodando os testes
 
 ```bash
-php artisan test    # 78 testes (Feature) com SQLite in-memory
+php artisan test    # 136 testes (Feature) com SQLite in-memory
 ```
 
 ---
@@ -267,17 +269,19 @@ Após `migrate:fresh --seed`, o banco é populado com 17 usuários, 55 pacientes
 | Dashboard por papel (ST-16) | v0.9.1 | 5 painéis + widget de conformidade LGPD |
 | Onboarding (ST-15) | v0.9.4 | Wizard de primeiro acesso |
 | Perfil do usuário (ST-10) | v0.10.0 | Avatar, dados, senha |
+| Linha de correções v0.10.x | v0.10.1–v0.10.6 | Polimento por perfil (Admin, Profissional, Paciente) + expedite LGPD |
+| DT-MOD-01 — Modelo A (ST-09) | v0.11.0 | Elo estrutural agendamento↔atendimento↔consulta |
+| Importação CSV (ST-14) | v0.11.x | Importação de pacientes em massa |
+| Exportação de auditoria (ST-19) | v0.11.x | Export de logs em CSV |
 
 ### Em andamento / Próximos
 
 | Item | Alvo | Descrição |
 |---|---|---|
-| Linha de correções v0.10.x | em andamento | Polimento e correções com base em testes manuais por perfil |
+| Refino do fluxo agendamento↔atendimento (v0.11.1) | em andamento | Ajustes pós-teste do Modelo A |
 | Governança / Inativação (ST-07) | próximo | Inativação lógica de pacientes e profissionais |
-| Importação CSV (ST-14) | próximo | Importação de pacientes em massa |
 | CRUD de termos LGPD (v0.9.6) | planejado | Versionamento de termos pelo admin |
 | Curso gerenciável (ST-18) | backlog | Curso como cadastro, não texto livre |
-| Exportação de auditoria (ST-19) | backlog | Export de logs em CSV/PDF |
 
 > Catálogo completo e rastreável: [`docs/CATALOGO_ST_UX.md`](docs/CATALOGO_ST_UX.md)
 

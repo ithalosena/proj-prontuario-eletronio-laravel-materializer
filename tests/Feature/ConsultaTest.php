@@ -12,7 +12,8 @@ class ConsultaTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Formulário de nova consulta retorna 200 (E1: exige contexto de atendimento)
+    // E3b (união): a tela standalone foi aposentada — /cadastro-consulta redireciona
+    // para a tela do atendimento, onde o formulário agora vive embutido
     public function test_formulario_de_nova_consulta(): void
     {
         [$user, $profissional] = $this->criarProfissionalUser();
@@ -27,7 +28,14 @@ class ConsultaTest extends TestCase
 
         $this->actingAs($user)
             ->get("/cadastro-consulta?atendimento_id={$atendimento->id}")
-            ->assertOk();
+            ->assertRedirectContains("/atendimentos/{$atendimento->id}");
+
+        // O form embutido está na tela do atendimento
+        $this->actingAs($user)
+            ->get("/atendimentos/{$atendimento->id}")
+            ->assertOk()
+            ->assertSee('Registrar Consulta')
+            ->assertSee('action="/cadastrar-consulta"', false);
     }
 
     // Criar consulta (dentro de um atendimento) redireciona para os detalhes da consulta
@@ -53,7 +61,8 @@ class ConsultaTest extends TestCase
         ]);
 
         $consulta = Consulta::first();
-        $response->assertRedirect("/consultas/{$consulta->id}");
+        // E3 (container): a consulta aterrissa de volta na tela do atendimento
+        $response->assertRedirect("/atendimentos/{$atendimento->id}");
         $this->assertDatabaseHas('consultas', [
             'paciente_id'    => $paciente->id,
             'tipo'           => 'Clínico Geral',
@@ -145,10 +154,16 @@ class ConsultaTest extends TestCase
                 'data_hora'  => now()->format('Y-m-d H:i:s'),
                 'tipo'       => 'Retorno',
                 'queixa'     => 'Queixa atualizada.',
+                'anotacoes'  => 'Anotação livre editada na consulta.', // E3d
             ])
             ->assertRedirect("/atendimentos/{$atendimento->id}");
 
-        $this->assertDatabaseHas('consultas', ['id' => $consulta->id, 'tipo' => 'Retorno']);
+        // E3d: o campo de registro livre também é editável (não só no cadastro)
+        $this->assertDatabaseHas('consultas', [
+            'id'        => $consulta->id,
+            'tipo'      => 'Retorno',
+            'anotacoes' => 'Anotação livre editada na consulta.',
+        ]);
     }
 
     // Autor pode excluir consulta em atendimento aberto; registro some da listagem

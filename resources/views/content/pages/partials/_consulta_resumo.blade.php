@@ -22,6 +22,11 @@
 <p class="mb-1 small"><span class="text-muted">Diagnóstico:</span> {{ Str::limit($consulta->diagnostico, 100) }}</p>
 @endif
 
+{{-- E3d: Anotações livres resumidas (psicologia e outros perfis) --}}
+@if($consulta->anotacoes)
+<p class="mb-1 small"><span class="text-muted">Anotações:</span> {{ Str::limit($consulta->anotacoes, 100) }}</p>
+@endif
+
 {{-- Badges de exames e prescrições (contadores em formato de etiqueta) --}}
 <div class="d-flex flex-wrap gap-1 mt-1">
   <span class="badge bg-label-info">

@@ -13,15 +13,15 @@ $iniciaisProf = $profissionalLogado
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Novo Atendimento')
+@section('title', 'Iniciar Atendimento')
 
-{{-- Breadcrumb: Início > Atendimentos > Novo Atendimento --}}
+{{-- Breadcrumb: Início > Atendimentos > Iniciar Atendimento --}}
 @push('breadcrumbs')
   @include('content.pages.partials._breadcrumb', [
     'breadcrumbs' => [
-      ['label' => 'Início',           'url' => '/'],
-      ['label' => 'Atendimentos',     'url' => '/atendimentos'],
-      ['label' => 'Novo Atendimento', 'url' => null],
+      ['label' => 'Início',              'url' => '/'],
+      ['label' => 'Atendimentos',        'url' => '/atendimentos'],
+      ['label' => 'Iniciar Atendimento', 'url' => null],
     ]
   ])
 @endpush
@@ -31,56 +31,57 @@ $iniciaisProf = $profissionalLogado
 <div class="container-xxl flex-grow-1 container-p-y">
 
   {{-- ================================================================ --}}
-  {{-- HERO HEADER                                                        --}}
-  {{-- Quando profissional logado: exibe dados do profissional + data.   --}}
-  {{-- Quando admin/recepcionista: exibe ícone genérico + título.        --}}
+  {{-- HERO degradê verde (padrão visual do projeto)                     --}}
+  {{-- Porta do atendimento ESPONTÂNEO — o agendado entra pelo Realizar. --}}
   {{-- UX-12: sem duplicidade — o profissional aparece APENAS aqui.      --}}
   {{-- ================================================================ --}}
-  <div class="card mb-4">
-    <div class="card-body py-4">
-      <div class="d-flex flex-wrap align-items-center gap-4">
+  <div class="card mb-4 text-white border-0"
+       style="background: linear-gradient(105deg, #237030 0%, #3DAA4A 50%, #56cf66 100%);">
+    <div class="card-body py-4 px-4 position-relative overflow-hidden">
+      <div class="position-absolute rounded-circle"
+           style="right:-60px; top:-60px; width:200px; height:200px; border:40px solid rgba(255,255,255,0.07); pointer-events:none;"></div>
 
-        {{-- Avatar: iniciais do profissional (verde) ou ícone genérico (cinza para admin) --}}
-        <div class="flex-shrink-0">
-          <div class="avatar avatar-xl">
-            @if($iniciaisProf)
-              <span class="avatar-initial rounded-circle bg-label-success"
-                style="font-size:1.4rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
-                {{ $iniciaisProf }}
-              </span>
-            @else
-              <span class="avatar-initial rounded-circle bg-label-secondary"
-                style="font-size:1.8rem; width:64px; height:64px; display:flex; align-items:center; justify-content:center;">
-                <i class="mdi mdi-stethoscope"></i>
-              </span>
-            @endif
-          </div>
+      <div class="d-flex flex-wrap align-items-center gap-3 position-relative">
+
+        {{-- Iniciais do profissional (ou ícone genérico) no box translúcido --}}
+        <div class="flex-shrink-0 rounded-3 d-flex align-items-center justify-content-center fw-bold"
+             style="width:56px; height:56px; background:rgba(255,255,255,0.18); font-size:1.3rem;">
+          @if($iniciaisProf)
+            {{ $iniciaisProf }}
+          @else
+            <i class="mdi mdi-stethoscope mdi-24px"></i>
+          @endif
         </div>
 
         {{-- Dados do profissional (quando logado) ou título genérico --}}
-        <div class="flex-grow-1">
-          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+        <div class="flex-grow-1 min-width-0">
+          <div class="d-flex flex-wrap align-items-center gap-2">
             @if($profissionalLogado)
-              <h4 class="mb-0">{{ $profissionalLogado->nome }}</h4>
+              <h4 class="mb-0 fw-bold text-white">{{ $profissionalLogado->nome }}</h4>
               @if($profissionalLogado->especialidade)
-                <span class="badge rounded-pill bg-label-primary">{{ $profissionalLogado->especialidade }}</span>
+                <span class="badge rounded-pill" style="background:rgba(255,255,255,.22); color:#fff;">
+                  {{ $profissionalLogado->especialidade }}
+                </span>
               @endif
             @else
-              <h4 class="mb-0">Novo Atendimento</h4>
+              <h4 class="mb-0 fw-bold text-white">Iniciar Atendimento</h4>
             @endif
-            <span class="badge rounded-pill bg-label-info">Novo Atendimento</span>
+            <span class="badge rounded-pill" style="background:rgba(255,255,255,.22); color:#fff;">
+              <i class="mdi mdi-account-arrow-right-outline me-1"></i>Espontâneo
+            </span>
           </div>
-          <div class="d-flex flex-wrap gap-3 text-muted small">
+          <div class="d-flex flex-wrap gap-3 mt-1" style="font-size:13px; opacity:.92;">
             @if($profissionalLogado && $profissionalLogado->registro_profissional)
               <span><i class="mdi mdi-card-account-details-outline me-1"></i>{{ $profissionalLogado->registro_profissional }}</span>
             @endif
             {{-- Data de abertura do atendimento (hoje) --}}
             <span><i class="mdi mdi-calendar-today-outline me-1"></i>{{ now()->format('d/m/Y') }}</span>
+            <span><i class="mdi mdi-account-search-outline me-1"></i>Selecione o paciente para abrir o episódio</span>
           </div>
         </div>
 
         <div class="flex-shrink-0">
-          <a href="{{ $voltarUrl }}" class="btn btn-default">
+          <a href="{{ $voltarUrl }}" class="btn btn-sm btn-outline-light">
             <i class="mdi mdi-arrow-u-left-bottom me-1"></i>Voltar
           </a>
         </div>

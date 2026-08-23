@@ -100,4 +100,10 @@ class Agendamento extends Model
     {
         return $this->status === 'cancelado';
     }
+
+    // No-show (DEC-2, v0.11.1): paciente faltou. Distinto de cancelado (desmarcado antes).
+    public function isNaoCompareceu(): bool
+    {
+        return $this->status === 'nao_compareceu';
+    }
 }

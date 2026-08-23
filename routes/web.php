@@ -193,6 +193,7 @@ Route::middleware(['auth', 'consentimento', 'onboarding'])->group(function () {
     Route::middleware('nivel:3')->group(function () {
         Route::patch('/agendamentos/{id}/confirmar',            [AgendamentoController::class, 'confirmar']);
         Route::patch('/agendamentos/{id}/realizar',             [AgendamentoController::class, 'realizar']);
+        Route::patch('/agendamentos/{id}/nao-compareceu',       [AgendamentoController::class, 'naoCompareceu']);
     });
 
     // Disponibilidade — profissional e acima (nivel <= 3)

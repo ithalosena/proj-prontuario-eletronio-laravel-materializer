@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAgendamentoRequest;
 use App\Models\AgendaConfig;
 use App\Models\Agendamento;
+use App\Models\Atendimento;
 use App\Models\DisponibilidadeBloco;
 use App\Models\DisponibilidadeExcecao;
 use App\Models\Paciente;
@@ -13,6 +14,7 @@ use App\Models\TipoConsulta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /*
  * Controller: AgendamentoController
@@ -305,7 +307,7 @@ class AgendamentoController extends Controller
         // S-02: profissional só cancela os próprios agendamentos
         $this->authorize('cancelar', $agendamento);
 
-        if ($agendamento->isRealizado() || $agendamento->isCancelado()) {
+        if ($agendamento->isRealizado() || $agendamento->isCancelado() || $agendamento->isNaoCompareceu()) {
             return back()->with('error', 'Este agendamento não pode ser cancelado.');
         }
 
@@ -335,16 +337,68 @@ class AgendamentoController extends Controller
         // S-02: profissional só realiza os próprios agendamentos
         $this->authorize('update', $agendamento);
 
+        // E3 (v0.11.1, modelo CONTAINER): 1 agendamento = 1 atendimento. Se já foi realizado
+        // (o atendimento existe), reabrir leva ao atendimento existente — idempotente (evita
+        // criar um 2º atendimento por duplo clique / duas abas).
+        if ($atendimentoExistente = $agendamento->atendimento) {
+            return redirect('/atendimentos/' . $atendimentoExistente->id);
+        }
+
         if (!$agendamento->isConfirmado()) {
             return back()->with('error', 'Apenas agendamentos confirmados podem ser realizados.');
         }
 
-        // DT-MOD-01: só o id do agendamento — o create() da consulta deriva
-        // paciente/profissional dele. NADA é criado neste passo: o atendimento
-        // nasce ao salvar a consulta (store atômico). O tipo não vai na URL
-        // (agendamento.tipo é a especialidade desde a v0.10.4 — decisão §8).
-        return redirect('/cadastro-consulta?' . http_build_query([
-            'agendamento_id' => $agendamento->id,
-        ]));
+        // Container: realizar ABRE o atendimento (agendado, vazio) e leva à tela do atendimento,
+        // onde as consultas entram inline. O agendamento vira 'realizado' (o encontro começou);
+        // a consulta pode ou não ser registrada — atendimento vazio é um estado válido (gerido
+        // pelo dashboard). Tudo numa transação (atendimento + status do agendamento).
+        $atendimento = DB::transaction(function () use ($agendamento) {
+            $atendimento = Atendimento::create([
+                'paciente_id'     => $agendamento->paciente_id,
+                'profissional_id' => $agendamento->profissional_id,
+                'agendamento_id'  => $agendamento->id,
+                'criado_por_id'   => Auth::id(),
+                'status'          => 'aberto',
+            ]);
+            $agendamento->update(['status' => 'realizado']);
+            return $atendimento;
+        });
+
+        return redirect('/atendimentos/' . $atendimento->id)
+            ->with('success', 'Atendimento aberto. Registre a consulta abaixo.');
+    }
+
+    /*
+     * Transição: confirmado → nao_compareceu (no-show — DEC-2, v0.11.1).
+     *
+     * Fecha o agendamento quando o paciente FALTOU: justificativa obrigatória e SEM criar
+     * atendimento/consulta. Estado distinto de 'cancelado' (desmarcado antes) — a agenda e o
+     * dashboard diferenciam falta de cancelamento. A justificativa reusa os campos de
+     * cancelamento (motivo_cancelamento/cancelado_em/cancelado_por_id), sem colunas novas.
+     */
+    public function naoCompareceu(Request $request, $id)
+    {
+        $request->validate([
+            'justificativa' => ['required', 'string', 'max:500'],
+        ]);
+
+        $agendamento = Agendamento::findOrFail($id);
+
+        // S-02: profissional só marca falta nos próprios agendamentos
+        $this->authorize('update', $agendamento);
+
+        if (!$agendamento->isConfirmado()) {
+            return back()->with('error', 'Apenas agendamentos confirmados podem ser marcados como falta.');
+        }
+
+        $agendamento->update([
+            'status'              => 'nao_compareceu',
+            'cancelado_por_id'    => Auth::id(),
+            'motivo_cancelamento' => $request->justificativa,
+            'cancelado_em'        => now(),
+        ]);
+
+        return redirect('/agendamentos')
+            ->with('success', 'Agendamento marcado como falta (paciente não compareceu).');
     }
 }

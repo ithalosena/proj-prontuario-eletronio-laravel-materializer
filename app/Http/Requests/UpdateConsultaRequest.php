@@ -22,6 +22,7 @@ class UpdateConsultaRequest extends FormRequest
             'anamnese'    => 'nullable|string',
             'diagnostico' => 'nullable|string',
             'conduta'     => 'nullable|string',
+            'anotacoes'   => 'nullable|string', // E3d: registro livre (outros perfis)
         ];
     }
 

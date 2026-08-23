@@ -12,352 +12,479 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /*
- * DT-MOD-01 (Modelo A · v0.11.0) — Fluxo Agendamento → Atendimento → Consulta.
+ * DT-MOD-01 → v0.11.1/E3 (modelo CONTAINER · DEC-1) + no-show (DEC-2).
+ * Spec: docs_desenvolvimento/testes/fluxo_agendamento_atendimento.md (Parte A + Parte D).
  *
- * Spec: docs_desenvolvimento/testes/fluxo_agendamento_atendimento.md (Parte A).
- * Regra-mãe: o atendimento nasce SÓ quando a 1ª consulta é salva (nunca vazio);
- * origem = presença de agendamento_id (Agendado × Espontâneo); 1 agendamento = 1
- * atendimento; retorno = novo atendimento (ST-Retorno, fora desta sprint).
+ * Regra-mãe (container): `realizar` ABRE o atendimento (agendado, vazio) e leva à tela do
+ * atendimento; as consultas entram inline (sempre com `atendimento_id`). O atendimento pode
+ * ficar vazio (estado válido, gerenciado pelo dashboard). Agendado e espontâneo convergem.
+ * No-show: estado `nao_compareceu` fecha o agendamento com justificativa, sem atendimento/consulta.
  */
 class FluxoAgendamentoTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Agendamento confirmado do profissional/paciente informados
-    private function agendamentoConfirmado(Profissional $profissional, Paciente $paciente): Agendamento
+    private function agendamentoConfirmado(Profissional $prof, Paciente $pac): Agendamento
     {
         return Agendamento::factory()->confirmado()->create([
-            'profissional_id' => $profissional->id,
-            'paciente_id'     => $paciente->id,
+            'profissional_id' => $prof->id,
+            'paciente_id'     => $pac->id,
         ]);
     }
 
-    // Payload mínimo do POST /cadastrar-consulta vindo de um agendamento
-    // (espelha os campos hidden que o form contextual envia)
-    private function payloadConsulta(Agendamento $agendamento, array $extra = []): array
+    // Payload de consulta anexada a um atendimento (container: sempre com atendimento_id)
+    private function payloadConsulta(Atendimento $at, array $extra = []): array
     {
         return array_merge([
-            'agendamento_id'  => $agendamento->id,
-            'profissional_id' => $agendamento->profissional_id,
-            'paciente_id'     => $agendamento->paciente_id,
+            'atendimento_id'  => $at->id,
+            'profissional_id' => $at->profissional_id,
+            'paciente_id'     => $at->paciente_id,
             'data_hora'       => now()->format('Y-m-d H:i:s'),
             'tipo'            => 'Clínico Geral',
-            'queixa'          => 'Queixa registrada a partir do agendamento.',
+            'queixa'          => 'Consulta registrada no atendimento.',
         ], $extra);
     }
 
     // ============================================================
-    // A.1 — Criação atômica (o coração do modelo)
+    // D1 — Fluxo Agendado (container)
     // ============================================================
 
-    // A.1.1: realizar + salvar a consulta cria o atendimento aberto vinculado,
-    // com paciente/profissional herdados, e o agendamento vira realizado
-    public function test_salvar_consulta_de_agendamento_cria_atendimento_agendado(): void
+    // D1.1: realizar abre o atendimento (agendado, vazio, aberto) e marca o agendamento realizado
+    public function test_realizar_abre_atendimento_agendado_vazio(): void
     {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-        $agendamento           = $this->agendamentoConfirmado($profissional, $paciente);
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
 
-        $response = $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento));
+        $resp = $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
 
-        // Exatamente 1 atendimento, aberto, apontando para o agendamento
         $this->assertSame(1, Atendimento::count());
-        $atendimento = Atendimento::first();
-        $this->assertSame('aberto', $atendimento->status);
-        $this->assertSame($agendamento->id, $atendimento->agendamento_id);
-        $this->assertSame($paciente->id, $atendimento->paciente_id);
-        $this->assertSame($profissional->id, $atendimento->profissional_id);
+        $at = Atendimento::first();
+        $this->assertSame('aberto', $at->status);
+        $this->assertSame($ag->id, $at->agendamento_id);
+        $this->assertSame($pac->id, $at->paciente_id);
+        $this->assertSame($prof->id, $at->profissional_id);
+        $this->assertTrue($at->isAgendado());
+        $this->assertSame(0, Consulta::count());              // vazio: nenhuma consulta ainda
+        $this->assertSame('realizado', $ag->fresh()->status);
+        $resp->assertRedirect("/atendimentos/{$at->id}");
+    }
 
-        // A consulta nasceu DENTRO do atendimento
+    // D1.3: realizar e não registrar consulta → atendimento vazio permanece (estado válido)
+    public function test_realizar_sem_consulta_deixa_atendimento_vazio(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+
+        $at = Atendimento::first();
+        $this->assertSame('aberto', $at->status);
+        $this->assertSame(0, $at->consultas()->count());      // vazio é OK no modelo container
+    }
+
+    // D1.2: adicionar consulta no atendimento agendado → anexa + liga o agendamento (AgendaLink)
+    public function test_adicionar_consulta_no_atendimento_agendado(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+        $at = Atendimento::first();
+
+        $resp = $this->actingAs($user)->post('/cadastrar-consulta', $this->payloadConsulta($at));
+
         $consulta = Consulta::first();
-        $this->assertSame($atendimento->id, $consulta->atendimento_id);
-
-        // O agendamento fechou o ciclo: realizado + consulta vinculada
-        $agendamento->refresh();
-        $this->assertSame('realizado', $agendamento->status);
-        $this->assertSame($consulta->id, $agendamento->consulta_id);
-
-        // Aterrissa nos detalhes do atendimento recém-criado
-        $response->assertRedirect("/atendimentos/{$atendimento->id}");
+        $this->assertSame($at->id, $consulta->atendimento_id);
+        $this->assertSame($consulta->id, $ag->fresh()->consulta_id);   // AgendaLink (1ª consulta)
+        $resp->assertRedirect("/atendimentos/{$at->id}");
     }
 
-    // A.1.2: realizar mas NÃO salvar (só acessar o form) não cria nada —
-    // o agendamento continua confirmado, cobrando o registro
-    public function test_realizar_sem_salvar_nao_cria_nada(): void
+    // D1.4: realizar idempotente — 2ª vez não cria 2º atendimento, vai para o existente
+    public function test_realizar_e_idempotente(): void
     {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-        $agendamento           = $this->agendamentoConfirmado($profissional, $paciente);
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
 
-        // O realizar só redireciona para o formulário contextual
-        $this->actingAs($user)
-            ->patch("/agendamentos/{$agendamento->id}/realizar")
-            ->assertRedirect("/cadastro-consulta?agendamento_id={$agendamento->id}");
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+        $at = Atendimento::first();
 
-        // O formulário abre normalmente (paciente travado pelo agendamento)
-        $this->actingAs($user)
-            ->get("/cadastro-consulta?agendamento_id={$agendamento->id}")
-            ->assertOk()
-            ->assertSee($paciente->nome);
+        $resp = $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
 
-        // Abandonou: nenhum atendimento, nenhuma consulta, agendamento intacto
-        $this->assertSame(0, Atendimento::count());
-        $this->assertSame(0, Consulta::count());
-        $this->assertSame('confirmado', $agendamento->fresh()->status);
+        $this->assertSame(1, Atendimento::count());
+        $resp->assertRedirect("/atendimentos/{$at->id}");
     }
 
-    // A.1.3: o fluxo agendado não gera consulta órfã (atendimento_id nulo)
-    public function test_consulta_de_agendamento_nao_fica_orfa(): void
+    // Transação: se o exame inline explodir, a consulta é revertida, mas o atendimento
+    // (criado no realizar) permanece — não há rollback do atendimento.
+    public function test_rollback_da_consulta_nao_afeta_o_atendimento(): void
     {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+        $at = Atendimento::first();
 
-        // Órfã legada pré-existente (decisão §8: não migrar — fica como está)
-        Consulta::factory()->create([
-            'profissional_id' => $profissional->id,
-            'paciente_id'     => $paciente->id,
-            'atendimento_id'  => null,
-            'criado_por_id'   => $user->id,
-        ]);
-        $orfasAntes = Consulta::whereNull('atendimento_id')->count();
-
-        $agendamento = $this->agendamentoConfirmado($profissional, $paciente);
-        $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento));
-
-        // Nenhuma órfã nova; a consulta do agendamento tem atendimento
-        $this->assertSame($orfasAntes, Consulta::whereNull('atendimento_id')->count());
-        $this->assertNotNull(Consulta::latest('id')->first()->atendimento_id);
-    }
-
-    // A.1.4: transação — se a gravação falhar no meio (exame explode),
-    // NADA é persistido: nem atendimento, nem consulta, e a agenda não muda
-    public function test_rollback_nao_deixa_atendimento_orfao(): void
-    {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-        $agendamento           = $this->agendamentoConfirmado($profissional, $paciente);
-
-        // Força uma exceção no meio da transação (depois do atendimento e da consulta)
         Exame::creating(function () {
             throw new \RuntimeException('Falha forçada pelo teste (rollback).');
         });
 
-        $response = $this->actingAs($user)->post(
-            '/cadastrar-consulta',
-            $this->payloadConsulta($agendamento, [
-                'exames' => [['tipo' => 'Hemograma Completo']],
-            ])
-        );
+        $this->actingAs($user)->post('/cadastrar-consulta', $this->payloadConsulta($at, [
+            'exames' => [['tipo' => 'Hemograma']],
+        ]))->assertStatus(500);
 
-        $response->assertStatus(500);
-
-        // Rollback total: banco exatamente como antes
-        $this->assertSame(0, Atendimento::count());
         $this->assertSame(0, Consulta::count());
-        $agendamento->refresh();
-        $this->assertSame('confirmado', $agendamento->status);
-        $this->assertNull($agendamento->consulta_id);
+        $this->assertSame(1, Atendimento::count());           // o atendimento continua lá
     }
 
     // ============================================================
-    // A.2 — Origem: Agendado × Espontâneo
+    // Guards de realizar (RBAC + estado)
     // ============================================================
 
-    // A.2.1: atendimento criado pelo fluxo agendado tem origem 'agendado'
-    public function test_atendimento_do_fluxo_agendado_tem_origem_agendado(): void
-    {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-        $agendamento           = $this->agendamentoConfirmado($profissional, $paciente);
-
-        $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento));
-
-        $atendimento = Atendimento::first();
-        $this->assertTrue($atendimento->isAgendado());
-        $this->assertSame('agendado', $atendimento->origem);
-    }
-
-    // A.2.2: atendimento aberto avulso (/cadastro-atendimento) é espontâneo
-    public function test_atendimento_avulso_tem_origem_espontaneo(): void
-    {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-
-        $this->actingAs($user)->post('/cadastrar-atendimento', [
-            'paciente_id'     => $paciente->id,
-            'profissional_id' => $profissional->id,
-        ]);
-
-        $atendimento = Atendimento::first();
-        $this->assertNull($atendimento->agendamento_id);
-        $this->assertFalse($atendimento->isAgendado());
-        $this->assertSame('espontaneo', $atendimento->origem);
-    }
-
-    // A.2.3: agendamento_id é fillable e a relação agendamento() resolve
-    public function test_relacao_agendamento_do_atendimento(): void
-    {
-        [, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]     = $this->criarPacienteUser();
-        $agendamento      = $this->agendamentoConfirmado($profissional, $paciente);
-
-        $atendimento = Atendimento::factory()->create([
-            'profissional_id' => $profissional->id,
-            'paciente_id'     => $paciente->id,
-            'agendamento_id'  => $agendamento->id,
-        ]);
-
-        $this->assertTrue($atendimento->agendamento->is($agendamento));
-        $this->assertTrue($agendamento->fresh()->atendimento->is($atendimento));
-    }
-
-    // ============================================================
-    // A.3 — 1 agendamento = 1 atendimento / guardas de estado
-    // ============================================================
-
-    // A.3.1: agendamento já realizado não pode ser realizado de novo
-    public function test_nao_realiza_agendamento_ja_realizado(): void
-    {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-        $agendamento           = Agendamento::factory()->create([
-            'profissional_id' => $profissional->id,
-            'paciente_id'     => $paciente->id,
-            'status'          => 'realizado',
-        ]);
-
-        // Pela rota realizar
-        $this->actingAs($user)
-            ->patch("/agendamentos/{$agendamento->id}/realizar")
-            ->assertRedirect()
-            ->assertSessionHas('error');
-
-        // E direto no store (bypass do form): mesmo guard
-        $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento))
-            ->assertRedirect('/agendamentos')
-            ->assertSessionHas('error');
-
-        $this->assertSame(0, Atendimento::count());
-        $this->assertSame(0, Consulta::count());
-    }
-
-    // A.3.2: agendamento pendente (não confirmado) também é bloqueado
     public function test_nao_realiza_agendamento_pendente(): void
     {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-        $agendamento           = Agendamento::factory()->create([
-            'profissional_id' => $profissional->id,
-            'paciente_id'     => $paciente->id,
-            'status'          => 'pendente',
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag = Agendamento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id, 'status' => 'pendente',
+        ]);
+
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar")
+            ->assertRedirect()->assertSessionHas('error');
+        $this->assertSame(0, Atendimento::count());
+    }
+
+    public function test_nao_realiza_agendamento_ja_realizado_sem_atendimento(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag = Agendamento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id, 'status' => 'realizado',
+        ]);
+
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar")
+            ->assertRedirect()->assertSessionHas('error');
+        $this->assertSame(0, Atendimento::count());
+    }
+
+    public function test_profissional_nao_realiza_agendamento_de_outro(): void
+    {
+        [, $profDono] = $this->criarProfissionalUser();
+        [$intruso]    = $this->criarProfissionalUser();
+        [, $pac]      = $this->criarPacienteUser();
+        $ag = $this->agendamentoConfirmado($profDono, $pac);
+
+        $this->actingAs($intruso)->patch("/agendamentos/{$ag->id}/realizar")->assertForbidden();
+        $this->assertSame(0, Atendimento::count());
+        $this->assertSame('confirmado', $ag->fresh()->status);
+    }
+
+    public function test_paciente_nao_realiza_agendamento(): void
+    {
+        [, $prof]        = $this->criarProfissionalUser();
+        [$userPac, $pac] = $this->criarPacienteUser();
+        $ag = $this->agendamentoConfirmado($prof, $pac);
+
+        $this->actingAs($userPac)->patch("/agendamentos/{$ag->id}/realizar")
+            ->assertRedirect()->assertSessionHas('error');
+        $this->assertSame(0, Atendimento::count());
+    }
+
+    // ============================================================
+    // D2 — Espontâneo (convergente) + origem
+    // ============================================================
+
+    public function test_atendimento_agendado_tem_origem_agendado(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+
+        $at = Atendimento::first();
+        $this->assertTrue($at->isAgendado());
+        $this->assertSame('agendado', $at->origem);
+    }
+
+    public function test_atendimento_espontaneo_tem_origem_espontaneo(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+
+        $this->actingAs($user)->post('/cadastrar-atendimento', [
+            'paciente_id'     => $pac->id,
+            'profissional_id' => $prof->id,
+        ]);
+
+        $at = Atendimento::first();
+        $this->assertNull($at->agendamento_id);
+        $this->assertFalse($at->isAgendado());
+        $this->assertSame('espontaneo', $at->origem);
+    }
+
+    public function test_relacao_agendamento_atendimento(): void
+    {
+        [, $prof] = $this->criarProfissionalUser();
+        [, $pac]  = $this->criarPacienteUser();
+        $ag       = $this->agendamentoConfirmado($prof, $pac);
+
+        $at = Atendimento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id, 'agendamento_id' => $ag->id,
+        ]);
+
+        $this->assertTrue($at->agendamento->is($ag));
+        $this->assertTrue($ag->fresh()->atendimento->is($at));
+    }
+
+    // ============================================================
+    // E3b — União: o form de consulta vive DENTRO da tela do atendimento
+    // ============================================================
+
+    // Links antigos /cadastro-consulta?atendimento_id=X redirecionam para a tela do atendimento
+    public function test_cadastro_consulta_redireciona_para_o_atendimento(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $at = Atendimento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id,
+            'criado_por_id'   => $user->id, 'status' => 'aberto',
         ]);
 
         $this->actingAs($user)
-            ->patch("/agendamentos/{$agendamento->id}/realizar")
-            ->assertRedirect()
+            ->get("/cadastro-consulta?atendimento_id={$at->id}")
+            ->assertRedirectContains("/atendimentos/{$at->id}");
+    }
+
+    // Atendimento aberto e vazio: form embutido presente e JÁ ABERTO (auto-open);
+    // DEC-5: o card "Consultas do atendimento" não aparece enquanto não há consulta
+    public function test_atendimento_aberto_vazio_tem_form_embutido_aberto(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+        $at = Atendimento::first();
+
+        $this->actingAs($user)->get("/atendimentos/{$at->id}")
+            ->assertOk()
+            ->assertSee('Registrar Consulta')
+            ->assertSee('action="/cadastrar-consulta"', false)
+            ->assertSee('collapse show', false)        // sem consulta → form começa aberto
+            ->assertSee('id="nova-consulta"', false)
+            ->assertDontSee('Consultas do atendimento'); // card da timeline só com consultas
+    }
+
+    // E3d: a consulta aceita anotações livres (psicologia e outros perfis) e elas
+    // aparecem na linha do tempo do atendimento e nos detalhes da consulta
+    public function test_consulta_com_anotacoes_persiste_e_aparece(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+        $at = Atendimento::first();
+
+        $this->actingAs($user)->post('/cadastrar-consulta', $this->payloadConsulta($at, [
+            'anotacoes' => 'Evolução registrada em campo livre pelo profissional.',
+        ]));
+
+        $this->assertDatabaseHas('consultas', [
+            'atendimento_id' => $at->id,
+            'anotacoes'      => 'Evolução registrada em campo livre pelo profissional.',
+        ]);
+        $this->actingAs($user)->get("/atendimentos/{$at->id}")
+            ->assertOk()
+            ->assertSee('Evolução registrada em campo livre pelo profissional.');
+    }
+
+    // E3d: os dados de saúde críticos do paciente (ST-15) aparecem na tela do
+    // atendimento — alergia em destaque — junto do nome social no formato profissional
+    public function test_dados_de_saude_e_nome_social_na_tela_do_atendimento(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [$userPac, $pac] = $this->criarPacienteUser();
+        $pac->update([
+            'nome_social'               => 'Fê',
+            'alergias'                  => 'Penicilina e dipirona',
+            'medicamentos_uso_continuo' => 'Losartana 50mg',
+            'condicoes_cronicas'        => 'Hipertensão arterial',
+        ]);
+        $at = Atendimento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id,
+            'criado_por_id'   => $user->id, 'status' => 'aberto',
+        ]);
+
+        $this->actingAs($user)->get("/atendimentos/{$at->id}")
+            ->assertOk()
+            ->assertSee('Dados de Saúde')
+            ->assertSee('Penicilina e dipirona')
+            ->assertSee('Losartana 50mg')
+            ->assertSee('Hipertensão arterial')
+            ->assertSee("Fê ({$pac->nome})");   // regra v0.10.3: "Social (Registro)"
+    }
+
+    // Atendimento fechado: sem form embutido (não dá para registrar consulta)
+    public function test_atendimento_fechado_nao_tem_form_embutido(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $at = Atendimento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id,
+            'criado_por_id'   => $user->id, 'status' => 'fechado',
+        ]);
+
+        $this->actingAs($user)->get("/atendimentos/{$at->id}")
+            ->assertOk()
+            ->assertDontSee('action="/cadastrar-consulta"', false)
+            ->assertDontSee('Registrar Consulta');
+    }
+
+    // Integridade (container): POST direto não anexa consulta a um atendimento ENCERRADO
+    public function test_nao_registra_consulta_em_atendimento_fechado(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $at = Atendimento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id,
+            'criado_por_id'   => $user->id, 'status' => 'fechado',
+        ]);
+
+        $this->actingAs($user)->post('/cadastrar-consulta', $this->payloadConsulta($at))
+            ->assertRedirect("/atendimentos/{$at->id}")
             ->assertSessionHas('error');
 
-        $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento))
-            ->assertRedirect('/agendamentos')
-            ->assertSessionHas('error');
+        $this->assertSame(0, Consulta::count());   // nada foi criado no atendimento fechado
+    }
 
-        $this->assertSame(0, Atendimento::count());
+    // Admin (nivel 1, só leitura) vê a tela do atendimento mas não o form de registrar
+    public function test_admin_nao_ve_form_embutido(): void
+    {
+        $admin    = $this->criarAdmin();
+        [, $prof] = $this->criarProfissionalUser();
+        [, $pac]  = $this->criarPacienteUser();
+        $at = Atendimento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id, 'status' => 'aberto',
+        ]);
+
+        $this->actingAs($admin)->get("/atendimentos/{$at->id}")
+            ->assertOk()
+            ->assertDontSee('action="/cadastrar-consulta"', false);
+    }
+
+    // ============================================================
+    // E1 guard (sobrevive ao container): consulta sempre dentro de atendimento
+    // ============================================================
+
+    public function test_consulta_exige_atendimento(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+
+        $this->actingAs($user)->get('/cadastro-consulta')->assertRedirect('/pacientes');
+
+        $this->actingAs($user)->post('/cadastrar-consulta', [
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id,
+            'data_hora' => now()->format('Y-m-d H:i:s'), 'tipo' => 'Clínico Geral', 'queixa' => 'x',
+        ])->assertRedirect('/pacientes');
+
         $this->assertSame(0, Consulta::count());
     }
 
-    // A.3.3: um agendamento realizado tem exatamente 1 atendimento — uma
-    // segunda tentativa de salvar consulta pelo mesmo agendamento é bloqueada
-    public function test_um_agendamento_gera_exatamente_um_atendimento(): void
-    {
-        [$user, $profissional] = $this->criarProfissionalUser();
-        [, $paciente]          = $this->criarPacienteUser();
-        $agendamento           = $this->agendamentoConfirmado($profissional, $paciente);
-
-        // 1ª vez: cria
-        $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento));
-
-        // 2ª vez: bloqueada (o agendamento já está realizado)
-        $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento))
-            ->assertRedirect('/agendamentos')
-            ->assertSessionHas('error');
-
-        $this->assertSame(1, Atendimento::where('agendamento_id', $agendamento->id)->count());
-        $this->assertSame(1, Consulta::count());
-    }
-
-    // ============================================================
-    // A.4 — Segurança / RBAC (não regressão do S-02)
-    // ============================================================
-
-    // A.4.1: profissional não realiza agendamento de OUTRO profissional (403)
-    public function test_profissional_nao_realiza_agendamento_de_outro(): void
-    {
-        [, $profissionalDono] = $this->criarProfissionalUser();
-        [$userIntruso]        = $this->criarProfissionalUser();
-        [, $paciente]         = $this->criarPacienteUser();
-        $agendamento          = $this->agendamentoConfirmado($profissionalDono, $paciente);
-
-        // Rota realizar: policy update do Agendamento (S-02)
-        $this->actingAs($userIntruso)
-            ->patch("/agendamentos/{$agendamento->id}/realizar")
-            ->assertForbidden();
-
-        // Form contextual e store: mesmos guards
-        $this->actingAs($userIntruso)
-            ->get("/cadastro-consulta?agendamento_id={$agendamento->id}")
-            ->assertForbidden();
-
-        $this->actingAs($userIntruso)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento))
-            ->assertForbidden();
-
-        $this->assertSame(0, Atendimento::count());
-        $this->assertSame(0, Consulta::count());
-        $this->assertSame('confirmado', $agendamento->fresh()->status);
-    }
-
-    // A.4.2: paciente (nivel 5) não acessa o realizar (rota nivel:3 —
-    // CheckNivel devolve redirect com mensagem de erro, não 403)
-    public function test_paciente_nao_realiza_agendamento(): void
-    {
-        [, $profissional]        = $this->criarProfissionalUser();
-        [$userPaciente, $paciente] = $this->criarPacienteUser();
-        $agendamento             = $this->agendamentoConfirmado($profissional, $paciente);
-
-        $this->actingAs($userPaciente)
-            ->patch("/agendamentos/{$agendamento->id}/realizar")
-            ->assertRedirect()
-            ->assertSessionHas('error');
-
-        $this->assertSame(0, Atendimento::count());
-        $this->assertSame('confirmado', $agendamento->fresh()->status);
-    }
-
-    // ============================================================
-    // A.5 — Não-regressão do lado do paciente
-    // ============================================================
-
-    // A.5.2: a consulta criada pelo fluxo agendado aparece no /meu-prontuario
-    // do paciente, dentro do atendimento (hasManyThrough intacto)
+    // Não-regressão: a consulta do fluxo agendado aparece no /meu-prontuario do paciente
     public function test_consulta_agendada_aparece_no_meu_prontuario(): void
     {
-        [$user, $profissional]     = $this->criarProfissionalUser();
-        [$userPaciente, $paciente] = $this->criarPacienteUser();
-        $agendamento               = $this->agendamentoConfirmado($profissional, $paciente);
+        [$user, $prof]   = $this->criarProfissionalUser();
+        [$userPac, $pac] = $this->criarPacienteUser();
+        $ag = $this->agendamentoConfirmado($prof, $pac);
 
-        $this->actingAs($user)
-            ->post('/cadastrar-consulta', $this->payloadConsulta($agendamento));
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/realizar");
+        $at = Atendimento::first();
+        $this->actingAs($user)->post('/cadastrar-consulta', $this->payloadConsulta($at, [
+            'queixa' => 'Queixa no prontuário do paciente.',
+        ]));
 
-        $this->actingAs($userPaciente)
-            ->get('/meu-prontuario')
+        $this->actingAs($userPac)->get('/meu-prontuario')
             ->assertOk()
-            ->assertSee('Queixa registrada a partir do agendamento.');
+            ->assertSee('Queixa no prontuário do paciente.');
+    }
+
+    // ============================================================
+    // D4 — No-show (DEC-2)
+    // ============================================================
+
+    // D4.2: marca falta → estado nao_compareceu, com justificativa, sem atendimento/consulta
+    public function test_marcar_nao_compareceu(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+
+        $resp = $this->actingAs($user)->patch("/agendamentos/{$ag->id}/nao-compareceu", [
+            'justificativa' => 'Paciente não compareceu e não avisou.',
+        ]);
+
+        $ag->refresh();
+        $this->assertSame('nao_compareceu', $ag->status);
+        $this->assertTrue($ag->isNaoCompareceu());
+        $this->assertSame('Paciente não compareceu e não avisou.', $ag->motivo_cancelamento);
+        $this->assertNotNull($ag->cancelado_em);
+        $this->assertSame(0, Atendimento::count());
+        $this->assertSame(0, Consulta::count());
+        $resp->assertRedirect('/agendamentos');
+    }
+
+    // D4.1: a justificativa é obrigatória
+    public function test_no_show_exige_justificativa(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag            = $this->agendamentoConfirmado($prof, $pac);
+
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/nao-compareceu", [])
+            ->assertSessionHasErrors('justificativa');
+        $this->assertSame('confirmado', $ag->fresh()->status);
+    }
+
+    // D4.4: só confirmado pode virar falta
+    public function test_no_show_so_em_confirmado(): void
+    {
+        [$user, $prof] = $this->criarProfissionalUser();
+        [, $pac]       = $this->criarPacienteUser();
+        $ag = Agendamento::factory()->create([
+            'profissional_id' => $prof->id, 'paciente_id' => $pac->id, 'status' => 'pendente',
+        ]);
+
+        $this->actingAs($user)->patch("/agendamentos/{$ag->id}/nao-compareceu", ['justificativa' => 'x'])
+            ->assertRedirect()->assertSessionHas('error');
+        $this->assertSame('pendente', $ag->fresh()->status);
+    }
+
+    // D4.5: profissional não marca falta de agendamento de outro (403)
+    public function test_no_show_de_outro_profissional_bloqueado(): void
+    {
+        [, $profDono] = $this->criarProfissionalUser();
+        [$intruso]    = $this->criarProfissionalUser();
+        [, $pac]      = $this->criarPacienteUser();
+        $ag = $this->agendamentoConfirmado($profDono, $pac);
+
+        $this->actingAs($intruso)->patch("/agendamentos/{$ag->id}/nao-compareceu", ['justificativa' => 'x'])
+            ->assertForbidden();
+        $this->assertSame('confirmado', $ag->fresh()->status);
+    }
+
+    // D4.5: paciente não acessa a ação (nivel:3)
+    public function test_paciente_nao_marca_no_show(): void
+    {
+        [, $prof]        = $this->criarProfissionalUser();
+        [$userPac, $pac] = $this->criarPacienteUser();
+        $ag = $this->agendamentoConfirmado($prof, $pac);
+
+        $this->actingAs($userPac)->patch("/agendamentos/{$ag->id}/nao-compareceu", ['justificativa' => 'x'])
+            ->assertRedirect()->assertSessionHas('error');
+        $this->assertSame('confirmado', $ag->fresh()->status);
     }
 }

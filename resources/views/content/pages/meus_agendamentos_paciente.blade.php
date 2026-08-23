@@ -5,6 +5,7 @@ $statusMap = [
     'confirmado' => ['label' => 'Confirmado',  'class' => 'bg-label-info'],
     'realizado'  => ['label' => 'Realizado',   'class' => 'bg-label-success'],
     'cancelado'  => ['label' => 'Cancelado',   'class' => 'bg-label-danger'],
+    'nao_compareceu' => ['label' => 'Não compareceu', 'class' => 'bg-label-secondary'],
 ];
 @endphp
 

@@ -28,9 +28,10 @@ $configData = Helper::appClasses();
       <h4 class="mb-0">Listagem de Consultas</h4>
       <p class="text-muted small mb-0 mt-1">Gerencie as consultas clínicas registradas</p>
     </div>
+    {{-- E3b (v0.11.1, união): consulta nasce dentro do atendimento — a porta aqui é abrir um --}}
     @if(Auth::user()->nivelAcesso() <= 3 && Auth::user()->profissional)
-    <a href="/cadastro-consulta" class="btn btn-primary">
-      <i class="mdi mdi-stethoscope me-1"></i>Nova Consulta
+    <a href="/cadastro-atendimento" class="btn btn-primary">
+      <i class="mdi mdi-folder-plus-outline me-1"></i>Iniciar Atendimento
     </a>
     @endif
   </div>
